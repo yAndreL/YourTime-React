@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import supabaseService from '../services/SupabaseService.js'
 import DatabaseSetup from '../utils/databaseSetup.js'
-import { testBasicConnection, testSupabaseConfig } from '../utils/testSupabaseConnection.js'
 
 function DatabaseSetupView() {
   const [connectionStatus, setConnectionStatus] = useState(null)
@@ -15,55 +14,8 @@ function DatabaseSetupView() {
   const [rlsFixResults, setRlsFixResults] = useState(null)
 
   useEffect(() => {
-    testConnection()
     checkDatabaseStructure()
   }, [])
-
-  const testConnection = async () => {
-    setIsLoading(true)
-    try {
-      console.log('🔄 Iniciando teste de conexão...')
-      
-      // Primeiro, verificar configuração básica
-      const configTest = testSupabaseConfig()
-      console.log('📋 Teste de configuração:', configTest)
-      
-      if (!configTest.success) {
-        setConnectionStatus(configTest)
-        return
-      }
-      
-      // Agora testar conexão básica
-      const basicTest = await testBasicConnection()
-      console.log('🔍 Teste básico:', basicTest)
-      
-      if (basicTest.success) {
-        // Se básico OK, tentar teste completo
-        try {
-          const fullTest = await supabaseService.testConnection()
-          console.log('📊 Teste completo:', fullTest)
-          setConnectionStatus(fullTest)
-        } catch (error) {
-          // Se teste completo falhar, usar resultado básico
-          setConnectionStatus({
-            ...basicTest,
-            details: `${basicTest.details} (Teste avançado falhou: ${error.message})`
-          })
-        }
-      } else {
-        setConnectionStatus(basicTest)
-      }
-    } catch (error) {
-      console.error('❌ Erro geral no teste:', error)
-      setConnectionStatus({
-        success: false,
-        message: 'Erro crítico ao testar conexão',
-        error: error.message
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const checkDatabaseStructure = async () => {
     try {
@@ -237,21 +189,6 @@ function DatabaseSetupView() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-green-900">Teste de Conexão</h3>
-                  <p className="text-sm text-green-700">
-                    Verificar conectividade com o servidor Supabase
-                  </p>
-                </div>
-                <button
-                  onClick={testConnection}
-                  disabled={isLoading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? '⏳ Testando...' : '🔍 Testar'}
-                </button>
-              </div>
 
               <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
                 <div>
@@ -375,11 +312,11 @@ function DatabaseSetupView() {
 
         {/* Navigation */}
         <div className="mt-6 text-center">
-          <Link 
-            to="/verificar-conexao" 
+          <Link
+            to="/"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            🔍 Verificar Conexão Detalhada
+            🏠 Voltar ao Dashboard
           </Link>
         </div>
       </div>

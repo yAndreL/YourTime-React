@@ -17,14 +17,13 @@ export const API_CONFIG = {
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
-  REGISTER: '/registrar',
+  REGISTER: '/formulario-ponto',
   PAINEL_ADMIN: '/painel-admin',
   PROFILE: '/perfil',
   SETTINGS: '/configuracoes',
   HISTORY: '/historico',
   FORM: '/formulario-ponto',
   NOT_FINISHED: '/nao-finalizada',
-  VERIFY_CONNECTION: '/verificar-conexao',
   DATABASE_SETUP: '/database-setup'
 }
 
@@ -145,7 +144,7 @@ export const SIDEBAR_MENU = [
   {
     icon: '🏢',
     label: 'Painel Administrativo',
-    route: ROUTES.REGISTER,
+    route: ROUTES.PAINEL_ADMIN,
     roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER]
   },
   {

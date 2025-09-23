@@ -1,20 +1,28 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import DashboardCards from './components/ui/DashboardCards'
+import TimeRecordsSummary from './components/TimeRecordsSummary'
+import jsPDF from 'jspdf'
+import { useTimeTracking } from './hooks/useTimeTracking'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  // Dados de exemplo para exportação
-  const horasTrabalhadasData = [
-    { dia: 'Segunda', horas: '8:00', entrada: '09:00', saida: '17:00' },
-    { dia: 'Terça', horas: '7:12', entrada: '09:15', saida: '16:27' },
-    { dia: 'Quarta', horas: '8:48', entrada: '08:30', saida: '17:18' },
-    { dia: 'Quinta', horas: '7:36', entrada: '09:00', saida: '16:36' },
-    { dia: 'Sexta', horas: '7:45', entrada: '09:15', saida: '17:00' }
-  ]
+  // Hook personalizado para dados de ponto
+  const {
+    dashboardData,
+    weeklyData,
+    loading,
+    error,
+    userData,
+    timeRecords,
+    refetch
+  } = useTimeTracking()
+
+  // Dados para exportação usando dados reais
+  const horasTrabalhadasData = weeklyData || []
 
   const showToastMessage = (message) => {
     setToastMessage(message)
@@ -23,13 +31,26 @@ function App() {
   }
 
   const exportToPDF = () => {
-    // Simulação de exportação para PDF
-    const dataString = horasTrabalhadasData.map(item => 
-      `${item.dia}: ${item.horas} (${item.entrada} - ${item.saida})`
-    ).join('\n')
+    const doc = new jsPDF()
     
+    // Adiciona título
+    doc.setFontSize(16)
+    doc.text('Relatório de Horas Trabalhadas', 20, 20)
+    
+    // Adiciona os dados
+    doc.setFontSize(12)
+    horasTrabalhadasData.forEach((item, index) => {
+      const yPos = 40 + (index * 10)
+      const texto = `${item.dia}: ${item.horas} (${item.entrada} - ${item.saida})`
+      doc.text(texto, 20, yPos)
+    })
+    
+    // Adiciona total
+    doc.text('Total: 39h 21m', 20, 40 + (horasTrabalhadasData.length * 10))
+    
+    // Salva o PDF
+    doc.save('relatorio-horas.pdf')
     showToastMessage('Relatório PDF gerado com sucesso!')
-    console.log(`Exportando para PDF...\n\nRelatório de Horas da Semana:\n${dataString}\n\nTotal: 39h 21m`)
   }
 
   const exportToCSV = () => {
@@ -130,12 +151,6 @@ function App() {
               >
                 <span className="mr-3">⚙️</span> Configurações
               </Link>
-              <Link 
-                to="/verificar-conexao" 
-                className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <span className="mr-3">🔌</span> Verificar BD
-              </Link>
             </div>
           </div>
         </nav>
@@ -156,7 +171,7 @@ function App() {
           <div className="px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <button 
+                <button
                   onClick={() => setSidebarOpen(true)}
                   className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
                 >
@@ -164,17 +179,27 @@ function App() {
                 </button>
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                    JS
+                    {loading ? '...' : (userData?.nome ? userData.nome.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'US')}
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">José da Silva Lemos</h2>
-                    <p className="text-sm text-gray-500">Desenvolvedor Frontend</p>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {loading ? 'Carregando...' : (userData?.nome || 'Usuário')}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {loading ? 'Carregando...' : (userData?.cargo || 'Funcionário')}
+                    </p>
                   </div>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Último registro</p>
-                <p className="text-sm font-medium text-gray-900">Hoje, 09:15</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {loading ? 'Carregando...' : (
+                    dashboardData?.horasHoje && dashboardData.horasHoje !== '00:00'
+                      ? `Hoje, ${dashboardData.horasHoje}`
+                      : 'Nenhum registro hoje'
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -184,58 +209,112 @@ function App() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
             Dashboard
           </h1>
-        
-          {/* Cards componentizados */}
-          <DashboardCards 
-            saldoHoras="+12:30"
-            horasHoje="07:45"
-            projetoAtual="YourTime v2.0"
-            status="Trabalhando"
-            isWorking={true}
+
+          {/* Indicadores de loading e erro */}
+          {loading && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md mb-6">
+              ⏳ Carregando dados do banco de dados...
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+              <div className="flex items-center">
+                <span className="mr-2">❌</span>
+                <div>
+                  <div className="font-medium">Erro ao carregar dados</div>
+                  <div className="text-sm mt-1">{error}</div>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cards componentizados com dados reais */}
+          {(!loading && !error) && (
+            <DashboardCards
+              saldoHoras={dashboardData?.saldoHoras || '+00:00'}
+              horasHoje={dashboardData?.horasHoje || '00:00'}
+              projetoAtual={dashboardData?.projetoAtual || 'Nenhum projeto'}
+              status={dashboardData?.status || 'Offline'}
+              isWorking={dashboardData?.isWorking || false}
+            />
+          )}
+
+          {/* Resumo detalhado de registros */}
+          <TimeRecordsSummary
+            timeRecords={timeRecords}
+            onRefresh={refetch}
+            loading={loading}
+            error={error}
           />
-          
+
           {/* Seção principal com gráfico e ações */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Gráfico de Horas */}
             <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Horas da Semana</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Segunda</span>
-                  <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">8:00h</span>
+
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Carregando gráfico...</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Terça</span>
-                  <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '90%' }}></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">7:12h</span>
+              ) : error ? (
+                <div className="flex items-center justify-center h-32 text-red-500">
+                  <span>Erro ao carregar gráfico</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Quarta</span>
-                  <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">8:48h</span>
+              ) : weeklyData && weeklyData.length > 0 ? (
+                <div className="space-y-3">
+                  {weeklyData.map((item, index) => {
+                    // Calcular largura da barra baseada nas horas
+                    const hours = parseInt(item.horas.split(':')[0]) || 0
+                    const maxHours = 10 // Máximo esperado de horas
+                    const widthPercent = Math.min((hours / maxHours) * 100, 100)
+
+                    return (
+                      <div key={index} className="flex items-center gap-4">
+                        {/* Dia da semana - largura fixa */}
+                        <div className="w-20 flex-shrink-0">
+                          <span className={`text-sm ${item.isToday ? 'text-green-600 font-semibold' : 'text-gray-600'}`}>
+                            {item.dia} {item.isToday && '(hoje)'}
+                          </span>
+                        </div>
+
+                        {/* Barra de progresso - ocupa todo espaço disponível */}
+                        <div className="flex-1">
+                          <div className="bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${item.isToday ? 'bg-green-500' : 'bg-blue-500'}`}
+                              style={{ width: `${widthPercent}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Horas - largura fixa */}
+                        <div className="w-12 flex-shrink-0 text-right">
+                          <span className={`text-sm font-medium ${item.isToday ? 'text-green-600' : 'text-gray-900'}`}>
+                            {item.horas}h
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Quinta</span>
-                  <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '95%' }}></div>
+              ) : (
+                <div className="flex items-center justify-center h-32 text-gray-500">
+                  <div className="text-center">
+                    <div className="text-gray-400 text-3xl mb-2">📈</div>
+                    <div>Nenhum dado de horas disponível</div>
+                    <div className="text-sm text-gray-400 mt-1">Registre seu primeiro ponto para ver o gráfico</div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">7:36h</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sexta</span>
-                  <div className="flex-1 mx-3 bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '97%' }}></div>
-                  </div>
-                  <span className="text-sm font-medium text-green-600">7:45h (hoje)</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Menu de Ações Rápidas */}
@@ -319,29 +398,41 @@ function App() {
           {/* Atividades Recentes */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Atividades Recentes</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Entrada registrada</span>
-                </div>
-                <span className="text-sm text-gray-500">Hoje, 09:15</span>
+
+            {!loading && !error && timeRecords?.length > 0 ? (
+              <div className="space-y-3">
+                {timeRecords.slice(-5).reverse().map((record, index) => (
+                  <div key={record.id || index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        record.entrada1 ? 'bg-green-500' :
+                        record.saida1 ? 'bg-red-500' : 'bg-blue-500'
+                      }`}></div>
+                      <span className="text-sm text-gray-900">
+                        {record.entrada1 ? 'Entrada registrada' :
+                         record.saida1 ? 'Saída registrada' :
+                         record.entrada2 ? 'Entrada 2 registrada' :
+                         record.saida2 ? 'Saída 2 registrada' : 'Registro de ponto'}
+                        {record.observacao && ` - ${record.observacao}`}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(record.data).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                ))}
+
+                {timeRecords.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    Nenhum registro de ponto encontrado
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Projeto YourTime v2.0 atualizado</span>
-                </div>
-                <span className="text-sm text-gray-500">Ontem, 17:30</span>
+            ) : (
+              <div className="flex items-center justify-center h-32 text-gray-500">
+                {loading ? 'Carregando atividades...' : 'Nenhuma atividade registrada'}
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-900">Saída registrada</span>
-                </div>
-                <span className="text-sm text-gray-500">Ontem, 18:00</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Botão adicional para projetos */}
@@ -358,16 +449,41 @@ function App() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div>
-                <p className="text-2xl font-bold text-blue-600">32h 15m</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {(() => {
+                    const totalMinutes = weeklyData?.reduce((total, item) => {
+                      const [hours, minutes] = item.horas.split(':').map(Number)
+                      return total + (hours * 60) + minutes
+                    }, 0) || 0
+
+                    const hours = Math.floor(totalMinutes / 60)
+                    const minutes = totalMinutes % 60
+                    return `${hours}h ${minutes}m`
+                  })()}
+                </p>
                 <p className="text-sm text-gray-500">Horas esta semana</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">156h 30m</p>
-                <p className="text-sm text-gray-500">Horas este mês</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {userData?.carga_horaria ? `${userData.carga_horaria}h/semana` : '40h/semana'}
+                </p>
+                <p className="text-sm text-gray-500">Carga horária</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-600">95%</p>
-                <p className="text-sm text-gray-500">Meta do mês</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {(() => {
+                    const totalMinutes = weeklyData?.reduce((total, item) => {
+                      const [hours, minutes] = item.horas.split(':').map(Number)
+                      return total + (hours * 60) + minutes
+                    }, 0) || 0
+
+                    const expectedMinutes = (userData?.carga_horaria || 40) * 60
+                    const percentage = expectedMinutes > 0 ? Math.round((totalMinutes / expectedMinutes) * 100) : 0
+
+                    return `${percentage}%`
+                  })()}
+                </p>
+                <p className="text-sm text-gray-500">Meta da semana</p>
               </div>
             </div>
           </div>

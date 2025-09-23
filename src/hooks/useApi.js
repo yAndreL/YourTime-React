@@ -56,10 +56,6 @@ const useApi = () => {
     return request(() => apiService.delete(endpoint))
   }, [request])
 
-  // Teste de conexão
-  const testConnection = useCallback(async (useRestApi = false) => {
-    return request(() => apiService.testConnection(useRestApi))
-  }, [request])
 
   // Diagnóstico
   const getDiagnostics = useCallback(async () => {
@@ -85,7 +81,6 @@ const useApi = () => {
     post,
     put,
     delete: del,
-    testConnection,
     getDiagnostics,
     clearData,
     clearError

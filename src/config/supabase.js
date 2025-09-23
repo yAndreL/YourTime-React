@@ -24,6 +24,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// Exportar createClient para uso administrativo
+export { createClient }
+
 // Configurações de conexão
 export const SUPABASE_CONFIG = {
   url: supabaseUrl,
@@ -32,55 +35,5 @@ export const SUPABASE_CONFIG = {
   region: 'us-east-1'
 }
 
-// Helper para testar conexão
-export const testConnection = async () => {
-  try {
-    console.log('🔍 Testando conexão com Supabase...')
-    console.log('📍 URL:', supabaseUrl)
-    
-    // Teste simples - verificar se consegue fazer uma query básica
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('count', { count: 'exact', head: true })
-    
-    if (error) {
-      console.log('⚠️ Erro na consulta:', error)
-      
-      // Se der erro de tabela não existir, a conexão está OK
-      if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
-        console.log('✅ Conexão OK - Tabela não existe ainda')
-        return {
-          success: true,
-          message: 'Conexão com Supabase estabelecida com sucesso!',
-          details: 'Banco conectado, mas tabelas precisam ser criadas',
-          needsSetup: true
-        }
-      }
-      
-      // Outros erros
-      throw error
-    }
-    
-    console.log('✅ Conexão e tabela OK')
-    return {
-      success: true,
-      message: 'Conexão com Supabase estabelecida com sucesso!',
-      recordCount: data || 0,
-      needsSetup: false
-    }
-  } catch (error) {
-    console.error('❌ Erro de conexão:', error)
-    return {
-      success: false,
-      message: 'Erro ao conectar com Supabase',
-      error: error.message,
-      details: {
-        code: error.code,
-        hint: error.hint,
-        message: error.message
-      }
-    }
-  }
-}
 
 export default supabase

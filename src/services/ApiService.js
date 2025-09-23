@@ -121,15 +121,6 @@ class ApiService {
     })
   }
 
-  /**
-   * Testa conexão com o servidor
-   * @param {boolean} useRestApi - Se deve usar REST API
-   * @returns {Promise} - Promise com resultado do teste
-   */
-  async testConnection(useRestApi = false) {
-    const params = useRestApi ? { useRestApi: 'true' } : {}
-    return this.get('/teste-conexao', params)
-  }
 
   /**
    * Obtém token de autenticação

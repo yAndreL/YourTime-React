@@ -210,10 +210,10 @@ function FormularioPonto() {
 
       console.log('✅ Ponto registrado com sucesso:', data[0])
       setSucesso('Ponto registrado com sucesso!')
-      
-      // Limpar formulário
+
+      // Redirecionar para dashboard
       setTimeout(() => {
-        navigate('/registrar')
+        navigate('/')
       }, 2000)
       
     } catch (error) {
@@ -281,8 +281,8 @@ function FormularioPonto() {
       <div className="w-full max-w-2xl mx-auto p-5 md:p-8 border border-gray-300 rounded-lg bg-white shadow-md">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <Link 
-            to="/registrar" 
+          <Link
+            to="/"
             className="flex items-center space-x-2 text-2xl no-underline py-2 px-3 rounded-md bg-transparent hover:bg-black hover:bg-opacity-10 transition-colors"
           >
             <ArrowIcon className="w-6 h-6" />
@@ -465,7 +465,7 @@ function FormularioPonto() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/registrar')}
+              onClick={() => navigate('/')}
               className="px-8 py-3 bg-white text-gray-800 border-2 border-black rounded-xl font-bold italic cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:bg-gray-800 hover:text-white hover:scale-105 text-center"
             >
               ❌ Cancelar

@@ -12,7 +12,6 @@ import HistoricoApontamento from './views/HistoricoApontamento.jsx'
 import GerenciamentoProjetos from './views/GerenciamentoProjetos.jsx'
 import Perfil from './views/Perfil.jsx'
 import Configuracoes from './views/Configuracoes.jsx'
-import VerificaConexaoDB from './services/VerificaConexaoDB.jsx'
 import DatabaseSetupView from './views/DatabaseSetupView.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -30,7 +29,6 @@ createRoot(document.getElementById('root')).render(
         <Route path="/projeto" element={<GerenciamentoProjetos />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
-        <Route path="/verificar-conexao" element={<VerificaConexaoDB />} />
         <Route path="/database-setup" element={<DatabaseSetupView />} />
       </Routes>
     </Router>

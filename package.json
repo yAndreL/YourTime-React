@@ -12,13 +12,20 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
     "setup": "node setup.js",
     "setup:dev": "cp .env.development .env && npm install",
-    "setup:prod": "cp .env.production .env && npm install && npm run build"
+    "setup:prod": "cp .env.production .env && npm install && npm run build",
+    "keep-alive": "node keep-alive.js",
+    "keep-alive:setup": "node keep-alive-config.js setup",
+    "keep-alive:config": "node keep-alive-config.js config",
+    "keep-alive:run": "node keep-alive-config.js run",
+    "keep-alive:cron": "node keep-alive-cron-setup.js",
+    "export-db": "node export-database.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jspdf": "^3.0.3",
     "pg": "^8.16.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -36,6 +43,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0",
     "postcss": "^8.5.6",
+    "supabase": "^2.48.3",
     "tailwindcss": "^3.4.17",
     "vite": "^7.0.0"
   }
