@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import DashboardCards from './components/ui/DashboardCards'
+import jsPDF from 'jspdf'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -23,13 +24,26 @@ function App() {
   }
 
   const exportToPDF = () => {
-    // Simulação de exportação para PDF
-    const dataString = horasTrabalhadasData.map(item => 
-      `${item.dia}: ${item.horas} (${item.entrada} - ${item.saida})`
-    ).join('\n')
+    const doc = new jsPDF()
     
+    // Adiciona título
+    doc.setFontSize(16)
+    doc.text('Relatório de Horas Trabalhadas', 20, 20)
+    
+    // Adiciona os dados
+    doc.setFontSize(12)
+    horasTrabalhadasData.forEach((item, index) => {
+      const yPos = 40 + (index * 10)
+      const texto = `${item.dia}: ${item.horas} (${item.entrada} - ${item.saida})`
+      doc.text(texto, 20, yPos)
+    })
+    
+    // Adiciona total
+    doc.text('Total: 39h 21m', 20, 40 + (horasTrabalhadasData.length * 10))
+    
+    // Salva o PDF
+    doc.save('relatorio-horas.pdf')
     showToastMessage('Relatório PDF gerado com sucesso!')
-    console.log(`Exportando para PDF...\n\nRelatório de Horas da Semana:\n${dataString}\n\nTotal: 39h 21m`)
   }
 
   const exportToCSV = () => {
