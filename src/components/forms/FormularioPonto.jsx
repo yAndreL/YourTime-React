@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowIcon } from '../ui/Icons'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabase.js'
+import MainLayout from '../layout/MainLayout'
+import NotificationService from '../../services/NotificationService'
+import { 
+  FiFileText,
+  FiClock,
+  FiSave,
+  FiX,
+  FiAlertCircle,
+  FiCheckCircle
+} from 'react-icons/fi'
 
 function FormularioPonto() {
   const [formData, setFormData] = useState({
@@ -15,32 +24,51 @@ function FormularioPonto() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [usuarioAtual, setUsuarioAtual] = useState(null)
+  const [projetoSelecionado, setProjetoSelecionado] = useState(null)
   const navigate = useNavigate()
 
   // Carregar usuário atual e data padrão
   useEffect(() => {
     carregarUsuarioAtual()
+    carregarProjetoSelecionado()
     definirDataPadrao()
   }, [])
 
+  const carregarProjetoSelecionado = () => {
+    try {
+      const savedProject = localStorage.getItem('selectedProject')
+      if (savedProject) {
+        const project = JSON.parse(savedProject)
+        setProjetoSelecionado(project)
+      }
+    } catch (error) {
+    }
+  }
+
   const carregarUsuarioAtual = async () => {
     try {
-      // Pegar primeiro usuário disponível (para teste)
-      const { data: usuarios, error } = await supabase
+      // Pegar usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setErro('Usuário não autenticado')
+        return
+      }
+
+      // Buscar dados do perfil do usuário autenticado
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('id, nome, email')
-        .limit(1)
+        .eq('id', user.id)
+        .single()
       
       if (error) throw error
       
-      if (usuarios && usuarios.length > 0) {
-        setUsuarioAtual(usuarios[0])
-        console.log('👤 Usuário carregado:', usuarios[0])
+      if (profile) {
+        setUsuarioAtual(profile)
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar usuário:', error)
       setErro('Erro ao carregar dados do usuário')
     }
   }
@@ -50,12 +78,41 @@ function FormularioPonto() {
     setFormData(prev => ({ ...prev, data: hoje }))
   }
 
-  const toggleMenu = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
-
   const handleChange = (e) => {
     const { name, value } = e.target
+    
+    // Se for campo de horário, validar formato e permitir digitação
+    if (name.includes('entrada') || name.includes('saida')) {
+      // Permitir apenas números e :
+      const sanitized = value.replace(/[^\d:]/g, '')
+      
+      // Auto-formatar enquanto digita
+      if (sanitized.length === 2 && !sanitized.includes(':')) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: sanitized + ':'
+        }))
+        return
+      }
+      
+      // Validar formato HH:MM
+      if (sanitized.length <= 5) {
+        const parts = sanitized.split(':')
+        if (parts[0] && parseInt(parts[0]) > 23) {
+          parts[0] = '23'
+        }
+        if (parts[1] && parseInt(parts[1]) > 59) {
+          parts[1] = '59'
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          [name]: parts.join(':')
+        }))
+        return
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -161,28 +218,42 @@ function FormularioPonto() {
       return
     }
 
+    // Validar se a data não está no futuro
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const dataSelecionada = new Date(formData.data + 'T00:00:00')
+    
+    if (dataSelecionada > hoje) {
+      setErro('Não é permitido registrar ponto para datas futuras.')
+      return
+    }
+
     setLoading(true)
     setErro('')
     setSucesso('')
 
     try {
-      console.log('📝 Salvando ponto...')
+
       
       // ✅ PRIMEIRO: Verificar se já existe registro para esta data
+
       const { data: registrosExistentes, error: errVerificacao } = await supabase
         .from('agendamento')
-        .select('id, entrada1, saida1')
+        .select('id, entrada1, saida1, entrada2, saida2, data, created_at, status')
         .eq('user_id', usuarioAtual.id)
         .eq('data', formData.data)
-      
+
       if (errVerificacao) throw errVerificacao
       
       if (registrosExistentes && registrosExistentes.length > 0) {
-        setErro(`Já existe um registro para ${formData.data}. Use a data de amanhã ou edite o registro existente.`)
+        const registro = registrosExistentes[0]
+        const horarios = `${registro.entrada1 || '--'} - ${registro.saida1 || '--'}${registro.entrada2 ? ` | ${registro.entrada2} - ${registro.saida2 || '--'}` : ''}`
+        const statusTexto = registro.status === 'P' ? 'Pendente' : registro.status === 'A' ? 'Aprovado' : 'Rejeitado'
+        setErro(`Já existe um registro para ${formData.data} (${horarios}) com status: ${statusTexto}. Vá ao Histórico para editar ou deletar este registro.`)
         setLoading(false)
         return
       }
-      
+
       // ✅ SEGUNDO: Salvar novo registro
       const pontoData = {
         user_id: usuarioAtual.id,
@@ -194,10 +265,11 @@ function FormularioPonto() {
         observacao: formData.observacao || null,
         pausa_almoco: calcularPausaAlmoco(),
         pausas_extras: calcularPausasExtras(),
-        status: 'pending'
+        status: 'P', // P = Pendente, A = Aprovado, R = Rejeitado
+        projeto_id: projetoSelecionado?.id || null
       }
 
-      console.log('📊 Dados do ponto:', pontoData)
+
 
       const { data, error } = await supabase
         .from('agendamento')
@@ -208,7 +280,19 @@ function FormularioPonto() {
         throw error
       }
 
-      console.log('✅ Ponto registrado com sucesso:', data[0])
+      // Notificar admins sobre o novo ponto pendente (exceto o próprio usuário)
+      if (data && data.length > 0) {
+        await NotificationService.notificarAdminsPontoPendente(
+          data[0].id,
+          usuarioAtual.nome,
+          formData.data,
+          usuarioAtual.id // Passa o ID do usuário para não notificar ele mesmo
+        )
+      }
+
+      // Limpar cache para forçar atualização no dashboard
+      sessionStorage.removeItem('cachedTimeRecords')
+
       setSucesso('Ponto registrado com sucesso!')
 
       // Redirecionar para dashboard
@@ -217,7 +301,7 @@ function FormularioPonto() {
       }, 2000)
       
     } catch (error) {
-      console.error('❌ Erro ao registrar ponto:', error)
+
       setErro(`Erro ao registrar ponto: ${error.message}`)
     } finally {
       setLoading(false)
@@ -225,255 +309,240 @@ function FormularioPonto() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center pl-0 md:pl-24">
-      {/* Menu Toggle Button */}
-      <button 
-        className="fixed top-4 left-4 z-50 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-white hover:text-gray-800 border hover:border-gray-800 transition-all duration-300"
-        onClick={toggleMenu}
-      >
-        ☰ Menu
-      </button>
-
-      {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 z-40 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Menu</h2>
-          <nav className="space-y-4">
-            <Link to="/" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏠 Início
-            </Link>
-            <Link to="/formulario-ponto" className="block text-blue-600 font-medium">
-              📝 Registrar Ponto
-            </Link>
-            <Link to="/painel-admin" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏢 Painel Admin
-            </Link>
-            <Link to="/historico" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              📊 Histórico
-            </Link>
-            <Link to="/projeto" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🎯 Projeto
-            </Link>
-            <button 
-              onClick={toggleMenu}
-              className="block text-gray-700 hover:text-blue-600 transition-colors w-full text-left"
-            >
-              Fechar Menu
-            </button>
-            <Link to="/login" className="block text-red-600 hover:text-red-700 transition-colors mt-8 pt-4 border-t">
-              &lt; Sair
-            </Link>
-          </nav>
+    <MainLayout title="Registrar Ponto" subtitle={usuarioAtual ? `Olá, ${usuarioAtual.nome}` : ''}>
+      {/* Projeto Selecionado */}
+      {projetoSelecionado && (
+        <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-4 h-4 rounded-full flex-shrink-0"
+              style={{ backgroundColor: projetoSelecionado.cor_identificacao }}
+            ></div>
+            <div>
+              <div className="text-sm font-medium text-blue-900">Registrando ponto para:</div>
+              <div className="text-lg font-bold text-blue-700">{projetoSelecionado.nome}</div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={toggleMenu}
-        ></div>
       )}
 
-      {/* Container Principal */}
-      <div className="w-full max-w-2xl mx-auto p-5 md:p-8 border border-gray-300 rounded-lg bg-white shadow-md">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <Link
-            to="/"
-            className="flex items-center space-x-2 text-2xl no-underline py-2 px-3 rounded-md bg-transparent hover:bg-black hover:bg-opacity-10 transition-colors"
-          >
-            <ArrowIcon className="w-6 h-6" />
-          </Link>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-800">Registrar Ponto</h1>
-            {usuarioAtual && (
-              <p className="text-sm text-gray-600">Usuário: {usuarioAtual.nome}</p>
-            )}
+      {!projetoSelecionado && (
+        <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg flex items-center gap-2">
+          <FiAlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+          <div>
+            <div className="text-sm font-medium text-yellow-900">Nenhum projeto selecionado</div>
+            <div className="text-xs text-yellow-700 mt-0.5">Selecione um projeto na página inicial antes de registrar o ponto</div>
           </div>
-          <div className="w-12"></div> {/* Spacer para centralizar */}
         </div>
+      )}
 
-        {/* Status do Usuário */}
-        {!usuarioAtual && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-md">
-            ⚠️ Carregando dados do usuário...
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Linha 1 - Data e Observação */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="data" className="block text-sm font-medium text-gray-700 mb-1">
-                Data: *
-              </label>
-              <input
-                type="date"
-                id="data"
-                name="data"
-                value={formData.data}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="observacao" className="block text-sm font-medium text-gray-700 mb-1">
-                Observação:
-              </label>
-              <input
-                type="text"
-                id="observacao"
-                name="observacao"
-                value={formData.observacao}
-                onChange={handleChange}
-                placeholder="Observação (opcional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* Linha 2 - Entrada 1 e Saída 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="entrada1" className="block text-sm font-medium text-gray-700 mb-1">
-                Entrada 1: *
-              </label>
-              <input
-                type="time"
-                id="entrada1"
-                name="entrada1"
-                value={formData.entrada1}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="saida1" className="block text-sm font-medium text-gray-700 mb-1">
-                Saída 1:
-              </label>
-              <input
-                type="time"
-                id="saida1"
-                name="saida1"
-                value={formData.saida1}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* Linha 3 - Entrada 2 e Saída 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="entrada2" className="block text-sm font-medium text-gray-700 mb-1">
-                Entrada 2:
-              </label>
-              <input
-                type="time"
-                id="entrada2"
-                name="entrada2"
-                value={formData.entrada2}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
-            </div>
-            <div>
-              <label htmlFor="saida2" className="block text-sm font-medium text-gray-700 mb-1">
-                Saída 2:
-              </label>
-              <input
-                type="time"
-                id="saida2"
-                name="saida2"
-                value={formData.saida2}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* Resumo do Ponto */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-medium text-blue-800 mb-2"> Resumo do Ponto</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Pausa Almoço:</span>
-                <span className="ml-2 text-blue-600">
-                  {calcularPausaAlmoco()} min
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">Total Trabalhado:</span>
-                <span className="ml-2 text-blue-600">
-                  {calcularTotalTrabalhado()}
-                </span>
-              </div>
-            </div>
-            
-            {/* Detalhes das jornadas */}
-            <div className="mt-3 pt-3 border-t border-blue-200 text-xs text-blue-700">
-              <div className="grid grid-cols-2 gap-4">
+      {/* Form */}
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm p-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Linha 1 - Data e Observação */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <span className="font-medium">Jornada 1:</span>
-                  <span className="ml-2">
-                    {formData.entrada1 && formData.saida1 
-                      ? `${formData.entrada1} - ${formData.saida1}` 
-                      : 'Não definida'
-                    }
-                  </span>
+                  <label htmlFor="data" className="block text-sm font-semibold text-gray-700 mb-1">
+                    Data <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="data"
+                    name="data"
+                    value={formData.data}
+                    onChange={handleChange}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
+                    required
+                  />
                 </div>
                 <div>
-                  <span className="font-medium">Jornada 2:</span>
-                  <span className="ml-2">
-                    {formData.entrada2 && formData.saida2 
-                      ? `${formData.entrada2} - ${formData.saida2}` 
-                      : 'Não definida'
-                    }
-                  </span>
+                  <label htmlFor="observacao" className="block text-sm font-semibold text-gray-700 mb-1">
+                    Observação
+                  </label>
+                  <input
+                    type="text"
+                    id="observacao"
+                    name="observacao"
+                    value={formData.observacao}
+                    onChange={handleChange}
+                    placeholder="Observação opcional"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder:text-gray-400 text-sm"
+                  />
                 </div>
               </div>
-            </div>
+
+              {/* Card de Jornada 1 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2 text-sm">
+                  <FiClock className="w-4 h-4" />
+                  Jornada 1 <span className="text-red-500">*</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="entrada1" className="block text-xs font-medium text-gray-700 mb-1">
+                      Entrada <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="entrada1"
+                      name="entrada1"
+                      value={formData.entrada1}
+                      onChange={handleChange}
+                      placeholder="HH:MM"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="saida1" className="block text-xs font-medium text-gray-700 mb-1">
+                      Saída
+                    </label>
+                    <input
+                      type="time"
+                      id="saida1"
+                      name="saida1"
+                      value={formData.saida1}
+                      onChange={handleChange}
+                      placeholder="HH:MM"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card de Jornada 2 */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2 text-sm">
+                  <FiClock className="w-4 h-4" />
+                  Jornada 2 (Opcional)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="entrada2" className="block text-xs font-medium text-gray-700 mb-1">
+                      Entrada
+                    </label>
+                    <input
+                      type="time"
+                      id="entrada2"
+                      name="entrada2"
+                      value={formData.entrada2}
+                      onChange={handleChange}
+                      placeholder="HH:MM"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="saida2" className="block text-xs font-medium text-gray-700 mb-1">
+                      Saída
+                    </label>
+                    <input
+                      type="time"
+                      id="saida2"
+                      name="saida2"
+                      value={formData.saida2}
+                      onChange={handleChange}
+                      placeholder="HH:MM"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Resumo do Ponto */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2 text-sm">
+                  <FiCheckCircle className="w-4 h-4" />
+                  Resumo do Ponto
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white rounded-lg p-2 shadow-sm">
+                    <span className="text-xs text-gray-600">Pausa Almoço</span>
+                    <p className="text-lg font-bold text-blue-600 mt-0.5">
+                      {calcularPausaAlmoco()} min
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 shadow-sm">
+                    <span className="text-xs text-gray-600">Total Trabalhado</span>
+                    <p className="text-lg font-bold text-green-600 mt-0.5">
+                      {calcularTotalTrabalhado()}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Detalhes das jornadas */}
+                <div className="mt-3 pt-3 border-t border-blue-300">
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700">Jornada 1:</span>
+                      <span className="text-blue-700">
+                        {formData.entrada1 && formData.saida1 
+                          ? `${formData.entrada1} - ${formData.saida1}` 
+                          : 'Não definida'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700">Jornada 2:</span>
+                      <span className="text-green-700">
+                        {formData.entrada2 && formData.saida2 
+                          ? `${formData.entrada2} - ${formData.saida2}` 
+                          : 'Não definida'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feedback de erro/sucesso */}
+              {erro && (
+                <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <FiAlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{erro}</span>
+                </div>
+              )}
+
+              {sucesso && (
+                <div className="bg-green-50 border-l-4 border-green-500 text-green-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{sucesso}</span>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex flex-col-reverse md:flex-row gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="flex-1 px-4 py-2.5 bg-white text-gray-700 border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <FiX className="w-4 h-4" />
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !usuarioAtual}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-700 hover:border-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      Registrar Ponto
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-
-          {/* Feedback de erro/sucesso */}
-          {erro && (
-            <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
-              ❌ {erro}
-            </div>
-          )}
-
-          {sucesso && (
-            <div className="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-md">
-              ✅ {sucesso}
-            </div>
-          )}
-
-          {/* Botões - ORDEM INVERTIDA */}
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              type="submit"
-              disabled={loading || !usuarioAtual}
-              className="px-8 py-3 bg-gray-800 text-white border-2 border-black rounded-xl font-bold italic cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:bg-white hover:text-gray-800 hover:scale-105 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? '⏳ Salvando...' : '📝 Registrar Ponto'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="px-8 py-3 bg-white text-gray-800 border-2 border-black rounded-xl font-bold italic cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:bg-gray-800 hover:text-white hover:scale-105 text-center"
-            >
-              ❌ Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+    </MainLayout>
   )
 }
 

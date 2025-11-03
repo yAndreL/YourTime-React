@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import supabaseService from '../services/SupabaseService.js'
 import DatabaseSetup from '../utils/databaseSetup.js'
+import { FiCheckCircle, FiXCircle, FiSettings } from 'react-icons/fi'
 
 function DatabaseSetupView() {
   const [connectionStatus, setConnectionStatus] = useState(null)
@@ -67,8 +68,12 @@ function DatabaseSetupView() {
       status?.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
     }`}>
       <h3 className="text-lg font-semibold mb-3 flex items-center">
-        <span className={`mr-2 text-xl ${status?.success ? 'text-green-600' : 'text-red-600'}`}>
-          {status?.success ? '✅' : '❌'}
+        <span className={`mr-2 ${status?.success ? 'text-green-600' : 'text-red-600'}`}>
+          {status?.success ? (
+            <FiCheckCircle className="w-6 h-6" />
+          ) : (
+            <FiXCircle className="w-6 h-6" />
+          )}
         </span>
         {title}
       </h3>
@@ -162,7 +167,9 @@ function DatabaseSetupView() {
         {/* Setup Section */}
         {connectionStatus?.success && (
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">⚙️ Configuração</h2>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <FiSettings className="w-6 h-6" /> Configuração
+            </h2>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
@@ -224,8 +231,13 @@ function DatabaseSetupView() {
               {setupResults.operations && (
                 <div className="mt-3 space-y-2">
                   {setupResults.operations.map((op, index) => (
-                    <div key={index} className={`text-sm ${op.success ? 'text-green-700' : 'text-red-700'}`}>
-                      {op.success ? '✅' : '❌'} {op.message || op.error}
+                    <div key={index} className={`text-sm flex items-center gap-2 ${op.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {op.success ? (
+                        <FiCheckCircle className="w-4 h-4" />
+                      ) : (
+                        <FiXCircle className="w-4 h-4" />
+                      )}
+                      {op.message || op.error}
                     </div>
                   ))}
                 </div>
@@ -267,8 +279,13 @@ function DatabaseSetupView() {
                 <div className="mt-3 space-y-2">
                   <p className="text-sm font-medium text-gray-700">Detalhes das correções:</p>
                   {rlsFixResults.results.map((result, index) => (
-                    <div key={index} className={`text-sm ${result.success ? 'text-green-700' : 'text-red-700'}`}>
-                      {result.success ? '✅' : '❌'} Fix {result.fix}: {result.success ? 'Aplicado' : result.error}
+                    <div key={index} className={`text-sm flex items-center gap-2 ${result.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {result.success ? (
+                        <FiCheckCircle className="w-4 h-4" />
+                      ) : (
+                        <FiXCircle className="w-4 h-4" />
+                      )}
+                      Fix {result.fix}: {result.success ? 'Aplicado' : result.error}
                     </div>
                   ))}
                 </div>

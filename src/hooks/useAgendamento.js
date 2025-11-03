@@ -21,7 +21,7 @@ const useAgendamento = () => {
       setAgendamentos(data)
     } catch (err) {
       setError('Erro ao carregar agendamentos')
-      console.error('Erro ao carregar agendamentos:', err)
+
     } finally {
       setIsLoading(false)
     }
@@ -37,7 +37,7 @@ const useAgendamento = () => {
       setAgendamentos(data)
     } catch (err) {
       setError('Erro ao carregar agendamentos por período')
-      console.error('Erro ao carregar agendamentos por período:', err)
+
     } finally {
       setIsLoading(false)
     }

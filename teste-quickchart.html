@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste QuickChart.io</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .chart-container h2 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+        .chart-container img {
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 30px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status.loading {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste da API QuickChart.io</h1>
+        
+        <p style="text-align: center; color: #666;">
+            Este é um teste para verificar se a API QuickChart.io está funcionando corretamente.<br>
+            Clique no botão abaixo para gerar os gráficos.
+        </p>
+
+        <button onclick="testarGraficos()">🚀 Gerar Gráficos de Teste</button>
+
+        <div id="status"></div>
+
+        <div id="graficos"></div>
+    </div>
+
+    <script>
+        async function gerarGrafico(config, titulo) {
+            const url = 'https://quickchart.io/chart'
+            const params = new URLSearchParams({
+                c: JSON.stringify(config),
+                backgroundColor: 'white',
+                width: 600,
+                height: 400,
+                devicePixelRatio: 2.0
+            })
+            
+            const response = await fetch(`${url}?${params.toString()}`)
+            if (!response.ok) throw new Error('Erro ao gerar gráfico')
+            
+            const blob = await response.blob()
+            return URL.createObjectURL(blob)
+        }
+
+        async function testarGraficos() {
+            const statusDiv = document.getElementById('status')
+            const graficosDiv = document.getElementById('graficos')
+            
+            statusDiv.innerHTML = '<div class="status loading">⏳ Gerando gráficos...</div>'
+            graficosDiv.innerHTML = ''
+
+            try {
+                // Gráfico 1: Barras Empilhadas
+                const barChartConfig = {
+                    type: 'bar',
+                    data: {
+                        labels: ['01/11', '02/11', '03/11', '04/11', '05/11', '06/11', '07/11'],
+                        datasets: [
+                            {
+                                label: 'Horas Normais',
+                                data: [8, 8, 7.5, 8, 8, 7, 8],
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Horas Extras',
+                                data: [0, 1, 0.5, 2, 0, 1, 1.5],
+                                backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                                borderColor: 'rgba(245, 158, 11, 1)',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '📊 Horas Trabalhadas por Dia',
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1e3a8a'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: { display: true, text: 'Data', font: { size: 12 } }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: { display: true, text: 'Horas', font: { size: 12 } },
+                                ticks: { stepSize: 2 }
+                            }
+                        }
+                    }
+                }
+
+                const barChartUrl = await gerarGrafico(barChartConfig, 'Barras Empilhadas')
+                
+                graficosDiv.innerHTML += `
+                    <div class="chart-container">
+                        <h2>📊 Gráfico de Barras Empilhadas</h2>
+                        <img src="${barChartUrl}" alt="Gráfico de Barras">
+                    </div>
+                `
+
+                // Gráfico 2: Pizza
+                const pieChartConfig = {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['✅ Aprovados', '⏳ Pendentes', '❌ Rejeitados'],
+                        datasets: [{
+                            data: [15, 3, 1],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(251, 191, 36, 0.8)',
+                                'rgba(239, 68, 68, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(251, 191, 36, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '📈 Distribuição por Status',
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1e3a8a'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                }
+
+                const pieChartUrl = await gerarGrafico(pieChartConfig, 'Pizza')
+                
+                graficosDiv.innerHTML += `
+                    <div class="chart-container">
+                        <h2>📈 Gráfico de Pizza (Donut)</h2>
+                        <img src="${pieChartUrl}" alt="Gráfico de Pizza">
+                    </div>
+                `
+
+                // Gráfico 3: Barras Horizontais
+                const summaryChartConfig = {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total Trabalhadas', 'Horas Extras'],
+                        datasets: [{
+                            label: 'Horas',
+                            data: [168.5, 12.5],
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(245, 158, 11, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(245, 158, 11, 1)'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '⏰ Resumo Total de Horas',
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1e3a8a'
+                            },
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Horas', font: { size: 12 } }
+                            }
+                        }
+                    }
+                }
+
+                const summaryChartUrl = await gerarGrafico(summaryChartConfig, 'Resumo')
+                
+                graficosDiv.innerHTML += `
+                    <div class="chart-container">
+                        <h2>⏰ Gráfico de Resumo (Barras Horizontais)</h2>
+                        <img src="${summaryChartUrl}" alt="Gráfico de Resumo">
+                    </div>
+                `
+
+                statusDiv.innerHTML = '<div class="status success">✅ Gráficos gerados com sucesso! A API está funcionando perfeitamente.</div>'
+
+            } catch (error) {
+                console.error('Erro:', error)
+                statusDiv.innerHTML = `<div class="status error">❌ Erro ao gerar gráficos: ${error.message}<br><br>Verifique sua conexão com a internet e se o site quickchart.io está acessível.</div>`
+            }
+        }
+
+        // Gerar automaticamente ao carregar
+        window.addEventListener('load', () => {
+            setTimeout(testarGraficos, 500)
+        })
+    </script>
+</body>
+</html>

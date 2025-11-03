@@ -10,36 +10,54 @@ export function useTimeTracking() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Carregar dados do cache imediatamente
+  useEffect(() => {
+    const cachedTimeRecords = sessionStorage.getItem('cachedTimeRecords')
+    if (cachedTimeRecords) {
+      try {
+        const parsed = JSON.parse(cachedTimeRecords)
+        setTimeRecords(parsed)
+        setLoading(false) // Marca como não carregando se temos cache
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }, [])
+
   // Buscar dados do usuário atual
   const fetchUserData = async () => {
     try {
-      setLoading(true)
+      // Não mostrar loading se já temos dados em cache
+      const hasCache = sessionStorage.getItem('cachedTimeRecords')
+      if (!hasCache) {
+        setLoading(true)
+      }
       setError(null)
 
-      console.log('🔍 Buscando dados do usuário...')
+      // Buscar usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser()
 
-      // Buscar primeiro usuário disponível (para desenvolvimento)
-      const { data: users, error: userError } = await supabase
+      if (!user) {
+        throw new Error('Usuário não autenticado')
+      }
+
+      // Buscar perfil do usuário autenticado
+      const { data: profile, error: userError } = await supabase
         .from('profiles')
         .select('*')
-        .limit(1)
+        .eq('id', user.id)
+        .single()
 
       if (userError) {
-        console.error('❌ Erro na consulta de usuários:', userError)
         throw userError
       }
 
-      console.log('✅ Dados de usuários recebidos:', users)
-
-      if (users && users.length > 0) {
-        setUserData(users[0])
-        console.log('👤 Usuário definido:', users[0])
+      if (profile) {
+        setUserData(profile)
       } else {
-        console.log('⚠️ Nenhum usuário encontrado')
         setUserData(null)
       }
     } catch (err) {
-      console.error('❌ Erro ao buscar dados do usuário:', err)
       setError(`Erro ao buscar dados do usuário: ${err.message}`)
       setUserData(null)
     } finally {
@@ -47,46 +65,41 @@ export function useTimeTracking() {
     }
   }
 
-  // Buscar registros de ponto da semana atual
+  // Buscar registros de ponto (últimos 90 dias para capturar todos os pendentes)
   const fetchTimeRecords = async () => {
     try {
       if (!userData?.id) {
-        console.log('⚠️ userData ou userData.id não disponível, pulando busca de registros')
         return
       }
 
-      console.log('📊 Buscando registros de ponto para usuário:', userData.id)
-
       const today = new Date()
-      const startOfWeek = new Date(today)
-      startOfWeek.setDate(today.getDate() - today.getDay()) // Domingo
-      startOfWeek.setHours(0, 0, 0, 0)
+      
+      // Buscar registros dos últimos 90 dias para capturar todos os pendentes
+      const startDate = new Date(today)
+      startDate.setDate(today.getDate() - 90)
+      startDate.setHours(0, 0, 0, 0)
 
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6) // Sábado
-      endOfWeek.setHours(23, 59, 59, 999)
 
-      console.log('📅 Período da semana:', startOfWeek.toISOString().split('T')[0], 'até', endOfWeek.toISOString().split('T')[0])
 
       const { data: records, error: recordsError } = await supabase
         .from('agendamento')
         .select('*')
         .eq('user_id', userData.id)
-        .gte('data', startOfWeek.toISOString().split('T')[0])
-        .lte('data', endOfWeek.toISOString().split('T')[0])
+        .gte('data', startDate.toISOString().split('T')[0])
         .order('data', { ascending: true })
 
       if (recordsError) {
-        console.error('❌ Erro na consulta de registros:', recordsError)
+
         throw recordsError
       }
 
-      console.log('✅ Registros recebidos:', records?.length || 0, 'registros')
       setTimeRecords(records || [])
+      // Salvar no cache para próximas navegações
+      sessionStorage.setItem('cachedTimeRecords', JSON.stringify(records || []))
       setError(null) // Limpar erros anteriores se sucesso
 
     } catch (err) {
-      console.error('❌ Erro ao buscar registros de ponto:', err)
+
       setError(`Erro ao buscar registros: ${err.message}`)
       setTimeRecords([]) // Definir array vazio em caso de erro
     }
@@ -115,37 +128,51 @@ export function useTimeTracking() {
   const calculateDailyWorkedMinutes = (record) => {
     let totalMinutes = 0
 
-    // Primeira jornada
+    // Primeira jornada (ex: 08:00 - 12:00 = 4h)
     if (record.entrada1 && record.saida1) {
       const entrada1 = new Date(`2000-01-01T${record.entrada1}`)
       const saida1 = new Date(`2000-01-01T${record.saida1}`)
       totalMinutes += (saida1 - entrada1) / (1000 * 60)
     }
 
-    // Segunda jornada
+    // Segunda jornada (ex: 13:00 - 18:00 = 5h)
     if (record.entrada2 && record.saida2) {
       const entrada2 = new Date(`2000-01-01T${record.entrada2}`)
       const saida2 = new Date(`2000-01-01T${record.saida2}`)
       totalMinutes += (saida2 - entrada2) / (1000 * 60)
     }
 
-    // Subtrair pausas
-    totalMinutes -= (record.pausa_almoco || 0)
-    totalMinutes -= (record.pausas_extras || 0)
+    // NÃO subtrair pausas - o intervalo de almoço JÁ está fora do cálculo
+    // O tempo entre saida1 (12:00) e entrada2 (13:00) não é contabilizado
+    // Exemplo: 08-12 (4h) + 13-18 (5h) = 9h trabalhadas (o almoço 12-13 já está excluído)
 
     return totalMinutes
   }
 
-  // Calcular horas de hoje
-  const calculateTodayHours = () => {
+  // Calcular horas aprovadas de hoje (status 'A')
+  const calculateTodayApprovedHours = () => {
     const today = new Date().toISOString().split('T')[0]
-    const todayRecord = timeRecords.find(record => record.data === today)
+    const todayRecords = timeRecords.filter(record => record.data === today && record.status === 'A')
 
-    if (!todayRecord) return '00:00'
+    if (!todayRecords.length) return '00:00'
 
-    const minutes = calculateDailyWorkedMinutes(todayRecord)
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
+    const totalMinutes = todayRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0)
+    const hours = Math.floor(totalMinutes / 60)
+    const mins = totalMinutes % 60
+
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+  }
+
+  // Calcular TOTAL de horas pendentes (status 'P') - não apenas hoje
+  const calculateTodayPendingHours = () => {
+    // Filtra TODOS os registros pendentes, não apenas de hoje
+    const pendingRecords = timeRecords.filter(record => record.status === 'P')
+
+    if (!pendingRecords.length) return '00:00'
+
+    const totalMinutes = pendingRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0)
+    const hours = Math.floor(totalMinutes / 60)
+    const mins = totalMinutes % 60
 
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
   }
@@ -154,7 +181,8 @@ export function useTimeTracking() {
   const getDashboardData = () => {
     return {
       saldoHoras: calculateTimeBalance(),
-      horasHoje: calculateTodayHours(),
+      horasHoje: calculateTodayApprovedHours(),
+      horasPendentes: calculateTodayPendingHours(),
       projetoAtual: userData?.cargo || 'Desenvolvimento',
       status: 'Trabalhando',
       isWorking: true,
@@ -162,29 +190,54 @@ export function useTimeTracking() {
     }
   }
 
-  // Dados semanais formatados para gráficos
+  // Dados semanais formatados para gráficos (apenas semana atual e registros aprovados)
   const getWeeklyChartData = () => {
-    const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
     const today = new Date()
-    const currentDay = today.getDay()
+    const dayOfWeek = today.getDay()
+    
+    // Calcular início da semana (segunda-feira)
+    const startOfWeek = new Date(today)
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+    startOfWeek.setDate(today.getDate() + diffToMonday)
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    // Calcular fim da semana (domingo)
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+    endOfWeek.setHours(23, 59, 59, 999)
+
+    // Filtrar registros da semana atual com status APROVADO ('A') ou PENDENTE ('P')
+    const weekRecords = timeRecords.filter(r => {
+      const recordDate = new Date(r.data + 'T00:00:00')
+      const isInWeek = recordDate >= startOfWeek && recordDate <= endOfWeek
+      const isApprovedOrPending = r.status === 'A' || r.status === 'P'
+      
+      return isInWeek && isApprovedOrPending
+    })
 
     return weekDays.map((day, index) => {
-      const targetDate = new Date(today)
-      targetDate.setDate(today.getDate() - currentDay + index)
+      const targetDate = new Date(startOfWeek)
+      targetDate.setDate(startOfWeek.getDate() + index)
 
       const dateStr = targetDate.toISOString().split('T')[0]
-      const record = timeRecords.find(r => r.data === dateStr)
+      const record = weekRecords.find(r => r.data === dateStr)
 
       const minutes = record ? calculateDailyWorkedMinutes(record) : 0
       const hours = Math.floor(minutes / 60)
       const mins = minutes % 60
+
+      // Verificar se é hoje
+      const todayStr = today.toISOString().split('T')[0]
+      const isToday = dateStr === todayStr
 
       return {
         dia: day,
         horas: minutes > 0 ? `${hours}:${mins.toString().padStart(2, '0')}` : '0:00',
         entrada: record?.entrada1 || '--:--',
         saida: record?.saida2 || record?.saida1 || '--:--',
-        isToday: index === currentDay
+        isToday: isToday,
+        status: record?.status || null // Adicionar status para usar no gráfico
       }
     })
   }
@@ -210,7 +263,7 @@ export function useTimeTracking() {
       await fetchTimeRecords()
       return { success: true, data }
     } catch (err) {
-      console.error('Erro ao registrar ponto:', err)
+
       return { success: false, error: err.message }
     }
   }

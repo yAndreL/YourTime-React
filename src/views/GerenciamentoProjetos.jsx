@@ -1,24 +1,109 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowIcon } from '../components/ui/Icons'
 import { supabase, createClient } from '../config/supabase.js'
-import RLSHelper from '../components/RLSHelper.jsx'
+import MainLayout from '../components/layout/MainLayout'
+import Modal from '../components/ui/Modal'
+import GerenciamentoProjetosSkeleton from '../components/ui/GerenciamentoProjetosSkeleton'
+import { useModal } from '../hooks/useModal'
+import CacheService from '../services/CacheService'
+import { 
+  FiTarget, 
+  FiPlus, 
+  FiEdit2, 
+  FiTrash2, 
+  FiX,
+  FiCheckCircle,
+  FiCircle,
+  FiAlertCircle,
+  FiXCircle,
+  FiBarChart2,
+  FiSave,
+  FiFolder,
+  FiRotateCcw
+} from 'react-icons/fi'
 
 function GerenciamentoProjetos() {
-  const [projetos, setProjetos] = useState([])
-  const [usuarios, setUsuarios] = useState([])
-  const [empresas, setEmpresas] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { modalState, showSuccess, showError, showConfirm, closeModal: closeNotificationModal } = useModal()
+  
+  // Funções auxiliares de cache
+  const getCachedData = (key) => {
+    try {
+      // Tenta pegar userId do sessionStorage
+      const userId = sessionStorage.getItem('currentUserId')
+      if (userId) {
+        const cached = CacheService.get(key, userId)
+        if (cached) {
+
+          return cached
+        }
+      }
+    } catch (e) {
+
+    }
+    return null
+  }
+
+  // Verifica se usuário é admin do cache
+  const getCachedAdminStatus = () => {
+    try {
+      const userId = sessionStorage.getItem('currentUserId')
+      if (userId) {
+        const cached = CacheService.get('user_is_admin', userId)
+        if (cached !== null && cached !== undefined) {
+
+          return cached
+        }
+      }
+    } catch (e) {
+
+    }
+    return false
+  }
+
+  // Inicializa estados com cache se disponível
+  const initializeFromCache = () => {
+    const cachedProjetos = getCachedData('projetos')
+    const cachedUsuarios = getCachedData('usuarios')
+    const cachedEmpresas = getCachedData('empresas')
+    
+    return {
+      projetos: cachedProjetos || [],
+      usuarios: cachedUsuarios || [],
+      empresas: cachedEmpresas || []
+    }
+  }
+
+  const cached = initializeFromCache()
+  
+  const [projetos, setProjetos] = useState(cached.projetos)
+  const [usuarios, setUsuarios] = useState(cached.usuarios)
+  const [empresas, setEmpresas] = useState(cached.empresas)
+  const [loading, setLoading] = useState(false) // Inicia como false
+  const [showSkeleton, setShowSkeleton] = useState(false) // Controla exibição do skeleton
   const [error, setError] = useState(null)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
-  const [filters, setFilters] = useState({
-    status: 'todos',
-    prioridade: 'todas',
-    empresa: '',
-    responsavel: ''
-  })
+  const [isAdmin, setIsAdmin] = useState(getCachedAdminStatus())
+  
+  // Inicializar filtros do sessionStorage ou usar valores padrão
+  const getSavedFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('projectFilters')
+      if (saved) {
+
+        return JSON.parse(saved)
+      }
+    } catch (e) {
+
+    }
+    return {
+      status: 'todos',
+      prioridade: 'todas',
+      empresa: '',
+      responsavel: ''
+    }
+  }
+  
+  const [filters, setFilters] = useState(getSavedFilters())
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -36,27 +121,83 @@ function GerenciamentoProjetos() {
 
   useEffect(() => {
     carregarDados()
+    checkAdminStatus()
   }, [])
 
-  const carregarDados = async () => {
+  const checkAdminStatus = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      await Promise.all([
-        carregarProjetos(),
-        carregarUsuarios(),
-        carregarEmpresas()
-      ])
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        const isAdminUser = profile?.role === 'admin'
+        setIsAdmin(isAdminUser)
+        
+        // Salvar status admin no cache (TTL de 10 minutos)
+        CacheService.set('user_is_admin', isAdminUser, user.id, 10 * 60 * 1000)
+
+      }
     } catch (error) {
-      console.error('Erro ao carregar dados iniciais:', error)
-      setError('Erro ao carregar dados. Verifique sua conexão e tente novamente.')
-    } finally {
-      setLoading(false)
+
     }
   }
 
-  const carregarProjetos = async () => {
+  const carregarDados = async () => {
+    let skeletonTimeout = null
+    
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Salvar userId para próximas inicializações
+      sessionStorage.setItem('currentUserId', user.id)
+
+      // Verificar se tem dados em cache
+      const hasCachedData = projetos.length > 0 || usuarios.length > 0 || empresas.length > 0
+      
+      if (hasCachedData) {
+
+        // Atualiza em background
+        await Promise.all([
+          carregarProjetos(user.id, true),
+          carregarUsuarios(user.id, true),
+          carregarEmpresas(user.id, true)
+        ])
+        return
+      }
+
+      // Se não tem cache, mostra skeleton apenas após 300ms
+      setLoading(true)
+      skeletonTimeout = setTimeout(() => {
+        setShowSkeleton(true)
+      }, 300)
+
+      setError(null)
+      await Promise.all([
+        carregarProjetos(user.id, false),
+        carregarUsuarios(user.id, false),
+        carregarEmpresas(user.id, false)
+      ])
+    } catch (error) {
+      setError('Erro ao carregar dados. Verifique sua conexão e tente novamente.')
+
+    } finally {
+      if (skeletonTimeout) clearTimeout(skeletonTimeout)
+      setLoading(false)
+      setShowSkeleton(false)
+    }
+  }
+
+  const carregarProjetos = async (userId, isBackgroundUpdate = false) => {
+    try {
+      if (!isBackgroundUpdate) {
+
+      }
+
       const { data, error } = await supabase
         .from('projetos')
         .select('*')
@@ -98,18 +239,62 @@ function GerenciamentoProjetos() {
             projetoCompleto.profiles = { nome: '-' }
           }
 
+          // Calcular horas trabalhadas no projeto
+          try {
+            const { data: agendamentos } = await supabase
+              .from('agendamento')
+              .select('entrada1, saida1, entrada2, saida2')
+              .eq('projeto_id', projeto.id)
+
+            let totalMinutos = 0
+            if (agendamentos && agendamentos.length > 0) {
+              agendamentos.forEach(agendamento => {
+                // Jornada 1
+                if (agendamento.entrada1 && agendamento.saida1) {
+                  const entrada1 = new Date(`2000-01-01T${agendamento.entrada1}`)
+                  const saida1 = new Date(`2000-01-01T${agendamento.saida1}`)
+                  const diffMinutos1 = Math.floor((saida1 - entrada1) / 60000)
+                  if (diffMinutos1 > 0) {
+                    totalMinutos += diffMinutos1
+                  }
+                }
+                // Jornada 2
+                if (agendamento.entrada2 && agendamento.saida2) {
+                  const entrada2 = new Date(`2000-01-01T${agendamento.entrada2}`)
+                  const saida2 = new Date(`2000-01-01T${agendamento.saida2}`)
+                  const diffMinutos2 = Math.floor((saida2 - entrada2) / 60000)
+                  if (diffMinutos2 > 0) {
+                    totalMinutos += diffMinutos2
+                  }
+                }
+              })
+            }
+            projetoCompleto.horasTrabalhadas = Math.floor(totalMinutos / 60)
+          } catch (err) {
+            projetoCompleto.horasTrabalhadas = 0
+          }
+
           return projetoCompleto
         })
       )
 
       setProjetos(projetosComRelacionamentos)
+      
+      // Salvar no cache (TTL de 10 minutos)
+      if (userId) {
+        CacheService.set('projetos', projetosComRelacionamentos, userId, 10 * 60 * 1000)
+      }
     } catch (error) {
-      console.error('Erro ao carregar projetos:', error)
+
     }
   }
 
-  const carregarUsuarios = async () => {
+  const carregarUsuarios = async (userId, isBackgroundUpdate = false) => {
     try {
+      if (!isBackgroundUpdate) {
+
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, nome, email')
@@ -117,15 +302,26 @@ function GerenciamentoProjetos() {
         .order('nome')
 
       if (error) throw error
-      setUsuarios(data || [])
+      
+      const usuarios = data || []
+      setUsuarios(usuarios)
+      
+      // Salvar no cache (TTL de 10 minutos)
+      if (userId) {
+        CacheService.set('usuarios', usuarios, userId, 10 * 60 * 1000)
+      }
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error)
+
       setUsuarios([])
     }
   }
 
-  const carregarEmpresas = async () => {
+  const carregarEmpresas = async (userId, isBackgroundUpdate = false) => {
     try {
+      if (!isBackgroundUpdate) {
+
+      }
+
       const { data, error } = await supabase
         .from('empresas')
         .select('id, nome, cnpj')
@@ -133,15 +329,18 @@ function GerenciamentoProjetos() {
         .order('nome')
 
       if (error) throw error
-      setEmpresas(data || [])
+      
+      const empresas = data || []
+      setEmpresas(empresas)
+      
+      // Salvar no cache (TTL de 10 minutos)
+      if (userId) {
+        CacheService.set('empresas', empresas, userId, 10 * 60 * 1000)
+      }
     } catch (error) {
-      console.error('Erro ao carregar empresas:', error)
+
       setEmpresas([])
     }
-  }
-
-  const toggleMenu = () => {
-    setIsSidebarOpen(!isSidebarOpen)
   }
 
   const openModal = (projeto = null) => {
@@ -194,10 +393,37 @@ function GerenciamentoProjetos() {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...filters,
       [name]: value
-    }))
+    }
+    setFilters(newFilters)
+    
+    // Salvar filtros no sessionStorage
+    try {
+      sessionStorage.setItem('projectFilters', JSON.stringify(newFilters))
+
+    } catch (e) {
+
+    }
+  }
+
+  const clearFilters = () => {
+    const defaultFilters = {
+      status: 'todos',
+      prioridade: 'todas',
+      empresa: '',
+      responsavel: ''
+    }
+    setFilters(defaultFilters)
+    
+    // Limpar filtros do sessionStorage
+    try {
+      sessionStorage.removeItem('projectFilters')
+
+    } catch (e) {
+
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -318,11 +544,16 @@ function GerenciamentoProjetos() {
         throw result.error
       }
 
-      await carregarProjetos()
+      // Invalidar cache e recarregar
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        CacheService.remove('projetos', user.id)
+      }
+      
+      await carregarProjetos(user?.id, false)
+      showSuccess('Projeto salvo com sucesso!')
       closeModal()
     } catch (error) {
-      console.error('Erro detalhado:', error)
-
       let mensagemErro = error.message
 
       // Mensagem mais clara para erro de RLS
@@ -337,31 +568,42 @@ function GerenciamentoProjetos() {
                       'CREATE POLICY "Allow all operations" ON projetos FOR ALL USING (true);'
       }
 
-      alert('Erro ao salvar projeto: ' + mensagemErro)
+      showError(mensagemErro, 'Erro ao salvar projeto')
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (projetoId) => {
-    if (!confirm('Tem certeza que deseja excluir este projeto?')) return
+    showConfirm(
+      'Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.',
+      async () => {
+        try {
+          setLoading(true)
+          
+          const { error } = await supabase
+            .from('projetos')
+            .delete()
+            .eq('id', projetoId)
 
-    try {
-      setLoading(true)
-      
-      const { error } = await supabase
-        .from('projetos')
-        .delete()
-        .eq('id', projetoId)
+          if (error) throw error
 
-      if (error) throw error
+          // Invalidar cache e recarregar
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            CacheService.remove('projetos', user.id)
+          }
 
-      await carregarProjetos()
-    } catch (error) {
-      alert('Erro ao excluir projeto: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+          await carregarProjetos(user?.id, false)
+          showSuccess('Projeto excluído com sucesso!')
+        } catch (error) {
+          showError('Erro ao excluir projeto: ' + error.message)
+        } finally {
+          setLoading(false)
+        }
+      },
+      'Confirmar Exclusão'
+    )
   }
 
   const getStatusColor = (status) => {
@@ -376,11 +618,11 @@ function GerenciamentoProjetos() {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'ativo': return '🟢 Ativo'
-      case 'pausado': return '🟡 Pausado'
-      case 'concluido': return '🔵 Concluído'
-      case 'cancelado': return '🔴 Cancelado'
-      default: return '❓ Indefinido'
+      case 'ativo': return 'Ativo'
+      case 'pausado': return 'Pausado'
+      case 'concluido': return 'Concluído'
+      case 'cancelado': return 'Cancelado'
+      default: return 'Indefinido'
     }
   }
 
@@ -402,6 +644,17 @@ function GerenciamentoProjetos() {
       case 'urgente': return '🔺 Urgente'
       default: return '❓ Indefinida'
     }
+  }
+
+  // Verifica se o projeto está atrasado
+  const isProjetoAtrasado = (projeto) => {
+    if (!projeto.data_fim) return false
+    if (projeto.status === 'concluido' || projeto.status === 'cancelado') return false
+    
+    const dataFim = new Date(projeto.data_fim + 'T23:59:59')
+    const hoje = new Date()
+    
+    return hoje > dataFim
   }
 
   const formatCurrency = (value) => {
@@ -435,203 +688,170 @@ function GerenciamentoProjetos() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center pl-0 md:pl-24">
-      {/* Menu Toggle Button */}
-      <button 
-        className="fixed top-4 left-4 z-50 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-white hover:text-gray-800 border hover:border-gray-800 transition-all duration-300"
-        onClick={toggleMenu}
-      >
-        ☰ Menu
-      </button>
-
-      {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 z-40 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Menu</h2>
-          <nav className="space-y-4">
-            <Link to="/" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏠 Início
-            </Link>
-            <Link to="/formulario-ponto" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              📝 Registrar Ponto
-            </Link>
-            <Link to="/painel-admin" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏢 Painel Admin
-            </Link>
-            <Link to="/historico" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              📊 Histórico
-            </Link>
-            <Link to="/projeto" className="block text-blue-600 font-medium">
-              🎯 Projetos
-            </Link>
-            <button 
-              onClick={toggleMenu}
-              className="block text-gray-700 hover:text-blue-600 transition-colors w-full text-left"
-            >
-              Fechar Menu
-            </button>
-            <Link to="/login" className="block text-red-600 hover:text-red-700 transition-colors mt-8 pt-4 border-t">
-              &lt; Sair
-            </Link>
-          </nav>
+    <MainLayout title="Gerenciamento de Projetos" subtitle="Controle e organize seus projetos">
+      {/* Header com Botão de Novo Projeto */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FiTarget className="w-7 h-7" />
+            Projetos
+          </h2>
         </div>
+        {isAdmin && (
+          <button
+            onClick={() => openModal()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
+          >
+            <FiPlus className="w-5 h-5" />
+            Novo Projeto
+          </button>
+        )}
       </div>
 
-      {/* Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={toggleMenu}
-        ></div>
+      {/* Indicador de Erro */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+          <div className="flex items-center">
+            <FiAlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+            <div>
+              <div className="font-medium text-red-800">Erro ao carregar projetos</div>
+              <div className="text-sm text-red-700 mt-1">{error}</div>
+              <button
+                onClick={carregarDados}
+                className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Container Principal */}
-      <div className="w-full max-w-7xl mx-auto p-5 md:p-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-300 p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <Link
-              to="/"
-              className="flex items-center space-x-2 text-2xl no-underline py-2 px-3 rounded-md bg-transparent hover:bg-black hover:bg-opacity-10 transition-colors"
-            >
-              <ArrowIcon className="w-6 h-6" />
-            </Link>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-800">🎯 Gerenciamento de Projetos</h1>
-              <p className="text-lg text-gray-600">Controle e organize seus projetos</p>
-            </div>
-            <button
-              onClick={() => openModal()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              ➕ Novo Projeto
-            </button>
-          </div>
-
-          {/* Indicador de Erro */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <span className="text-red-500 mr-2">❌</span>
-                <div>
-                  <div className="font-medium text-red-800">Erro ao carregar projetos</div>
-                  <div className="text-sm text-red-700 mt-1">{error}</div>
-                  <button
-                    onClick={carregarDados}
-                    className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
-                  >
-                    Tentar novamente
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Helper para RLS */}
-          <RLSHelper />
-
-          {/* Estatísticas */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Estatísticas */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{estatisticas.total}</div>
-              <div className="text-sm text-blue-700">📋 Total</div>
+              <div className="text-sm text-blue-700 flex items-center justify-center gap-1">
+                <FiBarChart2 className="w-4 h-4" /> Total
+              </div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-green-600">{estatisticas.ativos}</div>
-              <div className="text-sm text-green-700">🟢 Ativos</div>
+              <div className="text-sm text-green-700 flex items-center justify-center gap-1">
+                <FiCheckCircle className="w-4 h-4" /> Ativos
+              </div>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
-              <div className="text-sm text-blue-700">🔵 Concluídos</div>
+              <div className="text-sm text-blue-700 flex items-center justify-center gap-1">
+                <FiCheckCircle className="w-4 h-4" /> Concluídos
+              </div>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-yellow-600">{estatisticas.pausados}</div>
-              <div className="text-sm text-yellow-700">🟡 Pausados</div>
+              <div className="text-sm text-yellow-700 flex items-center justify-center gap-1">
+                <FiCircle className="w-4 h-4" /> Pausados
+              </div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-red-600">{estatisticas.cancelados}</div>
-              <div className="text-sm text-red-700">🔴 Cancelados</div>
+              <div className="text-sm text-red-700 flex items-center justify-center gap-1">
+                <FiXCircle className="w-4 h-4" /> Cancelados
+              </div>
             </div>
           </div>
 
           {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status:</label>
-              <select
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="todos">Todos os Status</option>
-                <option value="ativo">🟢 Ativo</option>
-                <option value="pausado">🟡 Pausado</option>
-                <option value="concluido">🔵 Concluído</option>
-                <option value="cancelado">🔴 Cancelado</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade:</label>
-              <select
-                name="prioridade"
-                value={filters.prioridade}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="todas">Todas as Prioridades</option>
-                <option value="baixa">🔹 Baixa</option>
-                <option value="media">🔸 Média</option>
-                <option value="alta">🔶 Alta</option>
-                <option value="urgente">🔺 Urgente</option>
-              </select>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status:</label>
+                <select
+                  name="status"
+                  value={filters.status}
+                  onChange={handleFilterChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="todos">Todos os Status</option>
+                  <option value="ativo">Ativo</option>
+                  <option value="pausado">Pausado</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Prioridade:</label>
+                <select
+                  name="prioridade"
+                  value={filters.prioridade}
+                  onChange={handleFilterChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="todas">Todas as Prioridades</option>
+                  <option value="baixa">🔹 Baixa</option>
+                  <option value="media">🔸 Média</option>
+                  <option value="alta">🔶 Alta</option>
+                  <option value="urgente">🔺 Urgente</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Empresa:</label>
+                <select
+                  name="empresa"
+                  value={filters.empresa}
+                  onChange={handleFilterChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Todas as Empresas</option>
+                  {empresas.map(empresa => (
+                    <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Responsável:</label>
+                <select
+                  name="responsavel"
+                  value={filters.responsavel}
+                  onChange={handleFilterChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Todos os Responsáveis</option>
+                  {usuarios.map(usuario => (
+                    <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Empresa:</label>
-              <select
-                name="empresa"
-                value={filters.empresa}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Todas as Empresas</option>
-                {empresas.map(empresa => (
-                  <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Responsável:</label>
-              <select
-                name="responsavel"
-                value={filters.responsavel}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Todos os Responsáveis</option>
-                {usuarios.map(usuario => (
-                  <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>
-                ))}
-              </select>
-            </div>
+            {/* Botão de Limpar Filtros */}
+            {(filters.status !== 'todos' || filters.prioridade !== 'todas' || filters.empresa || filters.responsavel) && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <FiRotateCcw className="w-4 h-4" />
+                  Limpar Filtros
+                </button>
+              </div>
+            )}
           </div>
-        </div>
 
         {/* Lista de Projetos */}
+        {showSkeleton ? (
+          <GerenciamentoProjetosSkeleton />
+        ) : (
         <div className="space-y-4">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Carregando projetos...</p>
-            </div>
-          ) : projetosFiltrados.length === 0 ? (
+          {projetosFiltrados.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8 text-center">
-              <p className="text-gray-500 text-lg">📭 Nenhum projeto encontrado</p>
+              <FiFolder className="w-16 h-16 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500 text-lg font-medium">Nenhum projeto encontrado</p>
               <p className="text-gray-400 text-sm mt-2">Crie um novo projeto ou ajuste os filtros</p>
             </div>
           ) : (
@@ -639,7 +859,7 @@ function GerenciamentoProjetos() {
               <div key={projeto.id} className="bg-white rounded-lg shadow-md border border-gray-300 p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: projeto.cor_identificacao }}
@@ -651,6 +871,12 @@ function GerenciamentoProjetos() {
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPrioridadeColor(projeto.prioridade)}`}>
                         {getPrioridadeText(projeto.prioridade)}
                       </span>
+                      {isProjetoAtrasado(projeto) && isAdmin && (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                          <FiAlertCircle className="w-3 h-3" />
+                          Atrasado
+                        </span>
+                      )}
                     </div>
                     
                     {projeto.descricao && (
@@ -677,46 +903,57 @@ function GerenciamentoProjetos() {
                         <p className="text-gray-600">{formatCurrency(projeto.orcamento)}</p>
                       </div>
                     </div>
+                  </div>
 
-                    {projeto.horas_estimadas && (
-                      <div className="mt-3">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="font-medium text-gray-700">Progresso das Horas:</span>
-                          <span className="text-gray-600">
-                            0 / {projeto.horas_estimadas}h
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full transition-all"
-                            style={{
-                              width: `0%`
-                            }}
-                          ></div>
-                        </div>
-                      </div>
+                  <div className="flex gap-2 ml-4 items-start">
+                    {isProjetoAtrasado(projeto) && !isAdmin && (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                        <FiAlertCircle className="w-3 h-3" />
+                        Atrasado
+                      </span>
+                    )}
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => openModal(projeto)}
+                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1"
+                        >
+                          <FiEdit2 className="w-4 h-4" /> Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(projeto.id)}
+                          className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-1"
+                        >
+                          <FiTrash2 className="w-4 h-4" /> Excluir
+                        </button>
+                      </>
                     )}
                   </div>
-
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => openModal(projeto)}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors"
-                    >
-                      ✏️ Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(projeto.id)}
-                      className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors"
-                    >
-                      🗑️ Excluir
-                    </button>
-                  </div>
                 </div>
+
+                {projeto.horas_estimadas && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-medium text-gray-700">Progresso das Horas:</span>
+                      <span className="text-gray-600">
+                        {projeto.horasTrabalhadas || 0} / {projeto.horas_estimadas}h
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(((projeto.horasTrabalhadas || 0) / projeto.horas_estimadas) * 100, 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
+        )}
 
         {/* Modal */}
         {isModalOpen && (
@@ -724,14 +961,22 @@ function GerenciamentoProjetos() {
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    {editingProject ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    {editingProject ? (
+                      <>
+                        <FiEdit2 className="w-6 h-6" /> Editar Projeto
+                      </>
+                    ) : (
+                      <>
+                        <FiPlus className="w-6 h-6" /> Novo Projeto
+                      </>
+                    )}
                   </h2>
                   <button
                     onClick={closeModal}
-                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                    className="text-gray-500 hover:text-gray-700"
                   >
-                    ✕
+                    <FiX className="w-6 h-6" />
                   </button>
                 </div>
 
@@ -823,10 +1068,10 @@ function GerenciamentoProjetos() {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="ativo">🟢 Ativo</option>
-                        <option value="pausado">🟡 Pausado</option>
-                        <option value="concluido">🔵 Concluído</option>
-                        <option value="cancelado">🔴 Cancelado</option>
+                        <option value="ativo">Ativo</option>
+                        <option value="pausado">Pausado</option>
+                        <option value="concluido">Concluído</option>
+                        <option value="cancelado">Cancelado</option>
                       </select>
                     </div>
 
@@ -921,16 +1166,26 @@ function GerenciamentoProjetos() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {loading ? 'Salvando...' : (editingProject ? '✏️ Atualizar' : '➕ Criar')}
+                      {loading ? (
+                        'Salvando...'
+                      ) : editingProject ? (
+                        <>
+                          <FiSave className="w-5 h-5" /> Atualizar
+                        </>
+                      ) : (
+                        <>
+                          <FiPlus className="w-5 h-5" /> Criar
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={closeModal}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                      className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors flex items-center gap-2"
                     >
-                      ❌ Cancelar
+                      <FiX className="w-5 h-5" /> Cancelar
                     </button>
                   </div>
                 </form>
@@ -939,7 +1194,20 @@ function GerenciamentoProjetos() {
           </div>
         )}
       </div>
-    </div>
+
+      {/* Modal de Notificações */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={closeNotificationModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        showCancel={modalState.showCancel}
+        onConfirm={modalState.onConfirm}
+      />
+    </MainLayout>
   )
 }
 

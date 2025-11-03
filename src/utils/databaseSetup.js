@@ -48,22 +48,22 @@ export class DatabaseSetup {
     
     try {
       // 1. Verificar se profiles já existe (criada pelo Supabase Auth)
-      console.log('📋 Verificando tabela profiles...')
+
       
       // 2. Criar tabela de empresas
-      console.log('🏢 Criando tabela empresas...')
+
       operations.push(await this.createEmpresasTable())
       
       // 3. Criar tabela de projetos
-      console.log('📊 Criando tabela projetos...')
+
       operations.push(await this.createProjetosTable())
       
       // 4. Criar tabela principal de agendamento
-      console.log('⏰ Criando tabela agendamento...')
+
       operations.push(await this.createAgendamentoTable())
       
       // 5. Inserir dados iniciais
-      console.log('📝 Inserindo dados iniciais...')
+
       operations.push(await this.insertInitialData())
       
       return {

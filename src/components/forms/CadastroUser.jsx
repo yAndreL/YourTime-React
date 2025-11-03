@@ -59,7 +59,7 @@ function CadastroUser() {
     
     if (Object.keys(newErrors).length === 0) {
       // Simular cadastro bem-sucedido
-      console.log('Dados do cadastro:', formData)
+
       alert('Cadastro realizado com sucesso!')
       navigate('/login')
     } else {

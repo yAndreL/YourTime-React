@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gkikgvkapnyfhpwhngxw.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdraWtndmthcG55Zmhwd2huZ3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NjYzNDcsImV4cCI6MjA3MTE0MjM0N30.8el8jBGOIgoNX5mANz9mRyCeLZZseK0kjkSvogxn-Jk'
 
-// Criar cliente Supabase
+// Criar cliente Supabase com headers explícitos para evitar erro 406
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
@@ -20,6 +20,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     headers: {
       'X-Client-Info': 'yourtime-app@1.0.0'
+      // NÃO definir Content-Type aqui! Deixar o Supabase detectar automaticamente
+      // Cada requisição (upload, query) usará o Content-Type apropriado
+    }
+  },
+  // Configurações adicionais para evitar problemas de cache
+  realtime: {
+    params: {
+      eventsPerSecond: 10
     }
   }
 })

@@ -2,6 +2,7 @@
 // Componente para mostrar resumo detalhado dos registros de ponto
 
 import { useState } from 'react'
+import { FiRefreshCw, FiClock, FiEye, FiEyeOff } from 'react-icons/fi'
 
 function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
   const [showDetails, setShowDetails] = useState(false)
@@ -29,9 +30,9 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
             >
-              🔄 Atualizar
+              <FiRefreshCw className="w-4 h-4" /> Atualizar
             </button>
           )}
         </div>
@@ -52,14 +53,14 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
             >
-              🔄 Atualizar
+              <FiRefreshCw className="w-4 h-4" /> Atualizar
             </button>
           )}
         </div>
         <div className="text-center py-8">
-          <div className="text-gray-400 text-4xl mb-4">📊</div>
+          <FiClock className="text-gray-400 w-12 h-12 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum Registro de Ponto</h3>
           <p className="text-gray-500 mb-4">Ainda não há registros de ponto cadastrados para esta semana.</p>
           <button
@@ -103,23 +104,22 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Resumo de Ponto</h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            {showDetails ? 'Ocultar Detalhes' : 'Ver Detalhes'}
-          </button>
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
-              title="Atualizar dados"
-            >
-              🔄
-            </button>
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          {showDetails ? (
+            <>
+              <FiEyeOff className="w-4 h-4" />
+              Ocultar Detalhes
+            </>
+          ) : (
+            <>
+              <FiEye className="w-4 h-4" />
+              Ver Detalhes
+            </>
           )}
-        </div>
+        </button>
       </div>
 
       {/* Estatísticas Gerais */}

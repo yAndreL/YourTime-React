@@ -1,40 +1,144 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowIcon } from '../components/ui/Icons'
+import MainLayout from '../components/layout/MainLayout'
 import { supabase } from '../config/supabase.js'
+import CacheService from '../services/CacheService'
+import { FiCalendar, FiRotateCcw, FiClock } from 'react-icons/fi'
 
 function HistoricoApontamento() {
-  const [filters, setFilters] = useState({
-    dataInicio: '',
-    dataFim: '',
-    projeto: ''
-  })
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [apontamentos, setApontamentos] = useState([])
-  const [loading, setLoading] = useState(true)
+  // Funções auxiliares de cache
+  const getCachedData = (key) => {
+    try {
+      const userId = sessionStorage.getItem('currentUserId')
+      if (userId) {
+        const cached = CacheService.get(key, userId)
+        if (cached) {
+
+          return cached
+        }
+      }
+    } catch (e) {
+
+    }
+    return null
+  }
+
+  // Inicializar filtros do sessionStorage
+  const getSavedFilters = () => {
+    try {
+      const saved = sessionStorage.getItem('historicoFilters')
+      if (saved) {
+
+        return JSON.parse(saved)
+      }
+    } catch (e) {
+
+    }
+    return {
+      dataInicio: '',
+      dataFim: '',
+      projeto: ''
+    }
+  }
+
+  const [filters, setFilters] = useState(getSavedFilters())
+  const [apontamentos, setApontamentos] = useState(getCachedData('apontamentos') || [])
+  const [projetos, setProjetos] = useState(getCachedData('projetos_historico') || [])
+  const [loading, setLoading] = useState(false)
+  const [showSkeleton, setShowSkeleton] = useState(false)
 
   useEffect(() => {
-    carregarApontamentos()
+    carregarDados()
   }, [])
 
-  const carregarApontamentos = async () => {
+  const carregarDados = async () => {
+    let skeletonTimeout = null
+    
     try {
-      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Salvar userId para próximas inicializações
+      sessionStorage.setItem('currentUserId', user.id)
+
+      // Verificar se tem dados em cache
+      const hasCachedData = apontamentos.length > 0 || projetos.length > 0
       
+      if (hasCachedData) {
+
+        // Atualiza em background
+        await Promise.all([
+          carregarApontamentos(user.id, true),
+          carregarProjetos(user.id, true)
+        ])
+        return
+      }
+
+      // Se não tem cache, mostra skeleton apenas após 300ms
+      setLoading(true)
+      skeletonTimeout = setTimeout(() => {
+        setShowSkeleton(true)
+      }, 300)
+
+      await Promise.all([
+        carregarApontamentos(user.id, false),
+        carregarProjetos(user.id, false)
+      ])
+    } catch (error) {
+
+    } finally {
+      if (skeletonTimeout) clearTimeout(skeletonTimeout)
+      setLoading(false)
+      setShowSkeleton(false)
+    }
+  }
+
+  const carregarProjetos = async (userId, isBackgroundUpdate = false) => {
+    try {
+      if (!isBackgroundUpdate) {
+
+      }
+
+      const { data, error } = await supabase
+        .from('projetos')
+        .select('id, nome')
+        .eq('status', 'ativo')
+        .order('nome')
+
+      if (error) throw error
+      
+      const projetos = data || []
+      setProjetos(projetos)
+      
+      // Salvar no cache (TTL de 10 minutos)
+      if (userId) {
+        CacheService.set('projetos_historico', projetos, userId, 10 * 60 * 1000)
+      }
+    } catch (error) {
+
+      setProjetos([])
+    }
+  }
+
+  const carregarApontamentos = async (userId, isBackgroundUpdate = false) => {
+    try {
+      if (!isBackgroundUpdate) {
+
+        setLoading(true)
+      }
+      
+      // Buscar o usuário atual
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setApontamentos([])
+        return
+      }
+
       let query = supabase
         .from('agendamento')
         .select(`
-          id,
-          data,
-          entrada1,
-          saida1,
-          entrada2,
-          saida2,
-          observacao,
-          profiles (
-            nome
-          )
+          *
         `)
+        .eq('user_id', user.id)
         .order('data', { ascending: false })
 
       // Aplicar filtros se houver
@@ -48,26 +152,58 @@ function HistoricoApontamento() {
 
       const { data, error } = await query
       
-      if (error) throw error
+      if (error) {
+
+        throw error
+      }
+
+      if (!data || data.length === 0) {
+        setApontamentos([])
+        return
+      }
+
+      // Buscar nomes dos projetos separadamente se necessário
+      const projetoIds = [...new Set(data.map(apt => apt.projeto_id).filter(id => id))]
+      let projetosMap = {}
       
+      if (projetoIds.length > 0) {
+        const { data: projetosData } = await supabase
+          .from('projetos')
+          .select('id, nome')
+          .in('id', projetoIds)
+        
+        if (projetosData) {
+          projetosMap = Object.fromEntries(projetosData.map(p => [p.id, p.nome]))
+        }
+      }
+
       // Mapear dados para o formato esperado
       const apontamentosMapeados = data.map(apt => ({
         id: apt.id,
         data: apt.data,
-        projeto: apt.profiles?.nome || 'Projeto Padrão',
-        entrada1: apt.entrada1,
-        saida1: apt.saida1,
-        entrada2: apt.entrada2,
-        saida2: apt.saida2,
+        projeto: projetosMap[apt.projeto_id] || 'Sem Projeto',
+        entrada1: apt.entrada1 || '--:--',
+        saida1: apt.saida1 || '--:--',
+        entrada2: apt.entrada2 || '--:--',
+        saida2: apt.saida2 || '--:--',
         horasTrabalhadas: calcularHorasTrabalhadas(apt),
-        anotacoes: apt.observacao
+        anotacoes: apt.observacao,
+        status: apt.status || 'P' // 'A' = Aprovado, 'P' = Pendente, 'R' = Rejeitado
       }))
-      
+
       setApontamentos(apontamentosMapeados)
+      
+      // Salvar no cache (TTL de 10 minutos)
+      if (userId) {
+        CacheService.set('apontamentos', apontamentosMapeados, userId, 10 * 60 * 1000)
+      }
     } catch (error) {
-      console.error('❌ Erro ao carregar apontamentos:', error)
+
+      setApontamentos([])
     } finally {
-      setLoading(false)
+      if (!isBackgroundUpdate) {
+        setLoading(false)
+      }
     }
   }
 
@@ -94,106 +230,183 @@ function HistoricoApontamento() {
     return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`
   }
 
-  const toggleMenu = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
-
   const handleFilterChange = (e) => {
     const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...filters,
       [name]: value
-    }))
-  }
-
-  const handleSearch = (e) => {
-    e.preventDefault()
-    carregarApontamentos()
-  }
-
-  const filteredApontamentos = apontamentos.filter(apontamento => {
-    const matchDataInicio = !filters.dataInicio || apontamento.data >= filters.dataInicio
-    const matchDataFim = !filters.dataFim || apontamento.data <= filters.dataFim
-    const matchProjeto = !filters.projeto || apontamento.projeto.toLowerCase().includes(filters.projeto.toLowerCase())
+    }
+    setFilters(newFilters)
     
-    return matchDataInicio && matchDataFim && matchProjeto
+    // Salvar filtros no sessionStorage
+    try {
+      sessionStorage.setItem('historicoFilters', JSON.stringify(newFilters))
+
+    } catch (e) {
+
+    }
+  }
+
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      // Invalida cache e recarrega com filtros
+      CacheService.remove('apontamentos', user.id)
+      await carregarApontamentos(user.id, false)
+    }
+  }
+
+  const handleClearFilters = async () => {
+    // Limpa os filtros
+    const defaultFilters = {
+      dataInicio: '',
+      dataFim: '',
+      projeto: ''
+    }
+    setFilters(defaultFilters)
+    
+    // Limpar filtros do sessionStorage
+    try {
+      sessionStorage.removeItem('historicoFilters')
+
+    } catch (e) {
+
+    }
+    
+    // Recarrega todos os apontamentos sem filtros
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Invalida cache e recarrega
+        CacheService.remove('apontamentos', user.id)
+        await carregarApontamentos(user.id, false)
+      }
+    } catch (error) {
+
+    }
+  }
+
+  // Remover código duplicado abaixo
+  const handleClearFiltersOLD = async () => {
+    // FUNÇÃO REMOVIDA - usar handleClearFilters acima
+    try {
+      setLoading(true)
+      
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setApontamentos([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('agendamento')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false })
+      
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        setApontamentos([])
+        return
+      }
+
+      // Buscar nomes dos projetos
+      const projetoIds = [...new Set(data.map(apt => apt.projeto_id).filter(id => id))]
+      let projetosMap = {}
+      
+      if (projetoIds.length > 0) {
+        const { data: projetosData } = await supabase
+          .from('projetos')
+          .select('id, nome')
+          .in('id', projetoIds)
+        
+        if (projetosData) {
+          projetosMap = Object.fromEntries(projetosData.map(p => [p.id, p.nome]))
+        }
+      }
+
+      // Este código não será executado pois foi substituído pela função handleClearFilters acima
+    } catch (error) {
+
+    }
+  }
+
+  // Aplicar apenas filtro de projeto no frontend (já que data é filtrada na query)
+  const filteredApontamentos = apontamentos.filter(apontamento => {
+    const matchProjeto = !filters.projeto || apontamento.projeto.toLowerCase().includes(filters.projeto.toLowerCase())
+    return matchProjeto
   })
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
+    // Adiciona 'T00:00:00' para garantir que a data seja interpretada no timezone local
+    const date = new Date(dateString + 'T00:00:00')
     return date.toLocaleDateString('pt-BR')
   }
 
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'A':
+        return { 
+          text: 'Aprovado', 
+          color: 'bg-green-100 text-green-800 border-green-300',
+          icon: '✓'
+        }
+      case 'R':
+        return { 
+          text: 'Rejeitado', 
+          color: 'bg-red-100 text-red-800 border-red-300',
+          icon: '✗'
+        }
+      case 'P':
+        return { 
+          text: 'Pendente', 
+          color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+          icon: <FiClock className="w-4 h-4" />
+        }
+      default:
+        return { 
+          text: 'Sem Status', 
+          color: 'bg-gray-100 text-gray-800 border-gray-300',
+          icon: '?'
+        }
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center pl-0 md:pl-24">
-      {/* Menu Toggle Button */}
-      <button 
-        className="fixed top-4 left-4 z-50 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-white hover:text-gray-800 border hover:border-gray-800 transition-all duration-300"
-        onClick={toggleMenu}
-      >
-        ☰ Menu
-      </button>
-
-      {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 z-40 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Menu</h2>
-          <nav className="space-y-4">
-            <Link to="/" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏠 Início
-            </Link>
-            <Link to="/formulario-ponto" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              📝 Registrar Ponto
-            </Link>
-            <Link to="/painel-admin" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🏢 Painel Admin
-            </Link>
-            <Link to="/historico" className="block text-blue-600 font-medium">
-              📊 Histórico
-            </Link>
-            <Link to="/projeto" className="block text-gray-700 hover:text-blue-600 transition-colors">
-              🎯 Projeto
-            </Link>
-            <button 
-              onClick={toggleMenu}
-              className="block text-gray-700 hover:text-blue-600 transition-colors w-full text-left"
-            >
-              Fechar Menu
-            </button>
-            <Link to="/login" className="block text-red-600 hover:text-red-700 transition-colors mt-8 pt-4 border-t">
-              &lt; Sair
-            </Link>
-          </nav>
+    <MainLayout title="Histórico de Apontamentos" subtitle="Consulte e analise seus registros de ponto">
+      {/* Resumo do Período */}
+      {!loading && filteredApontamentos.length > 0 && (
+        <div className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Resumo do Período</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600">{filteredApontamentos.length}</div>
+              <div className="text-sm text-blue-700 font-medium">Registros</div>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-green-600">
+                {filteredApontamentos.reduce((total, apt) => {
+                  const [h, m] = apt.horasTrabalhadas.split(':')
+                  return total + parseInt(h) + parseInt(m) / 60
+                }, 0).toFixed(1)}h
+              </div>
+              <div className="text-sm text-green-700 font-medium">Total Trabalhado</div>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold text-purple-600">
+                {new Set(filteredApontamentos.map(apt => apt.projeto)).size}
+              </div>
+              <div className="text-sm text-purple-700 font-medium">Projetos</div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={toggleMenu}
-        ></div>
       )}
 
-      {/* Container Principal */}
-      <div className="w-full max-w-7xl mx-auto p-5 md:p-8">
-        {/* Header com Filtros */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-300 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <Link 
-              to="/"
-              className="flex items-center space-x-2 text-2xl no-underline py-2 px-3 rounded-md bg-transparent hover:bg-black hover:bg-opacity-10 transition-colors"
-            >
-              <ArrowIcon className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Histórico de Apontamentos</h1>
-            <div className="w-12"></div>
-          </div>
-
-          {/* Formulário de Filtros */}
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        {/* Formulário de Filtros */}
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
             <div>
               <label htmlFor="dataInicio" className="block text-sm font-medium text-gray-700 mb-1">
                 Data Início:
@@ -232,115 +445,104 @@ function HistoricoApontamento() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
               >
                 <option value="">Todos os Projetos</option>
-                <option value="Projeto Padrão">Projeto Padrão</option>
-                <option value="YourTime">YourTime</option>
-                <option value="Sistema Interno">Sistema Interno</option>
+                {projetos.map(projeto => (
+                  <option key={projeto.id} value={projeto.nome}>{projeto.nome}</option>
+                ))}
+                <option value="Sem Projeto">Sem Projeto</option>
               </select>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-gray-800 text-white border-2 border-black rounded-xl font-bold italic cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:bg-white hover:text-gray-800 hover:scale-105 disabled:opacity-50"
-            >
-              {loading ? 'Carregando...' : 'Pesquisar'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? 'Carregando...' : 'Pesquisar'}
+              </button>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                disabled={loading}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Limpar
+              </button>
+            </div>
           </form>
-        </div>
 
         {/* Lista de Apontamentos */}
-        <div className="space-y-4">
-          {loading ? (
-            <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8 text-center">
-              <p className="text-gray-500 text-lg">Carregando apontamentos...</p>
+        <div className="space-y-3">
+          {showSkeleton ? (
+            <div className="bg-gray-50 rounded-lg border border-gray-300 p-6 text-center">
+              <p className="text-gray-500">Carregando apontamentos...</p>
             </div>
           ) : filteredApontamentos.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8 text-center">
-              <p className="text-gray-500 text-lg">Nenhum apontamento encontrado para os filtros selecionados.</p>
+            <div className="bg-gray-50 rounded-lg border border-gray-300 p-6 text-center">
+              <p className="text-gray-500">Nenhum apontamento encontrado para os filtros selecionados.</p>
             </div>
           ) : (
-            filteredApontamentos.map(apontamento => (
-              <div key={apontamento.id} className="bg-white rounded-lg shadow-md border border-gray-300 p-6">
+            filteredApontamentos.map(apontamento => {
+              const statusInfo = getStatusInfo(apontamento.status)
+              return (
+              <div key={apontamento.id} className="bg-white rounded-lg shadow-sm border border-gray-300 p-4">
                 {/* Header do Card */}
-                <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">{formatDate(apontamento.data)}</h3>
-                    <p className="text-blue-600 font-medium">{apontamento.projeto}</p>
+                <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-bold text-gray-800">{formatDate(apontamento.data)}</h3>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${statusInfo.color}`}>
+                        {statusInfo.icon} {statusInfo.text}
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-600 font-medium">{apontamento.projeto}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-green-600">{apontamento.horasTrabalhadas}</div>
-                    <div className="text-sm text-gray-600">Horas Trabalhadas</div>
+                    <div className="text-xl font-bold text-green-600">{apontamento.horasTrabalhadas}</div>
+                    <div className="text-xs text-gray-600">Horas</div>
                   </div>
                 </div>
 
                 {/* Horários */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="text-center">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="text-sm text-green-700 font-medium">Entrada 1</div>
-                      <div className="text-lg font-bold text-green-800">{apontamento.entrada1}</div>
+                    <div className="bg-green-50 border border-green-200 rounded p-2">
+                      <div className="text-xs text-green-700 font-medium">Entrada 1</div>
+                      <div className="text-sm font-bold text-green-800">{apontamento.entrada1}</div>
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="text-sm text-red-700 font-medium">Saída 1</div>
-                      <div className="text-lg font-bold text-red-800">{apontamento.saida1}</div>
+                    <div className="bg-red-50 border border-red-200 rounded p-2">
+                      <div className="text-xs text-red-700 font-medium">Saída 1</div>
+                      <div className="text-sm font-bold text-red-800">{apontamento.saida1}</div>
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="text-sm text-green-700 font-medium">Entrada 2</div>
-                      <div className="text-lg font-bold text-green-800">{apontamento.entrada2}</div>
+                    <div className="bg-green-50 border border-green-200 rounded p-2">
+                      <div className="text-xs text-green-700 font-medium">Entrada 2</div>
+                      <div className="text-sm font-bold text-green-800">{apontamento.entrada2}</div>
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="text-sm text-red-700 font-medium">Saída 2</div>
-                      <div className="text-lg font-bold text-red-800">{apontamento.saida2}</div>
+                    <div className="bg-red-50 border border-red-200 rounded p-2">
+                      <div className="text-xs text-red-700 font-medium">Saída 2</div>
+                      <div className="text-sm font-bold text-red-800">{apontamento.saida2}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Anotações */}
                 {apontamento.anotacoes && (
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="text-sm text-gray-600 font-medium mb-1">Anotações:</div>
-                    <div className="text-gray-800">{apontamento.anotacoes}</div>
+                  <div className="mt-2 bg-gray-50 rounded p-2 border border-gray-200">
+                    <div className="text-xs text-gray-600 font-medium mb-1">Anotações:</div>
+                    <div className="text-sm text-gray-800">{apontamento.anotacoes}</div>
                   </div>
                 )}
               </div>
-            ))
+            )})
           )}
         </div>
-
-        {/* Resumo */}
-        {!loading && filteredApontamentos.length > 0 && (
-          <div className="mt-8 bg-white rounded-lg shadow-md border border-gray-300 p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Resumo do Período</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <div className="text-3xl font-bold text-blue-600">{filteredApontamentos.length}</div>
-                <div className="text-blue-700 font-medium">Registros</div>
-              </div>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                <div className="text-3xl font-bold text-green-600">
-                  {filteredApontamentos.reduce((total, apt) => {
-                    const [h, m] = apt.horasTrabalhadas.split(':')
-                    return total + parseInt(h) + parseInt(m) / 60
-                  }, 0).toFixed(1)}h
-                </div>
-                <div className="text-green-700 font-medium">Total Trabalhado</div>
-              </div>
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-                <div className="text-3xl font-bold text-purple-600">
-                  {new Set(filteredApontamentos.map(apt => apt.projeto)).size}
-                </div>
-                <div className="text-purple-700 font-medium">Projetos</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </MainLayout>
   )
 }
 
