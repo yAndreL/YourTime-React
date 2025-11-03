@@ -31,12 +31,12 @@ class ApiService {
     }
 
     try {
-      console.log(`📡 API Request: ${config.method || 'GET'} ${url}`)
-      console.log('Request config:', config)
+
+
 
       const response = await fetch(url, config)
       
-      console.log(`📊 API Response: ${response.status} ${response.statusText}`)
+
 
       // Verificar se a resposta é JSON
       const contentType = response.headers.get('content-type')
@@ -59,7 +59,7 @@ class ApiService {
       }
 
     } catch (error) {
-      console.error('❌ API Error:', error)
+
       
       return {
         success: false,
