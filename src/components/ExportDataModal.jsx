@@ -81,10 +81,22 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Usuário não autenticado')
 
+        // Buscar o superior_empresa_id do usuário logado
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', user.id)
+          .single()
+
         let query = supabase
           .from('profiles')
-          .select('id, nome, email, cargo, departamento')
+          .select('id, nome, email, cargo, departamento, superior_empresa_id')
           .order('nome')
+
+        // ✅ FILTRO MULTITENANCY: Mostrar apenas usuários da mesma empresa
+        if (userProfile?.superior_empresa_id) {
+          query = query.eq('superior_empresa_id', userProfile.superior_empresa_id)
+        }
 
         if (!isAdmin) {
           query = query.eq('id', user.id)
@@ -1094,6 +1106,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
           {/* Modal Content */}
           <div 
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto pointer-events-auto"
+            style={{ marginTop: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

@@ -9,13 +9,21 @@ class NotificationService {
    */
   static async criarNotificacao({ userId, titulo, mensagem, tipo, agendamentoId = null, metadata = {} }) {
     try {
+      // Buscar superior_empresa_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
       const notificacao = {
         user_id: userId,
         titulo,
         mensagem,
         tipo,
         lida: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        superior_empresa_id: profile?.superior_empresa_id
       }
 
       // Adicionar campos opcionais apenas se existirem
@@ -50,11 +58,24 @@ class NotificationService {
    */
   static async buscarNotificacoes(userId, apenasNaoLidas = false) {
     try {
+      // Buscar superior_empresa_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
       let query = supabase
         .from('notificacoes')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por empresa se o usuário tiver superior_empresa_id
+      if (profile?.superior_empresa_id) {
+        query = query.eq('superior_empresa_id', profile.superior_empresa_id)
+      }
+
+      query = query.order('created_at', { ascending: false })
 
       if (apenasNaoLidas) {
         query = query.eq('lida', false)
@@ -134,11 +155,25 @@ class NotificationService {
    */
   static async contarNaoLidas(userId) {
     try {
-      const { count, error } = await supabase
+      // Buscar superior_empresa_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
+      let query = supabase
         .from('notificacoes')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('lida', false)
+
+      // Filtrar por empresa se o usuário tiver superior_empresa_id
+      if (profile?.superior_empresa_id) {
+        query = query.eq('superior_empresa_id', profile.superior_empresa_id)
+      }
+
+      const { count, error } = await query
 
       if (error) throw error
       return { success: true, count: count || 0 }
@@ -154,11 +189,31 @@ class NotificationService {
   static async notificarAdminsPontoPendente(agendamentoId, funcionarioNome, dataPonto, userId = null) {
     try {
 
-      // Buscar todos os admins
+      // Buscar superior_empresa_id do funcionário que registrou o ponto
+      const { data: funcionarioProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) {
+
+        throw profileError
+      }
+
+      const superiorEmpresaId = funcionarioProfile?.superior_empresa_id
+
+      if (!superiorEmpresaId) {
+
+        return { success: false, error: 'Funcionário sem empresa definida' }
+      }
+
+      // Buscar apenas admins da MESMA empresa
       const { data: admins, error: adminsError } = await supabase
         .from('profiles')
-        .select('id, nome, email')
+        .select('id, nome, email, superior_empresa_id')
         .eq('role', 'admin')
+        .eq('superior_empresa_id', superiorEmpresaId)
 
       if (adminsError) {
 
@@ -167,7 +222,7 @@ class NotificationService {
 
       if (!admins || admins.length === 0) {
 
-        return { success: true, warning: 'Nenhum admin encontrado' }
+        return { success: true, warning: 'Nenhum admin encontrado nesta empresa' }
       }
 
       // Filtrar para NÃO notificar o próprio usuário que registrou o ponto

@@ -37,22 +37,44 @@ function PainelAdministrativo() {
   const [totalPontosPendentes, setTotalPontosPendentes] = useState(0) // Total de pontos pendentes (todas as datas)
   const [menuAberto, setMenuAberto] = useState(null) // ID do funcionário com menu aberto
   const [modalConfirmarExclusao, setModalConfirmarExclusao] = useState({ isOpen: false, funcionario: null })
+  const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null) // Multitenancy
   const navigate = useNavigate()
 
   useEffect(() => {
     definirDataPadrao()
     aplicarFiltrosDaNotificacao()
+    carregarSuperiorEmpresaId()
   }, [])
 
   useEffect(() => {
-    if (dataSelecionada) {
+    if (dataSelecionada && superiorEmpresaId) {
       carregarFuncionarios()
     }
-  }, [dataSelecionada])
+  }, [dataSelecionada, superiorEmpresaId])
 
   useEffect(() => {
-    carregarDiasComPontosPendentes()
-  }, [])
+    if (superiorEmpresaId) {
+      carregarDiasComPontosPendentes()
+    }
+  }, [superiorEmpresaId])
+
+  const carregarSuperiorEmpresaId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setSuperiorEmpresaId(profile?.superior_empresa_id || null)
+    } catch (error) {
+      setSuperiorEmpresaId(null)
+    }
+  }
 
   const definirDataPadrao = () => {
     if (!dataSelecionada) {
@@ -79,23 +101,35 @@ function PainelAdministrativo() {
 
   const carregarDiasComPontosPendentes = async () => {
     try {
-      const { data, error } = await supabase
+      if (!superiorEmpresaId) {
+        console.warn('⚠️ superiorEmpresaId não definido no PainelAdmin')
+        return
+      }
+
+      console.log('🔍 Buscando pontos pendentes para superior_empresa_id:', superiorEmpresaId)
+
+      // Buscar pontos pendentes apenas da empresa do usuário logado
+      const { data: agendamentos, error } = await supabase
         .from('agendamento')
-        .select('data, status')
+        .select('data, status, user_id, superior_empresa_id')
         .eq('status', 'P')
+        .eq('superior_empresa_id', superiorEmpresaId)
         .order('data', { ascending: false })
 
       if (error) throw error
 
-      if (data && data.length > 0) {
-        const datasUnicas = [...new Set(data.map(item => item.data))]
+      console.log('📊 Pontos pendentes encontrados:', agendamentos?.length || 0, agendamentos)
+
+      if (agendamentos && agendamentos.length > 0) {
+        const datasUnicas = [...new Set(agendamentos.map(item => item.data))]
         setDiasComPontosPendentes(datasUnicas)
-        setTotalPontosPendentes(data.length) // Total de pontos pendentes (todas as datas)
+        setTotalPontosPendentes(agendamentos.length)
       } else {
         setDiasComPontosPendentes([])
         setTotalPontosPendentes(0)
       }
     } catch (error) {
+      console.error('Erro ao carregar dias com pontos pendentes:', error)
       setDiasComPontosPendentes([])
       setTotalPontosPendentes(0)
     }
@@ -109,7 +143,12 @@ function PainelAdministrativo() {
     try {
       setLoading(true)
       
-      // Buscar funcionários do banco de dados
+      if (!superiorEmpresaId) {
+        setFuncionarios([])
+        return
+      }
+      
+      // Buscar funcionários do banco de dados FILTRADOS por superior_empresa_id
       const { data: funcionariosData, error: funcionariosError } = await supabase
         .from('profiles')
         .select(`
@@ -125,8 +164,10 @@ function PainelAdministrativo() {
           is_active,
           role,
           created_at,
-          updated_at
+          updated_at,
+          superior_empresa_id
         `)
+        .eq('superior_empresa_id', superiorEmpresaId)
         .order('nome')
 
       if (funcionariosError) throw funcionariosError
@@ -136,11 +177,13 @@ function PainelAdministrativo() {
         return
       }
 
-      // Buscar TODOS os pontos do dia e filtrar no cliente
+      // Buscar pontos do dia apenas dos funcionários da mesma empresa
+      const funcionarioIds = funcionariosData.map(f => f.id)
       const { data: todosPontosDia } = await supabase
         .from('agendamento')
         .select('*')
         .eq('data', dataSelecionada)
+        .in('user_id', funcionarioIds)
 
       // Mapear pontos para funcionários (filtro no cliente)
       const funcionariosComPonto = funcionariosData.map((funcionario) => {

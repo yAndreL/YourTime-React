@@ -53,10 +53,22 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Usuário não autenticado')
 
+        // Buscar o superior_empresa_id do usuário logado
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', user.id)
+          .single()
+
         let query = supabase
           .from('profiles')
-          .select('id, nome, email, cargo, departamento')
+          .select('id, nome, email, cargo, departamento, superior_empresa_id')
           .order('nome')
+
+        // ✅ FILTRO MULTITENANCY: Mostrar apenas usuários da mesma empresa
+        if (userProfile?.superior_empresa_id) {
+          query = query.eq('superior_empresa_id', userProfile.superior_empresa_id)
+        }
 
         // Se não é admin, buscar apenas o próprio usuário
         if (!isAdmin) {
@@ -74,7 +86,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
           setFuncionariosSelecionados([funcionariosData[0].id])
         }
       } catch (error) {
-
+        console.error('Erro ao carregar funcionários:', error)
         setModalError({
           isOpen: true,
           message: 'Erro ao carregar funcionários',
@@ -390,8 +402,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
         style={{ top: 0, left: 0, right: 0, bottom: 0, position: 'fixed', margin: 0, padding: 0 }}
       >
-        <div className="p-4 w-full h-full flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000]">
+        <div className="p-4 w-full h-full flex items-center justify-center" style={{ padding: '1rem' }}>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000]" style={{ marginTop: 0, marginBottom: 0 }}>
           {/* Header */}
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <div>

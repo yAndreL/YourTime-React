@@ -193,16 +193,18 @@ export function useTimeTracking() {
   // Dados semanais formatados para gráficos (apenas semana atual e registros aprovados)
   const getWeeklyChartData = () => {
     const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+    
+    // ✅ CORREÇÃO: Usar horário LOCAL da máquina do usuário
     const today = new Date()
     const dayOfWeek = today.getDay()
     
-    // Calcular início da semana (segunda-feira)
+    // Calcular início da semana (segunda-feira) no fuso local
     const startOfWeek = new Date(today)
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
     startOfWeek.setDate(today.getDate() + diffToMonday)
     startOfWeek.setHours(0, 0, 0, 0)
 
-    // Calcular fim da semana (domingo)
+    // Calcular fim da semana (domingo) no fuso local
     const endOfWeek = new Date(startOfWeek)
     endOfWeek.setDate(startOfWeek.getDate() + 6)
     endOfWeek.setHours(23, 59, 59, 999)
@@ -216,6 +218,12 @@ export function useTimeTracking() {
       return isInWeek && isApprovedOrPending
     })
 
+    // ✅ CORREÇÃO: Obter data de hoje em formato YYYY-MM-DD no horário LOCAL da máquina
+    const todayYear = today.getFullYear()
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0')
+    const todayDay = String(today.getDate()).padStart(2, '0')
+    const todayStr = `${todayYear}-${todayMonth}-${todayDay}`
+
     return weekDays.map((day, index) => {
       const targetDate = new Date(startOfWeek)
       targetDate.setDate(startOfWeek.getDate() + index)
@@ -227,8 +235,7 @@ export function useTimeTracking() {
       const hours = Math.floor(minutes / 60)
       const mins = minutes % 60
 
-      // Verificar se é hoje
-      const todayStr = today.toISOString().split('T')[0]
+      // ✅ Comparar com a data de hoje calculada corretamente
       const isToday = dateStr === todayStr
 
       return {

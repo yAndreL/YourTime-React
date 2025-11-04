@@ -16,23 +16,27 @@ export const NotificationProvider = ({ children }) => {
     const verificarSeEhAdmin = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return false;
+        if (!user) return { isAdmin: false, superiorEmpresaId: null };
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, superior_empresa_id')
           .eq('id', user.id)
           .single();
 
-        return profile?.role === 'admin';
+        return { 
+          isAdmin: profile?.role === 'admin',
+          superiorEmpresaId: profile?.superior_empresa_id
+        };
       } catch (error) {
 
-        return false;
+        return { isAdmin: false, superiorEmpresaId: null };
       }
     };
 
-    const buscarPontosPendentes = async () => {
+    const buscarPontosPendentes = async (superiorEmpresaId) => {
       try {
+        // Buscar pontos pendentes apenas da mesma empresa
         const { data, error } = await supabase
           .from('agendamento')
           .select(`
@@ -40,9 +44,11 @@ export const NotificationProvider = ({ children }) => {
             data,
             hora_entrada,
             user_id,
-            profiles:user_id (
+            superior_empresa_id,
+            profiles!agendamento_user_id_fkey (
               id,
-              nome
+              nome,
+              superior_empresa_id
             )
           `)
           .eq('status', 'P')
@@ -50,28 +56,35 @@ export const NotificationProvider = ({ children }) => {
 
         if (error) throw error;
 
-        return data?.map(ponto => ({
+        // Filtrar apenas pontos de usuários da mesma empresa (usando o profiles.superior_empresa_id)
+        const pontosFiltrados = (data || []).filter(ponto => 
+          ponto.profiles?.superior_empresa_id === superiorEmpresaId
+        );
+
+        return pontosFiltrados.map(ponto => ({
           id: ponto.id,
           data: ponto.data,
           hora_entrada: ponto.hora_entrada,
           user_id: ponto.user_id,
-          funcionario_nome: ponto.profiles?.nome || 'Funcionário'
-        })) || [];
+          funcionario_nome: ponto.profiles?.nome || 'Funcionário',
+          superior_empresa_id: ponto.profiles?.superior_empresa_id
+        }));
       } catch (error) {
 
         return [];
       }
     };
 
-    const criarNotificacoesParaPontosPendentes = async (pontosPendentes) => {
+    const criarNotificacoesParaPontosPendentes = async (pontosPendentes, superiorEmpresaId) => {
       if (pontosPendentes.length === 0) return;
 
       try {
-        // Buscar todos os admins
+        // Buscar apenas admins da MESMA empresa
         const { data: admins } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('role', 'admin');
+          .select('id, superior_empresa_id')
+          .eq('role', 'admin')
+          .eq('superior_empresa_id', superiorEmpresaId);
 
         if (!admins || admins.length === 0) return;
 
@@ -105,6 +118,7 @@ export const NotificationProvider = ({ children }) => {
                 titulo: 'Ponto Aguardando Aprovação',
                 mensagem: `${ponto.funcionario_nome} registrou um ponto e aguarda aprovação`,
                 agendamento_id: ponto.id,
+                superior_empresa_id: superiorEmpresaId, // Adicionar empresa
                 metadata: {
                   funcionario: ponto.funcionario_nome,
                   data_ponto: ponto.data,
@@ -187,14 +201,14 @@ export const NotificationProvider = ({ children }) => {
     };
 
     const verificarECriarNotificacoes = async () => {
-      const ehAdmin = await verificarSeEhAdmin();
-      if (!ehAdmin) {
+      const { isAdmin, superiorEmpresaId } = await verificarSeEhAdmin();
+      if (!isAdmin || !superiorEmpresaId) {
 
         return;
       }
 
-      const pontosPendentes = await buscarPontosPendentes();
-      await criarNotificacoesParaPontosPendentes(pontosPendentes);
+      const pontosPendentes = await buscarPontosPendentes(superiorEmpresaId);
+      await criarNotificacoesParaPontosPendentes(pontosPendentes, superiorEmpresaId);
       await limparNotificacoesAnteriorizadas();
       await deletarNotificacoesAntigas();
     };

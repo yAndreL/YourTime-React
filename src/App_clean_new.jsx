@@ -176,8 +176,15 @@ function App() {
           }, 300)
         }
         
-        // Carregar projetos do banco
-        const { data: projectsData, error: projectsError } = await supabase
+        // Buscar superior_empresa_id do usuário logado para filtrar projetos
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', user.id)
+          .single()
+
+        // Carregar projetos do banco FILTRADOS pela empresa do usuário
+        let query = supabase
           .from('projetos')
           .select(`
             *,
@@ -187,6 +194,13 @@ function App() {
           `)
           .eq('status', 'ativo')
           .order('nome')
+
+        // Adicionar filtro de empresa se o usuário tiver superior_empresa_id
+        if (userProfile?.superior_empresa_id) {
+          query = query.eq('superior_empresa_id', userProfile.superior_empresa_id)
+        }
+
+        const { data: projectsData, error: projectsError } = await query
         
         if (projectsError) {
           setLoadingProjects(false)

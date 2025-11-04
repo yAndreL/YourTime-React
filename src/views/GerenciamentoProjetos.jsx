@@ -83,6 +83,7 @@ function GerenciamentoProjetos() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [isAdmin, setIsAdmin] = useState(getCachedAdminStatus())
+  const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null)
   
   // Inicializar filtros do sessionStorage ou usar valores padrão
   const getSavedFilters = () => {
@@ -122,7 +123,26 @@ function GerenciamentoProjetos() {
   useEffect(() => {
     carregarDados()
     checkAdminStatus()
+    carregarSuperiorEmpresaId()
   }, [])
+
+  const carregarSuperiorEmpresaId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setSuperiorEmpresaId(profile?.superior_empresa_id || null)
+    } catch (error) {
+      setSuperiorEmpresaId(null)
+    }
+  }
 
   const checkAdminStatus = async () => {
     try {
@@ -198,10 +218,28 @@ function GerenciamentoProjetos() {
 
       }
 
-      const { data, error } = await supabase
+      // Buscar superior_empresa_id do usuário se ainda não carregou
+      let empresaIdFiltro = superiorEmpresaId
+      if (!empresaIdFiltro) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', userId)
+          .single()
+        empresaIdFiltro = profile?.superior_empresa_id || null
+      }
+
+      // Filtrar projetos pela empresa do usuário
+      let query = supabase
         .from('projetos')
         .select('*')
         .order('created_at', { ascending: false })
+
+      if (empresaIdFiltro) {
+        query = query.eq('superior_empresa_id', empresaIdFiltro)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 
@@ -295,11 +333,29 @@ function GerenciamentoProjetos() {
 
       }
 
-      const { data, error } = await supabase
+      // Buscar superior_empresa_id do usuário
+      let empresaIdFiltro = superiorEmpresaId
+      if (!empresaIdFiltro) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', userId)
+          .single()
+        empresaIdFiltro = profile?.superior_empresa_id || null
+      }
+
+      // Filtrar usuários pela mesma empresa
+      let query = supabase
         .from('profiles')
         .select('id, nome, email')
         .eq('is_active', true)
         .order('nome')
+
+      if (empresaIdFiltro) {
+        query = query.eq('superior_empresa_id', empresaIdFiltro)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       
@@ -322,15 +378,65 @@ function GerenciamentoProjetos() {
 
       }
 
-      const { data, error } = await supabase
+      // Buscar superior_empresa_id do usuário
+      let empresaIdFiltro = superiorEmpresaId
+      if (!empresaIdFiltro) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', userId)
+          .single()
+        empresaIdFiltro = profile?.superior_empresa_id || null
+      }
+
+      // Carregar empresas
+      let query = supabase
         .from('empresas')
-        .select('id, nome, cnpj')
+        .select('id, nome, cnpj, superior_empresa_id')
         .eq('is_active', true)
         .order('nome')
 
-      if (error) throw error
+      // Se o usuário tem superior_empresa_id, mostra:
+      // 1. A empresa principal (aquela com id = superior_empresa_id)
+      // 2. Todas as empresas filhas (aquelas com superior_empresa_id = empresaIdFiltro)
+      if (empresaIdFiltro) {
+        query = query.or(`id.eq.${empresaIdFiltro},superior_empresa_id.eq.${empresaIdFiltro}`)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        throw error
+      }
       
       const empresas = data || []
+      
+      // Log temporário para debug
+      if (empresas.length === 0 && empresaIdFiltro) {
+        // Verificar se a empresa existe
+        const { data: checkEmpresa } = await supabase
+          .from('empresas')
+          .select('id, nome')
+          .eq('id', empresaIdFiltro)
+        
+        if (checkEmpresa && checkEmpresa.length > 0) {
+          // Empresa existe mas está inativa, carregar mesmo assim para o select
+          const { data: empresaInativa } = await supabase
+            .from('empresas')
+            .select('id, nome, cnpj')
+            .eq('id', empresaIdFiltro)
+            .single()
+          
+          if (empresaInativa) {
+            setEmpresas([empresaInativa])
+            if (userId) {
+              CacheService.set('empresas', [empresaInativa], userId, 10 * 60 * 1000)
+            }
+            return
+          }
+        }
+      }
+      
       setEmpresas(empresas)
       
       // Salvar no cache (TTL de 10 minutos)
@@ -443,7 +549,8 @@ function GerenciamentoProjetos() {
         status: formData.status,
         cor_identificacao: formData.cor_identificacao,
         horas_estimadas: formData.horas_estimadas ? parseInt(formData.horas_estimadas) : null,
-        prioridade: formData.prioridade
+        prioridade: formData.prioridade,
+        superior_empresa_id: superiorEmpresaId // ✅ Adicionar empresa do usuário
       }
 
       let result

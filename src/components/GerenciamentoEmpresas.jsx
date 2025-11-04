@@ -23,6 +23,7 @@ function GerenciamentoEmpresas() {
   const [showFormModal, setShowFormModal] = useState(false)
   const [editando, setEditando] = useState(false)
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null)
+  const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null)
   const [formData, setFormData] = useState({
     nome: '',
     cnpj: '',
@@ -32,16 +33,52 @@ function GerenciamentoEmpresas() {
   })
 
   useEffect(() => {
-    carregarEmpresas()
+    carregarSuperiorEmpresaId()
   }, [])
+
+  useEffect(() => {
+    if (superiorEmpresaId !== null) {
+      carregarEmpresas()
+    }
+  }, [superiorEmpresaId])
+
+  const carregarSuperiorEmpresaId = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setSuperiorEmpresaId(profile?.superior_empresa_id || null)
+    } catch (error) {
+      setSuperiorEmpresaId(null)
+    }
+  }
 
   const carregarEmpresas = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Filtrar empresas pela superior_empresa_id do usuário logado
+      let query = supabase
         .from('empresas')
         .select('*')
         .order('nome')
+
+      if (superiorEmpresaId) {
+        // Mostrar a empresa principal OU empresas que pertencem a ela
+        // Isso permite ver: 
+        // 1. A própria empresa (id = superiorEmpresaId)
+        // 2. Sub-empresas/filiais (superior_empresa_id = superiorEmpresaId)
+        query = query.or(`id.eq.${superiorEmpresaId},superior_empresa_id.eq.${superiorEmpresaId}`)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       setEmpresas(data || [])
@@ -117,7 +154,7 @@ function GerenciamentoEmpresas() {
         if (error) throw error
         toast.showSuccess('Empresa atualizada com sucesso!')
       } else {
-        // Criar nova empresa
+        // Criar nova empresa vinculada ao superior_empresa_id do usuário
         const { error } = await supabase
           .from('empresas')
           .insert({
@@ -126,6 +163,7 @@ function GerenciamentoEmpresas() {
             endereco: formData.endereco || null,
             telefone: formData.telefone || null,
             email: formData.email || null,
+            superior_empresa_id: superiorEmpresaId, // Vincular à empresa do usuário
             is_active: true
           })
 

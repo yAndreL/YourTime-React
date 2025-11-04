@@ -28,3 +28,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database structure (sensitive info)
+ESTRUTURA_BANCO.md
+estrutura_banco.json

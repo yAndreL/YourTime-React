@@ -95,14 +95,25 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
   const handleLogout = async () => {
     try {
-      // Limpar TUDO do sessionStorage
+      // ✅ LIMPAR TODO O CACHE antes de fazer logout
       sessionStorage.clear()
-      // Fazer logout
+      localStorage.clear()
+      
+      // Limpar cache do navegador (service workers, cache API)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+      
+      // Fazer logout do Supabase
       await supabase.auth.signOut()
-      // Redirecionar
+      
+      // Redirecionar para login
       navigate('/login')
     } catch (error) {
-
+      console.error('Erro ao fazer logout:', error)
+      // Mesmo com erro, redireciona para login
+      navigate('/login')
     }
   }
 

@@ -254,7 +254,30 @@ function FormularioPonto() {
         return
       }
 
-      // ✅ SEGUNDO: Salvar novo registro
+      // ✅ SEGUNDO: Buscar empresa_id e superior_empresa_id do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', usuarioAtual.id)
+        .single()
+
+      if (profileError) {
+        console.warn('Erro ao buscar superior_empresa_id do usuário:', profileError)
+      }
+
+      // ✅ TERCEIRO: Buscar empresa_id do projeto (se houver)
+      let empresaIdDoProjeto = null
+      if (projetoSelecionado?.id) {
+        const { data: projetoData } = await supabase
+          .from('projetos')
+          .select('empresa_id')
+          .eq('id', projetoSelecionado.id)
+          .single()
+        
+        empresaIdDoProjeto = projetoData?.empresa_id || null
+      }
+
+      // ✅ QUARTO: Salvar novo registro COM multitenancy
       const pontoData = {
         user_id: usuarioAtual.id,
         data: formData.data,
@@ -266,10 +289,17 @@ function FormularioPonto() {
         pausa_almoco: calcularPausaAlmoco(),
         pausas_extras: calcularPausasExtras(),
         status: 'P', // P = Pendente, A = Aprovado, R = Rejeitado
-        projeto_id: projetoSelecionado?.id || null
+        projeto_id: projetoSelecionado?.id || null,
+        empresa_id: empresaIdDoProjeto, // ✅ Empresa do projeto
+        superior_empresa_id: profileData?.superior_empresa_id || null // ✅ Empresa do usuário
       }
 
-
+      console.log('📝 Salvando ponto com multitenancy:', {
+        user_id: pontoData.user_id,
+        projeto_id: pontoData.projeto_id,
+        empresa_id: pontoData.empresa_id,
+        superior_empresa_id: pontoData.superior_empresa_id
+      })
 
       const { data, error } = await supabase
         .from('agendamento')

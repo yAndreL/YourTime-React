@@ -9,11 +9,24 @@ class ConfigService {
    */
   static async buscarConfiguracoes(userId) {
     try {
-      const { data, error } = await supabase
+      // Buscar superior_empresa_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
+      let query = supabase
         .from('configuracoes')
         .select('*')
         .eq('user_id', userId)
-        .single()
+
+      // Filtrar por empresa se o usuário tiver superior_empresa_id
+      if (profile?.superior_empresa_id) {
+        query = query.eq('superior_empresa_id', profile.superior_empresa_id)
+      }
+
+      const { data, error } = await query.single()
 
       // Se não existir configuração, criar uma padrão
       if (error && error.code === 'PGRST116') {
@@ -33,6 +46,13 @@ class ConfigService {
    */
   static async criarConfiguracoesPadrao(userId) {
     try {
+      // Buscar superior_empresa_id do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', userId)
+        .single()
+
       const configuracoesPadrao = {
         user_id: userId,
         email_relatorios: true,
@@ -42,7 +62,8 @@ class ConfigService {
         horas_semanais: 40,
         fuso_horario: 'America/Sao_Paulo',
         formato_exportacao: 'PDF',
-        incluir_graficos_pdf: true
+        incluir_graficos_pdf: true,
+        superior_empresa_id: profile?.superior_empresa_id
       }
 
       const { data, error } = await supabase

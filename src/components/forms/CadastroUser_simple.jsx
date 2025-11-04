@@ -19,19 +19,45 @@ function CadastroUser() {
   const [loading, setLoading] = useState(false)
   const [empresas, setEmpresas] = useState([])
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState([])
+  const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null)
   const navigate = useNavigate()
 
-  // Carregar empresas do banco de dados
+  // Carregar empresas do banco de dados (filtradas por superior_empresa_id)
   useEffect(() => {
     const carregarEmpresas = async () => {
-      const { data, error } = await supabase
-        .from('empresas')
-        .select('id, nome, cnpj')
-        .eq('is_active', true)
-        .order('nome')
-      
-      if (!error && data) {
-        setEmpresas(data)
+      try {
+        // Buscar superior_empresa_id do usuário logado
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', user.id)
+          .single()
+
+        const empresaIdFiltro = profile?.superior_empresa_id
+
+        if (!empresaIdFiltro) {
+          console.warn('Usuário sem superior_empresa_id configurado')
+          return
+        }
+
+        setSuperiorEmpresaId(empresaIdFiltro)
+
+        // Carregar empresas: mostra a empresa principal + empresas filhas
+        const { data, error } = await supabase
+          .from('empresas')
+          .select('id, nome, cnpj')
+          .eq('is_active', true)
+          .or(`id.eq.${empresaIdFiltro},superior_empresa_id.eq.${empresaIdFiltro}`)
+          .order('nome')
+        
+        if (!error && data) {
+          setEmpresas(data)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar empresas:', error)
       }
     }
 
@@ -129,7 +155,8 @@ function CadastroUser() {
         departamento: formData.departamento || null,
         carga_horaria: parseInt(formData.carga_horaria),
         role: formData.acesso, // 'admin' ou 'user'
-        is_active: true
+        is_active: true,
+        superior_empresa_id: superiorEmpresaId // ✅ Vincular à mesma empresa do admin
       }
 
       // Usar UPSERT para criar ou atualizar

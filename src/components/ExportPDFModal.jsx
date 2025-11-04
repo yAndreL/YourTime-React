@@ -39,10 +39,22 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         return
       }
 
+      // Buscar o superior_empresa_id do usuário logado
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('superior_empresa_id')
+        .eq('id', user.id)
+        .single()
+
       let query = supabase
         .from('profiles')
-        .select('id, nome, email, cargo, departamento')
+        .select('id, nome, email, cargo, departamento, superior_empresa_id')
         .eq('is_active', true)
+
+      // ✅ FILTRO MULTITENANCY: Mostrar apenas usuários da mesma empresa
+      if (userProfile?.superior_empresa_id) {
+        query = query.eq('superior_empresa_id', userProfile.superior_empresa_id)
+      }
 
       // Se não for admin, filtrar apenas o próprio usuário
       if (!isAdmin) {
@@ -63,7 +75,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         setFuncionariosSelecionados([funcionariosData[0].id])
       }
     } catch (error) {
-
+      console.error('Erro ao carregar funcionários:', error)
     } finally {
       setLoading(false)
     }
@@ -454,8 +466,8 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style={{ margin: 0, padding: '1rem' }}>
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ marginTop: 0, marginBottom: 0 }}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">

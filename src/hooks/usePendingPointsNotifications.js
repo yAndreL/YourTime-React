@@ -34,7 +34,7 @@ export const usePendingPointsNotifications = () => {
           id,
           data,
           user_id,
-          profiles:user_id (
+          profiles!agendamento_user_id_fkey (
             id,
             nome,
             email
@@ -44,13 +44,13 @@ export const usePendingPointsNotifications = () => {
         .order('data', { ascending: false })
 
       if (error) {
-
+        console.error('❌ Erro ao buscar pontos pendentes:', error)
         return []
       }
 
       return pontosPendentes || []
     } catch (error) {
-
+      console.error('❌ Erro na busca de pontos pendentes:', error)
       return []
     }
   }, [])
