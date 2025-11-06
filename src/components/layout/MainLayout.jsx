@@ -59,7 +59,7 @@ function MainLayout({ children, title, subtitle }) {
         <div className="bg-white shadow-sm border-b">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <button
                   onClick={() => setSidebarOpen(true)}
                   className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
@@ -68,40 +68,43 @@ function MainLayout({ children, title, subtitle }) {
                 </button>
                 {title && (
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">
                       {title}
                     </h2>
                     {subtitle && (
-                      <p className="text-sm text-gray-500">{subtitle}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">{subtitle}</p>
                     )}
                   </div>
                 )}
               </div>
 
               {/* Notifications and User Profile */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 {/* Notification Bell */}
                 <NotificationBell />
 
-                {/* User Profile Header */}
+                {/* User Profile Header - Responsivo */}
                 {profile && (
                   <div 
-                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-1 sm:p-2 transition-colors"
                     onClick={() => navigate('/perfil')}
                   >
-                    <div className="text-right">
+                    {/* Nome e Cargo - Oculto em mobile */}
+                    <div className="text-right hidden md:block">
                       <p className="text-sm font-semibold text-gray-900">{profile.nome}</p>
                       <p className="text-xs text-gray-500">{profile.cargo || 'Cargo não definido'}</p>
                     </div>
-                    <div className="relative">
+                    
+                    {/* Avatar - COMPLETAMENTE OCULTO em mobile (< 640px) */}
+                    <div className="relative hidden sm:block">
                       {profile.avatar_url ? (
                         <img
                           src={profile.avatar_url}
                           alt={profile.nome}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-blue-600"
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-blue-600"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-base shadow-md">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm sm:text-base shadow-md">
                           {(() => {
                             if (!profile.nome) return 'YT'
                             const parts = profile.nome.split(' ')
@@ -110,6 +113,16 @@ function MainLayout({ children, title, subtitle }) {
                           })()}
                         </div>
                       )}
+                    </div>
+                    
+                    {/* Nome reduzido apenas em mobile (< 640px) - SEM AVATAR */}
+                    <div className="block sm:hidden">
+                      <p className="text-xs font-semibold text-gray-900 truncate max-w-[70px]">
+                        {profile.nome?.split(' ')[0]}
+                      </p>
+                      <p className="text-[10px] text-gray-500 truncate max-w-[70px]">
+                        {profile.cargo?.substring(0, 10) || 'Usuário'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -120,7 +133,7 @@ function MainLayout({ children, title, subtitle }) {
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
-          <div className="p-6">
+          <div className="p-3 sm:p-6">
             {children}
           </div>
         </main>

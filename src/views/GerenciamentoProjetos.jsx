@@ -837,35 +837,35 @@ function GerenciamentoProjetos() {
       {/* Container Principal */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {/* Estatísticas */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{estatisticas.total}</div>
-              <div className="text-sm text-blue-700 flex items-center justify-center gap-1">
-                <FiBarChart2 className="w-4 h-4" /> Total
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.total}</div>
+              <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
+                <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4" /> Total
               </div>
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{estatisticas.ativos}</div>
-              <div className="text-sm text-green-700 flex items-center justify-center gap-1">
-                <FiCheckCircle className="w-4 h-4" /> Ativos
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{estatisticas.ativos}</div>
+              <div className="text-xs sm:text-sm text-green-700 flex items-center justify-center gap-1">
+                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Ativos
               </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
-              <div className="text-sm text-blue-700 flex items-center justify-center gap-1">
-                <FiCheckCircle className="w-4 h-4" /> Concluídos
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
+              <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
+                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Concluídos
               </div>
             </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">{estatisticas.pausados}</div>
-              <div className="text-sm text-yellow-700 flex items-center justify-center gap-1">
-                <FiCircle className="w-4 h-4" /> Pausados
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{estatisticas.pausados}</div>
+              <div className="text-xs sm:text-sm text-yellow-700 flex items-center justify-center gap-1">
+                <FiCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Pausados
               </div>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-red-600">{estatisticas.cancelados}</div>
-              <div className="text-sm text-red-700 flex items-center justify-center gap-1">
-                <FiXCircle className="w-4 h-4" /> Cancelados
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 text-center col-span-2 sm:col-span-1">
+              <div className="text-xl sm:text-2xl font-bold text-red-600">{estatisticas.cancelados}</div>
+              <div className="text-xs sm:text-sm text-red-700 flex items-center justify-center gap-1">
+                <FiXCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Cancelados
               </div>
             </div>
           </div>
@@ -963,23 +963,23 @@ function GerenciamentoProjetos() {
             </div>
           ) : (
             projetosFiltrados.map(projeto => (
-              <div key={projeto.id} className="bg-white rounded-lg shadow-md border border-gray-300 p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <div key={projeto.id} className="bg-white rounded-lg shadow-md border border-gray-300 p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-3">
+                  <div className="flex-1 w-full">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                       <div
-                        className="w-4 h-4 rounded-full"
+                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: projeto.cor_identificacao }}
                       ></div>
-                      <h3 className="text-xl font-bold text-gray-800">{projeto.nome}</h3>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(projeto.status)}`}>
+                      <h3 className="text-base sm:text-xl font-bold text-gray-800 break-words">{projeto.nome}</h3>
+                      <span className={`px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getStatusColor(projeto.status)}`}>
                         {getStatusText(projeto.status)}
                       </span>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPrioridadeColor(projeto.prioridade)}`}>
+                      <span className={`px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getPrioridadeColor(projeto.prioridade)}`}>
                         {getPrioridadeText(projeto.prioridade)}
                       </span>
                       {isProjetoAtrasado(projeto) && isAdmin && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                        <span className="px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
                           <FiAlertCircle className="w-3 h-3" />
                           Atrasado
                         </span>
@@ -987,21 +987,21 @@ function GerenciamentoProjetos() {
                     </div>
                     
                     {projeto.descricao && (
-                      <p className="text-gray-600 mb-3">{projeto.descricao}</p>
+                      <p className="text-sm sm:text-base text-gray-600 mb-3 line-clamp-2">{projeto.descricao}</p>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Empresa:</span>
-                        <p className="text-gray-600">{projeto.empresas?.nome || '-'}</p>
+                        <p className="text-gray-600 truncate">{projeto.empresas?.nome || '-'}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Responsável:</span>
-                        <p className="text-gray-600">{projeto.profiles?.nome || '-'}</p>
+                        <p className="text-gray-600 truncate">{projeto.profiles?.nome || '-'}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Período:</span>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 text-xs sm:text-sm">
                           {formatDate(projeto.data_inicio)} - {formatDate(projeto.data_fim)}
                         </p>
                       </div>
@@ -1012,7 +1012,7 @@ function GerenciamentoProjetos() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 ml-4 items-start">
+                  <div className="flex gap-2 w-full sm:w-auto sm:ml-4 items-start justify-end">
                     {isProjetoAtrasado(projeto) && !isAdmin && (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
                         <FiAlertCircle className="w-3 h-3" />
@@ -1023,15 +1023,17 @@ function GerenciamentoProjetos() {
                       <>
                         <button
                           onClick={() => openModal(projeto)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1"
+                          className="px-2 sm:px-3 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1"
                         >
-                          <FiEdit2 className="w-4 h-4" /> Editar
+                          <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                          <span className="hidden sm:inline">Editar</span>
                         </button>
                         <button
                           onClick={() => handleDelete(projeto.id)}
-                          className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-1"
+                          className="px-2 sm:px-3 py-1 bg-red-500 text-white text-xs sm:text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-1"
                         >
-                          <FiTrash2 className="w-4 h-4" /> Excluir
+                          <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                          <span className="hidden sm:inline">Excluir</span>
                         </button>
                       </>
                     )}
@@ -1040,7 +1042,7 @@ function GerenciamentoProjetos() {
 
                 {projeto.horas_estimadas && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between text-sm mb-2">
+                    <div className="flex justify-between text-xs sm:text-sm mb-2">
                       <span className="font-medium text-gray-700">Progresso das Horas:</span>
                       <span className="text-gray-600">
                         {projeto.horasTrabalhadas || 0} / {projeto.horas_estimadas}h

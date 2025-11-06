@@ -486,41 +486,41 @@ function PainelAdministrativo() {
           {abaAtiva === 'funcionarios' ? (
             <div>
               {/* Estatísticas Rápidas */}
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="mb-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <FiUsers className="w-8 h-8 text-blue-600" />
+                      <FiUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-blue-800">Funcionários</p>
-                      <p className="text-2xl font-bold text-blue-900">{funcionarios.filter(f => f.is_active !== false).length}</p>
+                    <div className="ml-2 sm:ml-3">
+                      <p className="text-xs sm:text-sm font-medium text-blue-800">Funcionários</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-900">{funcionarios.filter(f => f.is_active !== false).length}</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <FiCheckCircle className="w-8 h-8 text-green-600" />
+                      <FiCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-green-800">Pontos Aprovados</p>
-                      <p className="text-2xl font-bold text-green-900">
+                    <div className="ml-2 sm:ml-3">
+                      <p className="text-xs sm:text-sm font-medium text-green-800 truncate">Aprovados</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-900">
                         {funcionarios.filter(f => f.is_active !== false && f.statusPonto === 'completed').length}
                       </p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <FiClock className="w-8 h-8 text-yellow-600" />
+                      <FiClock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600" />
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-yellow-800">Pontos Pendentes</p>
-                      <p className="text-2xl font-bold text-yellow-900">
+                    <div className="ml-2 sm:ml-3">
+                      <p className="text-xs sm:text-sm font-medium text-yellow-800 truncate">Pendentes</p>
+                      <p className="text-xl sm:text-2xl font-bold text-yellow-900">
                         {totalPontosPendentes}
                       </p>
                    
@@ -528,14 +528,14 @@ function PainelAdministrativo() {
                   </div>
                 </div>
                 
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <FiLock className="w-8 h-8 text-red-600" />
+                      <FiLock className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-red-800">Sem Registro</p>
-                      <p className="text-2xl font-bold text-red-900">
+                    <div className="ml-2 sm:ml-3">
+                      <p className="text-xs sm:text-sm font-medium text-red-800 truncate">Sem Registro</p>
+                      <p className="text-xl sm:text-2xl font-bold text-red-900">
                         {funcionarios.filter(f => f.is_active !== false && !f.pontoHoje).length}
                       </p>
                     </div>

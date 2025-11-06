@@ -126,26 +126,26 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
       </div>
 
       {/* Estatísticas Gerais */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-4 bg-blue-50 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+        <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">
             {horas}h {minutos}m
           </div>
-          <div className="text-sm text-blue-800">Total de Horas</div>
+          <div className="text-xs sm:text-sm text-blue-800">Total de Horas</div>
         </div>
 
-        <div className="text-center p-4 bg-green-50 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">
+        <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+          <div className="text-xl sm:text-2xl font-bold text-green-600">
             {diasTrabalhados}
           </div>
-          <div className="text-sm text-green-800">Dias Trabalhados</div>
+          <div className="text-xs sm:text-sm text-green-800">Dias Trabalhados</div>
         </div>
 
-        <div className="text-center p-4 bg-purple-50 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">
+        <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
+          <div className="text-xl sm:text-2xl font-bold text-purple-600">
             {diasTrabalhados > 0 ? Math.round(totalHoras / diasTrabalhados / 60 * 10) / 10 : 0}h
           </div>
-          <div className="text-sm text-purple-800">Média por Dia</div>
+          <div className="text-xs sm:text-sm text-purple-800">Média por Dia</div>
         </div>
       </div>
 
