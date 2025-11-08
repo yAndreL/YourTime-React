@@ -244,20 +244,17 @@ function GerenciamentoEmpresas() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <FiBriefcase className="w-7 h-7 text-blue-600" />
+          <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+            <FiBriefcase className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-600" />
             Gerenciamento de Empresas
           </h2>
-          <p className="text-gray-600 mt-1">
-            Cadastre e gerencie as empresas vinculadas aos projetos
-          </p>
         </div>
         <button
           onClick={abrirModalNovo}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
         >
-          <FiPlus className="w-5 h-5" />
-          Nova Empresa
+          <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+          Empresa
         </button>
       </div>
 

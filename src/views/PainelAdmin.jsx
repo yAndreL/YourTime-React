@@ -28,7 +28,6 @@ function PainelAdministrativo() {
   const [funcionarios, setFuncionarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [dataSelecionada, setDataSelecionada] = useState('')
-  const [filtroAtivo, setFiltroAtivo] = useState('todos') // todos, ativos, inativos
   const [buscaTexto, setBuscaTexto] = useState('')
   const [abaAtiva, setAbaAtiva] = useState('funcionarios') // 'funcionarios', 'removidos' ou 'empresas'
   const [modalError, setModalError] = useState({ isOpen: false, message: '', code: '' })
@@ -276,12 +275,7 @@ function PainelAdministrativo() {
       (funcionario.role === 'admin' && 'administrador'.includes(buscaTexto.toLowerCase())) ||
       (funcionario.role === 'usuario' && 'usuario'.includes(buscaTexto.toLowerCase()))
 
-    // Filtro por status ativo/inativo
-    const matchStatus = filtroAtivo === 'todos' || 
-      (filtroAtivo === 'ativos' && funcionario.is_active !== false) ||
-      (filtroAtivo === 'inativos' && funcionario.is_active === false)
-
-    return matchTexto && matchStatus
+    return matchTexto
   })
 
   const toggleStatusFuncionario = async (funcionarioId, novoStatus) => {
@@ -447,80 +441,80 @@ function PainelAdministrativo() {
           <nav className="flex -mb-px">
             <button
               onClick={() => setAbaAtiva('funcionarios')}
-              className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 abaAtiva === 'funcionarios'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <FiUsers className="w-5 h-5" />
+              <FiUsers className="w-4 h-4 sm:w-5 sm:h-5" />
               Funcionários
             </button>
             <button
               onClick={() => setAbaAtiva('removidos')}
-              className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 abaAtiva === 'removidos'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <FiLock className="w-5 h-5" />
+              <FiLock className="w-4 h-4 sm:w-5 sm:h-5" />
               Removidos
             </button>
             <button
               onClick={() => setAbaAtiva('empresas')}
-              className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 abaAtiva === 'empresas'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <FiBriefcase className="w-5 h-5" />
+              <FiBriefcase className="w-4 h-4 sm:w-5 sm:h-5" />
               Empresas
             </button>
           </nav>
         </div>
 
         {/* Conteúdo das Abas */}
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           {abaAtiva === 'funcionarios' ? (
             <div>
               {/* Estatísticas Rápidas */}
-              <div className="mb-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center">
+              <div className="mb-6 grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 min-h-[80px] sm:min-h-[90px]">
+                  <div className="flex items-center h-full">
                     <div className="flex-shrink-0">
                       <FiUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                     </div>
-                    <div className="ml-2 sm:ml-3">
-                      <p className="text-xs sm:text-sm font-medium text-blue-800">Funcionários</p>
-                      <p className="text-xl sm:text-2xl font-bold text-blue-900">{funcionarios.filter(f => f.is_active !== false).length}</p>
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-blue-800 truncate">Funcionários</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-900 truncate">{funcionarios.filter(f => f.is_active !== false).length}</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 min-h-[80px] sm:min-h-[90px]">
+                  <div className="flex items-center h-full">
                     <div className="flex-shrink-0">
                       <FiCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                     </div>
-                    <div className="ml-2 sm:ml-3">
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-medium text-green-800 truncate">Aprovados</p>
-                      <p className="text-xl sm:text-2xl font-bold text-green-900">
+                      <p className="text-xl sm:text-2xl font-bold text-green-900 truncate">
                         {funcionarios.filter(f => f.is_active !== false && f.statusPonto === 'completed').length}
                       </p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 min-h-[80px] sm:min-h-[90px]">
+                  <div className="flex items-center h-full">
                     <div className="flex-shrink-0">
                       <FiClock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600" />
                     </div>
-                    <div className="ml-2 sm:ml-3">
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-medium text-yellow-800 truncate">Pendentes</p>
-                      <p className="text-xl sm:text-2xl font-bold text-yellow-900">
+                      <p className="text-xl sm:text-2xl font-bold text-yellow-900 truncate">
                         {totalPontosPendentes}
                       </p>
                    
@@ -528,14 +522,14 @@ function PainelAdministrativo() {
                   </div>
                 </div>
                 
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-                  <div className="flex items-center">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 min-h-[80px] sm:min-h-[90px]">
+                  <div className="flex items-center h-full">
                     <div className="flex-shrink-0">
                       <FiLock className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
                     </div>
-                    <div className="ml-2 sm:ml-3">
+                    <div className="ml-2 sm:ml-3 flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-medium text-red-800 truncate">Sem Registro</p>
-                      <p className="text-xl sm:text-2xl font-bold text-red-900">
+                      <p className="text-xl sm:text-2xl font-bold text-red-900 truncate">
                         {funcionarios.filter(f => f.is_active !== false && !f.pontoHoje).length}
                       </p>
                     </div>
@@ -605,41 +599,27 @@ function PainelAdministrativo() {
               )}
 
               {/* Filtros e Busca */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                  <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="mb-4 sm:mb-6 p-2 sm:p-3 lg:p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-col lg:flex-row gap-2 sm:gap-3 compact:gap-1 items-stretch lg:items-center justify-between">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 compact:gap-1 items-stretch sm:items-center">
                     {/* Busca por texto */}
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium text-gray-700">Buscar:</label>
+                    <div className="flex items-center gap-1 sm:gap-2 compact:gap-1">
+                      <label className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-700 whitespace-nowrap">Buscar:</label>
                       <input
                         type="text"
                         value={buscaTexto}
                         onChange={(e) => setBuscaTexto(e.target.value)}
-                        placeholder="Nome, email, departamento ou telefone..."
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nome, email..."
+                        className="w-full sm:w-40 md:w-48 lg:w-56 xl:w-64 px-1.5 sm:px-2 lg:px-3 py-1 sm:py-1.5 lg:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-[11px] sm:text-xs lg:text-sm"
                       />
                     </div>
 
-                    {/* Filtro por status */}
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium text-gray-700">Status:</label>
-                      <select
-                        value={filtroAtivo}
-                        onChange={(e) => setFiltroAtivo(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="todos">Todos</option>
-                        <option value="ativos">Somente Ativos</option>
-                        <option value="inativos">Somente Inativos</option>
-                      </select>
-                    </div>
-
                     {/* Data para pontos */}
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <div className="flex items-center gap-1 sm:gap-2 compact:gap-1">
+                      <label className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-700 flex items-center gap-1 whitespace-nowrap">
                         Data:
                         {diasComPontosPendentes.length > 0 && !diasComPontosPendentes.includes(dataSelecionada) && (
-                          <span className="inline-flex items-center justify-center w-5 h-5 bg-yellow-400 text-yellow-900 rounded-full text-xs font-bold" title="Há pontos pendentes em outras datas">
+                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-yellow-400 text-yellow-900 rounded-full text-[9px] sm:text-xs font-bold" title="Há pontos pendentes em outras datas">
                             {diasComPontosPendentes.length}
                           </span>
                         )}
@@ -648,69 +628,57 @@ function PainelAdministrativo() {
                         type="date"
                         value={dataSelecionada}
                         onChange={(e) => setDataSelecionada(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full sm:w-auto px-1.5 sm:px-2 lg:px-3 py-1 sm:py-1.5 lg:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-[11px] sm:text-xs lg:text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate('/cadastro')}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
-                    >
-                      <FiPlus className="w-5 h-5" /> Cadastrar Novo Funcionário
-                    </button>
-                    <button
-                      onClick={carregarFuncionarios}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <FiRefreshCw className="w-5 h-5" /> Atualizar
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => navigate('/cadastro')}
+                    className="w-full sm:w-auto px-2 sm:px-3 lg:px-4 compact:px-3 py-1 sm:py-1.5 lg:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 compact:gap-1 text-[10px] sm:text-xs lg:text-sm whitespace-nowrap"
+                  >
+                    <FiPlus className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                    <span className="hidden md:inline">Funcionário</span>
+                    <span className="inline md:hidden">Novo</span>
+                  </button>
                 </div>
               </div>
 
               {/* Tabela de Funcionários */}
-              <div className="overflow-x-auto mt-6">
+              <div className="overflow-x-auto mt-6 -mx-3 sm:-mx-4 lg:mx-0">
                 {loading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-2 text-gray-600">Carregando funcionários...</p>
                   </div>
                 ) : (
-                  <table className="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                        <th className="px-0 sm:px-1 lg:px-2 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider w-6 sm:w-8 lg:w-10">
                           
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Funcionário
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nome
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status Conta
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ponto
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status Ponto Hoje
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Admissão
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cargo / Departamento
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Horas
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data Admissão
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Horas Trabalhadas
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações Ponto
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ações
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {funcionariosFiltrados.length === 0 ? (
                         <tr>
-                          <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                          <td colSpan="7" className="px-1 sm:px-2 md:px-4 lg:px-6 py-4 text-center text-gray-500 text-[9px] sm:text-[10px] md:text-xs lg:text-sm">
                             {buscaTexto ? 'Nenhum funcionário encontrado com os filtros aplicados' : 'Nenhum funcionário cadastrado'}
                           </td>
                         </tr>
@@ -718,13 +686,13 @@ function PainelAdministrativo() {
                         funcionariosFiltrados.map((funcionario) => (
                           <tr key={funcionario.id} className="hover:bg-gray-50">
                             {/* Menu de 3 pontos */}
-                            <td className="px-2 py-4 whitespace-nowrap relative">
+                            <td className="px-0 sm:px-1 lg:px-2 py-2 sm:py-3 lg:py-4 whitespace-nowrap relative">
                               <button
                                 onClick={() => setMenuAberto(menuAberto === funcionario.id ? null : funcionario.id)}
-                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                className="p-0.5 sm:p-1 hover:bg-gray-100 rounded transition-colors"
                                 title="Opções"
                               >
-                                <FiMoreVertical className="w-5 h-5 text-gray-600" />
+                                <FiMoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-600" />
                               </button>
                               
                               {/* Dropdown Menu */}
@@ -759,89 +727,66 @@ function PainelAdministrativo() {
                                 </>
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{funcionario.nome || 'Nome não informado'}</div>
-                                <div className="text-sm text-gray-500">{funcionario.email}</div>
-                                <div className="text-xs text-gray-400">{funcionario.telefone}</div>
+                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900">{funcionario.nome || 'Nome não informado'}</div>
+                                <div className="hidden sm:block text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500">{funcionario.email}</div>
+                                <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400">{funcionario.telefone}</div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${
-                                funcionario.is_active !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {funcionario.is_active !== false ? (
-                                  <>
-                                    <FiCheckCircle className="w-3 h-3" /> Ativo
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiXCircle className="w-3 h-3" /> Inativo
-                                  </>
-                                )}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(funcionario.statusPonto)}`}>
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 text-[8px] sm:text-[9px] md:text-xs font-semibold rounded-full ${getStatusColor(funcionario.statusPonto)}`}>
                                 {getStatusText(funcionario.statusPonto)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {funcionario.cargo || 'Sem cargo'}
-                                </div>
-                                <div className="text-xs text-gray-500">{funcionario.departamento || 'Sem departamento'}</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-900">
                               {formatarData(funcionario.created_at)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-900 font-medium">
                               {calcularHorasTrabalhadas(funcionario.pontoHoje)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium">
                               {funcionario.pontoHoje ? (
                                 <div className="flex items-center gap-2">
                                   {funcionario.statusPonto === 'pending' && (
                                     <>
                                       <button 
                                         onClick={() => aprovarPonto(funcionario.id, funcionario.pontoHoje.id)}
-                                        className="text-green-600 hover:text-green-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                                        className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 transition-colors text-[9px] sm:text-[10px] md:text-xs"
                                         title="Aprovar ponto"
                                       >
-                                        <FiCheck className="w-4 h-4" /> Aprovar
+                                        <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">Aprovar</span>
                                       </button>
                                       <button 
                                         onClick={() => desaprovarPonto(funcionario.id, funcionario.pontoHoje.id)}
-                                        className="text-red-600 hover:text-red-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                        className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 transition-colors text-[9px] sm:text-[10px] md:text-xs"
                                         title="Desaprovar ponto"
                                       >
-                                        <FiXCircle className="w-4 h-4" /> Desaprovar
+                                        <FiXCircle className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">Desaprovar</span>
                                       </button>
                                     </>
                                   )}
                                   {funcionario.statusPonto === 'completed' && (
                                     <button 
                                       onClick={() => desaprovarPonto(funcionario.id, funcionario.pontoHoje.id)}
-                                      className="text-red-600 hover:text-red-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                      className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 transition-colors text-[9px] sm:text-[10px] md:text-xs"
                                       title="Desaprovar ponto"
                                     >
-                                      <FiXCircle className="w-4 h-4" /> Desaprovar
+                                      <FiXCircle className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">Desaprovar</span>
                                     </button>
                                   )}
                                   {funcionario.statusPonto === 'rejected' && (
                                     <button 
                                       onClick={() => aprovarPonto(funcionario.id, funcionario.pontoHoje.id)}
-                                      className="text-green-600 hover:text-green-900 inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                                      className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 transition-colors text-[9px] sm:text-[10px] md:text-xs"
                                       title="Aprovar ponto"
                                     >
-                                      <FiCheck className="w-4 h-4" /> Aprovar
+                                      <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">Aprovar</span>
                                     </button>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-gray-400 text-xs">Sem ponto</span>
+                                <span className="text-gray-400 text-[9px] sm:text-[10px] md:text-xs">Sem ponto</span>
                               )}
                             </td>
                           </tr>
@@ -855,9 +800,7 @@ function PainelAdministrativo() {
           ) : abaAtiva === 'removidos' ? (
             <div>
               {/* Lista de Funcionários Removidos */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Removidos</h3>
-              </div>
+             
 
               <div className="overflow-x-auto">
                 {loading ? (
@@ -869,41 +812,41 @@ function PainelAdministrativo() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Ações
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Funcionário
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nome
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cargo / Departamento
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Função
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data Cadastro
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Admissão
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data Remoção
+                        <th className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-1.5 sm:py-2 lg:py-3 text-left text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Remoção
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {funcionarios.filter(f => f.is_active === false).length === 0 ? (
                         <tr>
-                          <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                          <td colSpan="5" className="px-0.5 sm:px-2 md:px-4 lg:px-6 py-12 text-center text-gray-500 text-[9px] sm:text-[10px] md:text-xs lg:text-sm">
                             Nenhum funcionário removido
                           </td>
                         </tr>
                       ) : (
                         funcionarios.filter(f => f.is_active === false).map((funcionario) => (
                           <tr key={funcionario.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div className="relative">
                                 <button
                                   onClick={() => setMenuAberto(menuAberto === funcionario.id ? null : funcionario.id)}
-                                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                  className="p-1 sm:p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors"
                                   title="Opções"
                                 >
-                                  <FiMoreVertical className="w-5 h-5 text-gray-600" />
+                                  <FiMoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-gray-600" />
                                 </button>
 
                                 {menuAberto === funcionario.id && (
@@ -919,9 +862,9 @@ function PainelAdministrativo() {
                                             reativarFuncionario(funcionario.id)
                                             setMenuAberto(null)
                                           }}
-                                          className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                                          className="w-full px-4 py-2 text-left text-xs sm:text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
                                         >
-                                          <FiRefreshCw className="w-4 h-4" /> Reativar Funcionário
+                                          <FiRefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Reativar Funcionário
                                         </button>
                                       </div>
                                     </div>
@@ -929,25 +872,33 @@ function PainelAdministrativo() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{funcionario.nome || 'Nome não informado'}</div>
-                                <div className="text-sm text-gray-500">{funcionario.email}</div>
-                                <div className="text-xs text-gray-400">{funcionario.telefone}</div>
+                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900">{funcionario.nome || 'Nome não informado'}</div>
+                                <div className="hidden sm:block text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500">{funcionario.email}</div>
+                                <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400">{funcionario.telefone}</div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {funcionario.cargo || 'Sem cargo'}
-                                </div>
-                                <div className="text-xs text-gray-500">{funcionario.departamento || 'Sem departamento'}</div>
+                                {!funcionario.cargo && !funcionario.departamento ? (
+                                  <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-400">---</div>
+                                ) : (
+                                  <>
+                                    <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900">
+                                      {funcionario.cargo || '---'}
+                                    </div>
+                                    {funcionario.departamento && (
+                                      <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-500">{funcionario.departamento}</div>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-900">
                               {formatarData(funcionario.created_at)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-900">
                               {formatarData(funcionario.updated_at)}
                             </td>
                           </tr>

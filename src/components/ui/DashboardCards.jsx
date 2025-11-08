@@ -10,12 +10,12 @@ function DashboardCards({
   isWorking = true 
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
       {/* Card Saldo de Horas */}
       <DashboardCard 
         title="Saldo de Horas"
         value={saldoHoras}
-        iconElement={<FiClock className="w-6 h-6 text-green-600" />}
+        iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />}
         bgColor="bg-green-100"
         textColor="text-green-600"
         valueColor="text-green-600"
@@ -25,7 +25,7 @@ function DashboardCards({
       <DashboardCard 
         title="Horas Aprovadas"
         value={horasHoje}
-        iconElement={<FiClock className="w-6 h-6 text-blue-600" />}
+        iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />}
         bgColor="bg-blue-100"
         textColor="text-blue-600"
         valueColor="text-blue-600"
@@ -35,7 +35,7 @@ function DashboardCards({
       <DashboardCard 
         title="Horas Pendentes"
         value={horasPendentes}
-        iconElement={<FiClock className="w-6 h-6 text-yellow-600" />}
+        iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />}
         bgColor="bg-yellow-100"
         textColor="text-yellow-600"
         valueColor="text-yellow-600"
@@ -45,7 +45,7 @@ function DashboardCards({
       <DashboardCard 
         title="Projeto Atual"
         value={projetoAtual}
-        iconElement={<FiBriefcase className="w-6 h-6 text-purple-600" />}
+        iconElement={<FiBriefcase className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />}
         bgColor="bg-purple-100"
         textColor="text-purple-600"
         valueColor="text-gray-900"

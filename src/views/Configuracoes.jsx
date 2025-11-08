@@ -326,7 +326,7 @@ function Configuracoes() {
           </div>
 
           {/* Botões de Ação */}
-          <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
+          <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4 justify-center">
             <button 
               onClick={handleSalvar}
               disabled={isSaving}
@@ -339,7 +339,6 @@ function Configuracoes() {
                 </>
               ) : (
                 <>
-                  <FiSave className="w-5 h-5" />
                   Salvar
                 </>
               )}
@@ -347,9 +346,8 @@ function Configuracoes() {
             <button 
               onClick={() => setShowConfirmModal(true)}
               disabled={isSaving}
-              className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
+              className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg transition-colors"
             >
-              <FiRotateCcw className="w-5 h-5" />
               Restaurar Padrões
             </button>
           </div>

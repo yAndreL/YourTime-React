@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'compact': '1380px',
+      },
       keyframes: {
         shimmer: {
           '0%': {
