@@ -26,18 +26,12 @@ function EsqueciSenha() {
       // Gerar código de 6 dígitos
       const codigo = gerarCodigo()
 
+      console.log('📧 Tentando enviar email para:', emailFormatado)
+      console.log('🔐 Código gerado:', codigo)
+
       // Enviar email com o código
-      try {
-        await enviarCodigoRecuperacao(emailFormatado, codigo)
-      } catch (emailError) {
-        // Em desenvolvimento, continua mesmo com erro de CORS
-        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        if (!isDev) {
-          setErro('Erro ao enviar email. Tente novamente mais tarde.')
-          setLoading(false)
-          return
-        }
-      }
+      const resultado = await enviarCodigoRecuperacao(emailFormatado, codigo)
+      console.log('✅ Resultado do envio:', resultado)
 
       // Redirecionar para tela de verificação de código
       navigate('/verificar-codigo', { 
@@ -48,7 +42,8 @@ function EsqueciSenha() {
         } 
       })
     } catch (error) {
-      setErro('Ocorreu um erro inesperado. Tente novamente.')
+      console.error('❌ Erro ao enviar email:', error)
+      setErro('Erro ao enviar email. Tente novamente mais tarde.')
     } finally {
       setLoading(false)
     }
