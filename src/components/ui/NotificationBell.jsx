@@ -159,7 +159,7 @@ function NotificationBell() {
       sistema: FiInfo
     }
     const IconComponent = IconMap[tipo] || FiBell
-    return <IconComponent className="w-5 h-5" />
+    return <IconComponent className="w-5 h-5 max-[620px]:w-4 max-[620px]:h-4" />
   }
 
   const getCorNotificacao = (tipo) => {
@@ -228,14 +228,14 @@ function NotificationBell() {
 
       {/* Dropdown de Notificações */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-96 max-[620px]:w-[min(calc(100vw-1rem),250px)] max-[620px]:right-0 max-[620px]:mr-0.5 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-lg">
-            <h3 className="text-lg font-semibold text-gray-900">Notificações</h3>
+          <div className="px-3 max-[620px]:px-1.5 py-3 max-[620px]:py-2 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-lg gap-2">
+            <h3 className="text-base max-[620px]:text-xs font-semibold text-gray-900 flex-shrink-0">Notificações</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarcarTodasComoLidas}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="text-[10px] max-[620px]:text-[8px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap flex-shrink-0"
               >
                 Marcar todas como lidas
               </button>
@@ -250,36 +250,36 @@ function NotificationBell() {
                 <p className="mt-2 text-sm">Carregando...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-8 max-[620px]:p-4 text-center text-gray-500">
+                <svg className="w-16 h-16 max-[620px]:w-12 max-[620px]:h-12 mx-auto mb-4 max-[620px]:mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="text-sm">Nenhuma notificação</p>
+                <p className="text-sm max-[620px]:text-xs">Nenhuma notificação</p>
               </div>
             ) : (
               notifications.map((notificacao) => (
                   <div
                   key={notificacao.id}
                   onClick={() => handleNotificacaoClick(notificacao)}
-                  className={`px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  className={`px-4 max-[620px]:px-2 py-3 max-[620px]:py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
                     !notificacao.lida ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 max-[620px]:gap-2">
                     {/* Ícone */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center border ${getCorNotificacao(notificacao.tipo)}`}>
+                    <div className={`flex-shrink-0 w-10 h-10 max-[620px]:w-8 max-[620px]:h-8 rounded-full flex items-center justify-center border ${getCorNotificacao(notificacao.tipo)}`}>
                       {getIconeNotificacao(notificacao.tipo)}
                     </div>                    {/* Conteúdo */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium text-gray-900 ${!notificacao.lida ? 'font-semibold' : ''}`}>
+                        <p className={`text-sm max-[620px]:text-xs font-medium text-gray-900 ${!notificacao.lida ? 'font-semibold' : ''}`}>
                           {notificacao.titulo}
                         </p>
                         {!notificacao.lida && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm max-[620px]:text-xs text-gray-600 mt-1">
                         {notificacao.tipo === 'aprovacao_pendente' && notificacao.metadata?.funcionario ? (
                           <>
                             <span className="font-semibold text-gray-900">{notificacao.metadata.funcionario}</span> {notificacao.mensagem}
@@ -289,9 +289,9 @@ function NotificationBell() {
                         )}
                       </p>
                       {notificacao.metadata?.data_formatada && (
-                        <p className="text-xs text-gray-500 mt-1">Data: {notificacao.metadata.data_formatada}</p>
+                        <p className="text-xs max-[620px]:text-[10px] text-gray-500 mt-1">Data: {notificacao.metadata.data_formatada}</p>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">{formatarTempo(notificacao.created_at)}</p>
+                      <p className="text-xs max-[620px]:text-[10px] text-gray-400 mt-1">{formatarTempo(notificacao.created_at)}</p>
                     </div>
 
                     {/* Ações */}

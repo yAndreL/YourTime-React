@@ -105,8 +105,6 @@ function PainelAdministrativo() {
         return
       }
 
-      console.log('🔍 Buscando pontos pendentes para superior_empresa_id:', superiorEmpresaId)
-
       // Buscar pontos pendentes apenas da empresa do usuário logado
       const { data: agendamentos, error } = await supabase
         .from('agendamento')
@@ -116,8 +114,6 @@ function PainelAdministrativo() {
         .order('data', { ascending: false })
 
       if (error) throw error
-
-      console.log('📊 Pontos pendentes encontrados:', agendamentos?.length || 0, agendamentos)
 
       if (agendamentos && agendamentos.length > 0) {
         const datasUnicas = [...new Set(agendamentos.map(item => item.data))]

@@ -20,9 +20,6 @@ export const enviarCodigoRecuperacao = async (email, codigo) => {
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     
     if (isDev) {
-      console.log('🔧 MODO DEV - Email simulado')
-      console.log('📧 Para:', email)
-      console.log('🔐 Código:', codigo)
       // Simular delay de rede
       await new Promise(resolve => setTimeout(resolve, 500))
       return { success: true, dev: true, codigo }
@@ -34,20 +31,15 @@ export const enviarCodigoRecuperacao = async (email, codigo) => {
     })
 
     if (error) {
-      console.error('❌ Erro da Edge Function:', error)
-      console.error('📋 Detalhes:', JSON.stringify(error, null, 2))
       throw new Error(error.message || 'Erro ao enviar email')
     }
 
     if (data?.error) {
-      console.error('❌ Erro retornado pela função:', data.error)
       throw new Error(data.error)
     }
 
-    console.log('✅ Email enviado com sucesso:', data)
     return { success: true, data }
   } catch (error) {
-    console.error('Erro ao enviar email:', error)
     throw error
   }
 }
