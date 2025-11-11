@@ -156,8 +156,8 @@ O **YourTime** é uma solução moderna e completa para empresas que precisam:
 - **Estilização**: Tailwind CSS
 - **Ícones**: React Icons (Feather Icons)
 - **Roteamento**: React Router DOM
-- **Relatórios**: jsPDF, autoTable, xlsxwriter (Python)
-- **Email**: Resend API
+- **Relatórios**: jsPDF, autoTable
+- **Email**: Resend API (via Supabase Edge Functions)
 
 ---
 
