@@ -18,10 +18,15 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { email, codigo } = await req.json() as EmailRequest
+    console.log('📨 Recebendo requisição de envio de email')
+    
+    const body = await req.json() as EmailRequest
+    console.log('📋 Body recebido:', { email: body.email, codigoLength: body.codigo?.length })
+    
+    const { email, codigo } = body
 
     if (!email || !codigo) {
-      console.error('Email ou código faltando:', { email: !!email, codigo: !!codigo })
+      console.error('❌ Email ou código faltando:', { email: !!email, codigo: !!codigo })
       return new Response(
         JSON.stringify({ error: 'Email e código são obrigatórios' }),
         { 
@@ -34,6 +39,7 @@ serve(async (req: Request) => {
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
+      console.error('❌ Email inválido:', email)
       return new Response(
         JSON.stringify({ error: 'Email inválido' }),
         { 
@@ -46,10 +52,12 @@ serve(async (req: Request) => {
     // Get Resend API Key from environment (configurado no Supabase)
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY não configurada no Supabase')
+      console.error('❌ RESEND_API_KEY não configurada no Supabase')
       throw new Error('Configuração de email não disponível')
     }
 
+    console.log('📤 Enviando email via Resend API para:', email)
+    
     // Send email using Resend API
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -66,12 +74,14 @@ serve(async (req: Request) => {
     })
 
     const resendData = await resendResponse.json()
+    console.log('📬 Resposta do Resend:', { ok: resendResponse.ok, status: resendResponse.status, data: resendData })
 
     if (!resendResponse.ok) {
-      console.error('Erro do Resend:', resendData)
+      console.error('❌ Erro do Resend:', resendData)
       throw new Error(resendData.message || 'Erro ao enviar email')
     }
 
+    console.log('✅ Email enviado com sucesso!')
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -85,12 +95,13 @@ serve(async (req: Request) => {
     )
 
   } catch (error) {
-    console.error('Erro na Edge Function:', error)
+    console.error('❌ Erro na Edge Function:', error)
+    console.error('❌ Stack:', error instanceof Error ? error.stack : 'N/A')
     const errorMessage = error instanceof Error ? error.message : 'Erro ao enviar email'
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        details: error 
+        details: error instanceof Error ? error.stack : String(error)
       }),
       { 
         status: 500, 
