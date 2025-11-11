@@ -683,17 +683,30 @@ function GerenciamentoProjetos() {
 
   const handleDelete = async (projetoId) => {
     showConfirm(
-      'Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.',
+      'Tem certeza que deseja excluir este projeto? Todos os agendamentos vinculados a ele também serão excluídos. Esta ação não pode ser desfeita.',
       async () => {
         try {
           setLoading(true)
           
-          const { error } = await supabase
+          // Primeiro, excluir todos os agendamentos vinculados a este projeto
+          const { error: agendamentoError } = await supabase
+            .from('agendamento')
+            .delete()
+            .eq('projeto_id', projetoId)
+
+          if (agendamentoError) {
+            throw new Error('Erro ao excluir agendamentos do projeto: ' + agendamentoError.message)
+          }
+
+          // Depois, excluir o projeto
+          const { error: projetoError } = await supabase
             .from('projetos')
             .delete()
             .eq('id', projetoId)
 
-          if (error) throw error
+          if (projetoError) {
+            throw new Error('Erro ao excluir projeto: ' + projetoError.message)
+          }
 
           // Invalidar cache e recarregar
           const { data: { user } } = await supabase.auth.getUser()
@@ -702,9 +715,9 @@ function GerenciamentoProjetos() {
           }
 
           await carregarProjetos(user?.id, false)
-          showSuccess('Projeto excluído com sucesso!')
+          showSuccess('Projeto e agendamentos vinculados excluídos com sucesso!')
         } catch (error) {
-          showError('Erro ao excluir projeto: ' + error.message)
+          showError(error.message || 'Erro ao excluir projeto')
         } finally {
           setLoading(false)
         }

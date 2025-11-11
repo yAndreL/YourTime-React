@@ -22,16 +22,10 @@ function EsqueciSenha() {
 
     try {
       const emailFormatado = email.trim().toLowerCase()
-      
-      // Gerar código de 6 dígitos
       const codigo = gerarCodigo()
 
-      console.log('📧 Tentando enviar email para:', emailFormatado)
-      console.log('🔐 Código gerado:', codigo)
-
       // Enviar email com o código
-      const resultado = await enviarCodigoRecuperacao(emailFormatado, codigo)
-      console.log('✅ Resultado do envio:', resultado)
+      await enviarCodigoRecuperacao(emailFormatado, codigo)
 
       // Redirecionar para tela de verificação de código
       navigate('/verificar-codigo', { 
@@ -42,7 +36,7 @@ function EsqueciSenha() {
         } 
       })
     } catch (error) {
-      console.error('❌ Erro ao enviar email:', error)
+      console.error('Erro ao enviar email:', error)
       setErro('Erro ao enviar email. Tente novamente mais tarde.')
     } finally {
       setLoading(false)

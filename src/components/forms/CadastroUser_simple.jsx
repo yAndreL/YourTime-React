@@ -20,6 +20,10 @@ function CadastroUser() {
   const [empresas, setEmpresas] = useState([])
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState([])
   const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null)
+  const [emailError, setEmailError] = useState('')
+  const [telefoneError, setTelefoneError] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [telefoneTouched, setTelefoneTouched] = useState(false)
   const navigate = useNavigate()
 
   // Carregar empresas do banco de dados (filtradas por superior_empresa_id)
@@ -88,6 +92,11 @@ function CadastroUser() {
         ...prev,
         [name]: formatted
       }))
+      
+      // Validar telefone ao digitar (se campo foi tocado)
+      if (telefoneTouched) {
+        validarTelefone(formatted)
+      }
       return
     }
     
@@ -95,6 +104,82 @@ function CadastroUser() {
       ...prev,
       [name]: value
     }))
+  }
+
+  // Validar formato de email
+  const validarFormatoEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  // Verificar se email já existe no banco
+  const verificarEmailExistente = async (email) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle()
+      
+      if (error) throw error
+      return data !== null
+    } catch (error) {
+      console.error('Erro ao verificar email:', error)
+      return false
+    }
+  }
+
+  // Validar email completo
+  const validarEmail = async (email) => {
+    if (!email) {
+      setEmailError('')
+      return true
+    }
+
+    if (!validarFormatoEmail(email)) {
+      setEmailError('email inválido')
+      return false
+    }
+
+    const emailExiste = await verificarEmailExistente(email)
+    if (emailExiste) {
+      setEmailError('email já em uso')
+      return false
+    }
+
+    setEmailError('')
+    return true
+  }
+
+  // Validar telefone
+  const validarTelefone = (telefone) => {
+    if (!telefone) {
+      setTelefoneError('')
+      return true
+    }
+
+    const cleaned = telefone.replace(/\D/g, '')
+    
+    // Telefone deve ter 11 dígitos e o terceiro dígito deve ser 9
+    if (cleaned.length !== 11 || cleaned.charAt(2) !== '9') {
+      setTelefoneError('telefone inválido')
+      return false
+    }
+
+    setTelefoneError('')
+    return true
+  }
+
+  // Handler para quando o campo de email perde o foco
+  const handleEmailBlur = async () => {
+    setEmailTouched(true)
+    await validarEmail(formData.email)
+  }
+
+  // Handler para quando o campo de telefone perde o foco
+  const handleTelefoneBlur = () => {
+    setTelefoneTouched(true)
+    validarTelefone(formData.telefone)
   }
 
   const handleToggleEmpresa = (empresaId) => {
@@ -135,11 +220,19 @@ function CadastroUser() {
         return
       }
 
+      // Validar email antes de submeter
+      const emailValido = await validarEmail(formData.email)
+      if (!emailValido) {
+        showError('Corrija os erros no formulário antes de continuar')
+        setLoading(false)
+        return
+      }
+
       // Validar telefone se preenchido
       if (formData.telefone) {
-        const cleaned = formData.telefone.replace(/\D/g, '')
-        if (cleaned.length !== 11 || cleaned.charAt(2) !== '9') {
-          showError('Telefone inválido. Use o formato: (XX) 9XXXX-XXXX')
+        const telefoneValido = validarTelefone(formData.telefone)
+        if (!telefoneValido) {
+          showError('Corrija os erros no formulário antes de continuar')
           setLoading(false)
           return
         }
@@ -267,100 +360,116 @@ function CadastroUser() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 py-4 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8 flex items-center justify-center gap-3">
-            <FiUser className="w-8 h-8" />
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
+            <FiUser className="w-6 h-6" />
             Cadastro de Funcionário
           </h1>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Informações Pessoais */}
-            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-              <h2 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
-                <FiUser className="w-5 h-5" />
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h2 className="text-base font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                <FiUser className="w-4 h-4" />
                 Informações Pessoais
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nome Completo
                   </label>
                   <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="text"
                       name="nome"
                       value={formData.nome}
                       onChange={handleChange}
                       required
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="Nome completo do funcionário"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
                   <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      onBlur={handleEmailBlur}
                       required
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full pl-9 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 text-sm ${
+                        emailError 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
                       placeholder="funcionario@empresa.com"
                     />
                   </div>
+                  {emailError && (
+                    <p className="text-xs text-red-600 mt-1">{emailError}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Telefone
                   </label>
                   <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="tel"
                       name="telefone"
                       value={formData.telefone}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onBlur={handleTelefoneBlur}
+                      className={`w-full pl-9 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 text-sm ${
+                        telefoneError 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
                       placeholder="(11) 99999-9999"
                       maxLength="15"
                     />
                   </div>
+                  {telefoneError && (
+                    <p className="text-xs text-red-600 mt-1">{telefoneError}</p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Informações Profissionais */}
-            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-              <h2 className="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
-                <FiBriefcase className="w-5 h-5" />
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h2 className="text-base font-semibold text-green-800 mb-3 flex items-center gap-2">
+                <FiBriefcase className="w-4 h-4" />
                 Informações Profissionais
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Empresas <span className="text-red-500">*</span>
                   </label>
-                  <div className="bg-white border border-gray-300 rounded-md p-4 max-h-48 overflow-y-auto">
+                  <div className="bg-white border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                     {empresas.length === 0 ? (
-                      <p className="text-sm text-gray-500 text-center py-4">
+                      <p className="text-sm text-gray-500 text-center py-3">
                         Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.
                       </p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {empresas.map((empresa) => (
                           <label
                             key={empresa.id}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors"
+                            className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors"
                           >
                             <input
                               type="checkbox"
@@ -375,14 +484,14 @@ function CadastroUser() {
                               )}
                             </div>
                             {empresasSelecionadas.includes(empresa.id) && (
-                              <FiCheck className="w-5 h-5 text-green-600" />
+                              <FiCheck className="w-4 h-4 text-green-600" />
                             )}
                           </label>
                         ))}
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 mt-1.5">
                     {empresasSelecionadas.length === 0 
                       ? 'Selecione uma ou mais empresas para vincular este funcionário'
                       : `${empresasSelecionadas.length} empresa(s) selecionada(s)`}
@@ -390,14 +499,14 @@ function CadastroUser() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Departamento (opcional)
                   </label>
                   <select
                     name="departamento"
                     value={formData.departamento}
                     onChange={handleChange}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="">Selecione o departamento</option>
                     <option value="Tecnologia">Tecnologia</option>
@@ -413,11 +522,11 @@ function CadastroUser() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Carga Horária Semanal
                   </label>
                   <div className="relative">
-                    <FiClock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiClock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="number"
                       name="carga_horaria"
@@ -426,24 +535,24 @@ function CadastroUser() {
                       min="20"
                       max="60"
                       required
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="40"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Horas por semana (padrão: 40h)</p>
+                  <p className="text-xs text-gray-500 mt-1">Horas/semana (padrão: 40h)</p>
                 </div>
               </div>
             </div>
 
             {/* Informações de Acesso */}
-            <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-              <h2 className="text-lg font-semibold text-yellow-800 mb-4 flex items-center gap-2">
-                <FiLock className="w-5 h-5" />
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h2 className="text-base font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                <FiLock className="w-4 h-4" />
                 Informações de Acesso
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nível de Acesso <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -451,7 +560,7 @@ function CadastroUser() {
                     value={formData.acesso}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <option value="user">Usuário</option>
                     <option value="admin">Administrador</option>
@@ -459,11 +568,11 @@ function CadastroUser() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Senha <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="password"
                       name="senha"
@@ -471,25 +580,25 @@ function CadastroUser() {
                       onChange={handleChange}
                       required
                       minLength={6}
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="Mínimo 6 caracteres"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Confirmar Senha <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="password"
                       name="confirmarSenha"
                       value={formData.confirmarSenha}
                       onChange={handleChange}
                       required
-                      className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="Confirme a senha"
                     />
                   </div>
@@ -497,28 +606,28 @@ function CadastroUser() {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link 
                 to="/painel-admin"
-                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"
               >
-                <FiArrowLeft className="w-5 h-5" />
+                <FiArrowLeft className="w-4 h-4" />
                 Voltar ao Painel
               </Link>
               
               <button 
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Cadastrando...
                   </>
                 ) : (
                   <>
-                    <FiCheck className="w-5 h-5" />
+                    <FiCheck className="w-4 h-4" />
                     Cadastrar Funcionário
                   </>
                 )}

@@ -19,9 +19,6 @@ export const enviarCodigoRecuperacao = async (email, codigo) => {
     // MODO DESENVOLVIMENTO: Se estiver em localhost, apenas simula o envio
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     
-    console.log('🌍 Ambiente:', isDev ? 'DESENVOLVIMENTO' : 'PRODUÇÃO')
-    console.log('🌐 Hostname:', window.location.hostname)
-    
     if (isDev) {
       console.log('🔧 MODO DEV - Email simulado')
       console.log('📧 Para:', email)
@@ -31,28 +28,19 @@ export const enviarCodigoRecuperacao = async (email, codigo) => {
       return { success: true, dev: true, codigo }
     }
 
-    // MODO PRODUÇÃO: Chama Edge Function do Supabase usando SDK
-    console.log('📡 Chamando Edge Function...')
-    console.log('📧 Email:', email)
-    console.log('🔐 Código:', codigo)
-    
+    // MODO PRODUÇÃO: Chama Edge Function do Supabase
     const { data, error } = await supabase.functions.invoke('enviar-email-recuperacao', {
       body: { email, codigo }
     })
 
-    console.log('📬 Resposta da Edge Function:')
-    console.log('  - Data:', data)
-    console.log('  - Error:', error)
-
     if (error) {
-      console.error('❌ Erro da Edge Function:', error)
+      console.error('Erro da Edge Function:', error)
       throw new Error(error.message || 'Erro ao enviar email')
     }
 
-    console.log('✅ Email enviado com sucesso!')
     return { success: true, data }
   } catch (error) {
-    console.error('💥 Exceção capturada:', error)
+    console.error('Erro ao enviar email:', error)
     throw error
   }
 }
