@@ -4,8 +4,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configurações do Supabase usando variáveis de ambiente
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gkikgvkapnyfhpwhngxw.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdraWtndmthcG55Zmhwd2huZ3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NjYzNDcsImV4cCI6MjA3MTE0MjM0N30.8el8jBGOIgoNX5mANz9mRyCeLZZseK0kjkSvogxn-Jk'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Validar se as variáveis estão configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY devem estar configuradas no arquivo .env')
+}
 
 // Criar cliente Supabase com headers explícitos para evitar erro 406
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -39,7 +44,7 @@ export { createClient }
 export const SUPABASE_CONFIG = {
   url: supabaseUrl,
   anonKey: supabaseAnonKey,
-  projectRef: 'gkikgvkapnyfhpwhngxw',
+  projectRef: supabaseUrl.match(/https:\/\/(.+?)\.supabase\.co/)?.[1] || '',
   region: 'us-east-1'
 }
 

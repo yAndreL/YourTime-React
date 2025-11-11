@@ -541,7 +541,7 @@ function App() {
                               ? 'border-blue-500 bg-blue-50 shadow-md' 
                               : 'border-gray-200'
                           }`}
-                          style={{ minWidth: '320px', maxWidth: '320px' }}
+                          style={{ minWidth: '20px', maxWidth: '320px' }}
                         >
                           {/* Indicador de seleção (bolinha) no canto superior direito */}
                           <div className="absolute top-3 right-3">

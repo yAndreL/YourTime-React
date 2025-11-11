@@ -4,6 +4,7 @@ import Modal from '../components/ui/Modal'
 import { useModal } from '../hooks/useModal'
 import { supabase } from '../config/supabase'
 import { FiMail, FiLock, FiLoader } from 'react-icons/fi'
+import logoYourTime from '../assets/yourtimelogo.png'
 
 function Login() {
   const { modalState, showError, closeModal: closeNotificationModal } = useModal()
@@ -85,13 +86,11 @@ function Login() {
       <div className="w-full max-w-md">
         {/* Container Principal */}
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
-          {/* Header com gradiente */}
+          {/* Header com logo */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
-              YT
+            <div className="flex justify-center mb-4">
+              <img src={logoYourTime} alt="YourTime Logo" className="h-60 w-auto" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">YourTime</h1>
-            <p className="text-gray-600">Sistema de Gestão de Tempo</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">

@@ -6,6 +6,7 @@ import App_clean from './App_clean_new.jsx'
 import Login from './views/Login.jsx'
 import CadastroUser from './components/forms/CadastroUser_simple.jsx'
 import EsqueciSenha from './views/EsqueciSenha.jsx'
+import VerificarCodigo from './views/VerificarCodigo.jsx'
 import ResetarSenha from './views/ResetarSenha.jsx'
 import PainelAdmin from './views/PainelAdmin.jsx'
 import FormularioPonto from './components/forms/FormularioPonto.jsx'
@@ -28,6 +29,7 @@ createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/verificar-codigo" element={<VerificarCodigo />} />
           <Route path="/resetar-senha" element={<ResetarSenha />} />
           
           {/* Rotas protegidas - requerem autenticação */}

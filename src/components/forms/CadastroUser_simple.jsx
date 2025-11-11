@@ -66,6 +66,31 @@ function CadastroUser() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    
+    // Formatação especial para telefone
+    if (name === 'telefone') {
+      const cleaned = value.replace(/\D/g, '')
+      let formatted = cleaned
+      
+      if (cleaned.length > 0) {
+        if (cleaned.length <= 2) {
+          formatted = `(${cleaned}`
+        } else if (cleaned.length <= 7) {
+          formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
+        } else if (cleaned.length <= 11) {
+          formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
+        } else {
+          formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: formatted
+      }))
+      return
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -110,6 +135,16 @@ function CadastroUser() {
         return
       }
 
+      // Validar telefone se preenchido
+      if (formData.telefone) {
+        const cleaned = formData.telefone.replace(/\D/g, '')
+        if (cleaned.length !== 11 || cleaned.charAt(2) !== '9') {
+          showError('Telefone inválido. Use o formato: (XX) 9XXXX-XXXX')
+          setLoading(false)
+          return
+        }
+      }
+
       // 1. Criar usuário no Supabase Auth com confirmação automática
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -122,7 +157,15 @@ function CadastroUser() {
         }
       })
 
-      if (authError) throw authError
+      if (authError) {
+        // Verificar se é erro de email duplicado
+        if (authError.message.includes('already registered') || 
+            authError.message.includes('duplicate') ||
+            authError.message.includes('unique constraint')) {
+          throw new Error('Email já cadastrado no sistema')
+        }
+        throw authError
+      }
 
       // Verificar se o usuário foi criado
       if (!authData.user) {
@@ -193,23 +236,28 @@ function CadastroUser() {
       setTimeout(() => navigate('/painel-admin'), 1500)
     } catch (error) {
 
-      let errorMessage = 'Erro ao cadastrar funcionário'
+      let errorMessage = 'Erro ao cadastrar usuário, contate o suporte'
       
-      // Mensagens de erro específicas
-      if (error.message.includes('trigger')) {
-        errorMessage = 'Configure o trigger no banco de dados primeiro. Veja o arquivo TRIGGER_AUTO_CREATE_PROFILE.sql'
-      } else if (error.message.includes('profiles_id_fkey')) {
-        errorMessage = 'Execute o arquivo TRIGGER_AUTO_CREATE_PROFILE.sql no Supabase para criar o trigger automático'
-      } else if (error.message.includes('user_empresas')) {
-        errorMessage = 'Erro ao vincular usuário às empresas. Verifique as empresas selecionadas.'
+      // Mensagens de erro específicas e amigáveis
+      if (error.message === 'Email já cadastrado no sistema') {
+        errorMessage = 'Este email já está cadastrado no sistema'
       } else if (error.message.includes('duplicate key') && error.message.includes('profiles_email')) {
-        errorMessage = 'Já existe um usuário com este email'
-      } else if (error.message.includes('duplicate key') && error.message.includes('profiles_pkey')) {
-        errorMessage = 'Este usuário já foi cadastrado anteriormente'
+        errorMessage = 'Este email já está cadastrado no sistema'
       } else if (error.message.includes('User already registered')) {
         errorMessage = 'Este email já está cadastrado no sistema'
-      } else {
-        errorMessage = error.message
+      } else if (error.message.includes('policies') || 
+                 error.message.includes('policy') || 
+                 error.message.includes('row level security') ||
+                 error.message.includes('RLS')) {
+        errorMessage = 'Erro ao cadastrar usuário, contate o suporte'
+      } else if (error.message.includes('trigger')) {
+        errorMessage = 'Erro ao cadastrar usuário, contate o suporte'
+      } else if (error.message.includes('profiles_id_fkey')) {
+        errorMessage = 'Erro ao cadastrar usuário, contate o suporte'
+      } else if (error.message.includes('user_empresas')) {
+        errorMessage = 'Erro ao vincular usuário às empresas'
+      } else if (error.message.includes('duplicate key') && error.message.includes('profiles_pkey')) {
+        errorMessage = 'Este usuário já foi cadastrado anteriormente'
       }
       
       showError(errorMessage)
@@ -284,6 +332,7 @@ function CadastroUser() {
                       onChange={handleChange}
                       className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="(11) 99999-9999"
+                      maxLength="15"
                     />
                   </div>
                 </div>
