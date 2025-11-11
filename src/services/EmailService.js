@@ -34,10 +34,17 @@ export const enviarCodigoRecuperacao = async (email, codigo) => {
     })
 
     if (error) {
-      console.error('Erro da Edge Function:', error)
+      console.error('❌ Erro da Edge Function:', error)
+      console.error('📋 Detalhes:', JSON.stringify(error, null, 2))
       throw new Error(error.message || 'Erro ao enviar email')
     }
 
+    if (data?.error) {
+      console.error('❌ Erro retornado pela função:', data.error)
+      throw new Error(data.error)
+    }
+
+    console.log('✅ Email enviado com sucesso:', data)
     return { success: true, data }
   } catch (error) {
     console.error('Erro ao enviar email:', error)

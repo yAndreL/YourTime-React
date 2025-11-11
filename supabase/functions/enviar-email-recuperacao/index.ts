@@ -18,21 +18,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Validar que a requisição vem do Supabase (opcional, mas recomendado)
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
     const { email, codigo } = await req.json() as EmailRequest
 
     if (!email || !codigo) {
+      console.error('Email ou código faltando:', { email: !!email, codigo: !!codigo })
       return new Response(
         JSON.stringify({ error: 'Email e código são obrigatórios' }),
         { 
