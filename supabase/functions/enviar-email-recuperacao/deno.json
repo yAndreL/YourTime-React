@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true
-  },
-  "imports": {
-    "std/": "https://deno.land/std@0.168.0/"
-  }
-}

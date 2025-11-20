@@ -55,7 +55,6 @@ function ResetarSenha() {
         return
       }
 
-      // Verificar resposta da função
       if (data && !data.success) {
         setErro(data.message || 'Erro ao atualizar senha.')
         setLoading(false)

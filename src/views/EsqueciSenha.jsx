@@ -24,10 +24,7 @@ function EsqueciSenha() {
       const emailFormatado = email.trim().toLowerCase()
       const codigo = gerarCodigo()
 
-      // Enviar email com o código
       await enviarCodigoRecuperacao(emailFormatado, codigo)
-
-      // Redirecionar para tela de verificação de código
       navigate('/verificar-codigo', { 
         state: { 
           email: emailFormatado,
@@ -47,12 +44,13 @@ function EsqueciSenha() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
-          {/* Header */}
+          {}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Recuperar Senha</h1>
             <p className="text-gray-600 text-sm">
               Informe seu email para enviarmos um código de verificação
             </p>
+            <div className="text-sm   font-bold text-yellow-500 mb-2">Estamos enfrentando alguns problemas. Funcionlidade incompleta</div>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">

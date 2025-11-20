@@ -57,7 +57,7 @@ serve(async (req: Request) => {
         'Authorization': `Bearer ${resendApiKey}`
       },
       body: JSON.stringify({
-        from: 'YourTime <notificacoes@notificacoes.yourtime.com>',
+        from: 'YourTime <onboarding@resend.dev>',
         to: email,
         subject: 'Código de Recuperação de Senha - YourTime',
         html: gerarHTMLEmail(codigo)
