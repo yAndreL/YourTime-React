@@ -20,12 +20,14 @@ import Notificacoes from './views/Notificacoes.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { ToastProvider } from './hooks/useToast.jsx'
 import { NotificationProvider } from './providers/NotificationProvider.jsx'
+import { LanguageProvider } from './hooks/useLanguage.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ToastProvider>
-      <NotificationProvider>
-        <Router>
+    <LanguageProvider>
+      <ToastProvider>
+        <NotificationProvider>
+          <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
@@ -52,7 +54,8 @@ createRoot(document.getElementById('root')).render(
           <Route path="/acesso-negado" element={<AcessoNegado />} />
         </Routes>
       </Router>
-      </NotificationProvider>
-    </ToastProvider>
+        </NotificationProvider>
+      </ToastProvider>
+    </LanguageProvider>
   </StrictMode>,
 )

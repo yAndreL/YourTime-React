@@ -27,13 +27,13 @@ function ResetarSenha() {
     setErro('')
 
     if (novaSenha.length < 6) {
-      setErro('A senha deve ter no mínimo 6 caracteres.')
+      setErro(t('validation.passwordMinLengthReset'))
       setLoading(false)
       return
     }
 
     if (novaSenha !== confirmarSenha) {
-      setErro('As senhas não coincidem.')
+      setErro(t('validation.passwordsNotMatchReset'))
       setLoading(false)
       return
     }
@@ -47,9 +47,9 @@ function ResetarSenha() {
 
       if (rpcError) {
         if (rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
-          setErro('Configuração pendente no banco de dados.')
+          setErro(t('validation.pendingDatabaseConfig'))
         } else {
-          setErro('Erro ao atualizar senha. Tente novamente.')
+          setErro(t('validation.errorUpdatingPassword'))
         }
         setLoading(false)
         return

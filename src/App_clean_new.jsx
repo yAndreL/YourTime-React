@@ -9,6 +9,7 @@ import ProjectsLoadingSkeleton from './components/ui/ProjectCardSkeleton'
 import CacheService from './services/CacheService'
 import jsPDF from 'jspdf'
 import { useTimeTracking } from './hooks/useTimeTracking'
+import { useLanguage } from './hooks/useLanguage.jsx'
 import { supabase } from './config/supabase'
 import { 
   FiTarget, 
@@ -30,6 +31,8 @@ import {
 } from 'react-icons/fi'
 
 function App() {
+  const { t } = useLanguage()
+  
   // Inicializar estados com cache seguro
   const getCachedProjects = () => {
     try {
@@ -327,7 +330,7 @@ function App() {
   const handleSelectProject = (project) => {
     setSelectedProject(project)
     localStorage.setItem('selectedProject', JSON.stringify(project))
-    showToastMessage(`Projeto "${project.nome}" selecionado!`)
+    showToastMessage(t('dashboard.projectSelected').replace('{name}', project.nome))
   }
 
   const clearSelectedProject = () => {
@@ -393,7 +396,7 @@ function App() {
   }
 
   return (
-    <MainLayout title="Dashboard" subtitle="Gerenciamento do Sistema">
+    <MainLayout title="Dashboard" subtitle={t('common.systemManagement')}>
       <div className="space-y-6">
         {/* Indicadores de erro */}
         {error && (
@@ -436,16 +439,16 @@ function App() {
               {selectedProject && selectedProject.horas_estimadas && (
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">Progresso das Horas</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.hoursProgress')}</h3>
                     <div className="text-right">
                       <div className="text-sm text-gray-600">
-                        <span className="text-blue-600 font-semibold">{selectedProject.horasTrabalhadas || '0.0'}h aprovadas</span>
+                        <span className="text-blue-600 font-semibold">{selectedProject.horasTrabalhadas || '0.0'}h {t('dashboard.approvedHours')}</span>
                         {parseFloat(selectedProject.horasPendentesAprovacao || '0') > 0 && (
-                          <> + <span className="text-yellow-600 font-semibold">{selectedProject.horasPendentesAprovacao}h pendentes</span></>
+                          <> + <span className="text-yellow-600 font-semibold">{selectedProject.horasPendentesAprovacao}h {t('dashboard.pending').toLowerCase()}</span></>
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Meta: {selectedProject.horas_estimadas}h
+                        {t('projects.goal')}: {selectedProject.horas_estimadas}h
                       </div>
                     </div>
                   </div>
@@ -465,7 +468,7 @@ function App() {
                             <div
                               className="bg-blue-500 h-3 transition-all duration-500"
                               style={{ width: `${porcentagemAprovada}%` }}
-                              title={`${horasAprovadas}h aprovadas`}
+                              title={`${horasAprovadas}h ${t('dashboard.approvedHours')}`}
                             ></div>
                           )}
                           {/* Barra Amarela - Horas Pendentes */}
@@ -473,7 +476,7 @@ function App() {
                             <div
                               className="bg-yellow-500 h-3 transition-all duration-500"
                               style={{ width: `${porcentagemPendente}%` }}
-                              title={`${horasPendentes}h pendentes`}
+                              title={`${horasPendentes}h ${t('dashboard.pending').toLowerCase()}`}
                             ></div>
                           )}
                         </div>
@@ -484,15 +487,15 @@ function App() {
                     <div className="flex items-center gap-4 text-xs">
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                        <span className="text-gray-600">Aprovadas</span>
+                        <span className="text-gray-600">{t('dashboard.approved_plural')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                        <span className="text-gray-600">Pendentes</span>
+                        <span className="text-gray-600">{t('dashboard.pending')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-gray-200 rounded"></div>
-                        <span className="text-gray-600">Restante</span>
+                        <span className="text-gray-600">{t('dashboard.remaining')}</span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-600">
@@ -500,7 +503,7 @@ function App() {
                         const horasTotais = parseFloat(selectedProject.horasTotais || '0')
                         const horasEstimadas = parseFloat(selectedProject.horas_estimadas || 1)
                         const porcentagem = Math.round((horasTotais / horasEstimadas) * 100)
-                        return `${porcentagem}% do total`
+                        return `${porcentagem}% ${t('dashboard.ofTotal')}`
                       })()}
                     </p>
                   </div>
@@ -514,11 +517,11 @@ function App() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <FiTarget className="w-5 h-5" />
-                Selecione um projeto para registrar suas horas
+                {t('dashboard.selectProject')}
               </h3>
               {!loadingProjects && projectsWithHours.length > CARDS_PER_PAGE && (
                 <div className="text-sm text-gray-500">
-                  Página {currentPage + 1} de {totalPages}
+                  {t('dashboard.page')} {currentPage + 1} {t('dashboard.of')} {totalPages}
                 </div>
               )}
             </div>
@@ -585,16 +588,16 @@ function App() {
                           {/* Informações de horas */}
                           <div className="space-y-2 pt-3 border-t border-gray-200">
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-gray-600">Horas trabalhadas:</span>
+                              <span className="text-gray-600">{t('projects.workedHours')}:</span>
                               <span className="font-semibold text-green-600">{project.horasTrabalhadas || '0.0'}h</span>
                             </div>
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-gray-600">Horas pendentes:</span>
+                              <span className="text-gray-600">{t('projects.pendingHours')}:</span>
                               <span className="font-semibold text-orange-600">{project.horasPendentes || '0.0'}h</span>
                             </div>
                             {project.horas_estimadas && (
                               <div className="flex justify-between items-center text-xs">
-                                <span className="text-gray-600">Meta total:</span>
+                                <span className="text-gray-600">{t('projects.totalGoal')}:</span>
                                 <span className="font-semibold text-blue-600">{project.horas_estimadas}h</span>
                               </div>
                             )}
@@ -648,7 +651,7 @@ function App() {
                           : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
                       }`}
                     >
-                      Próximo
+                      {t('dashboard.next')}
                       <FiChevronRight className="w-5 h-5" />
                     </button>
                   </div>
@@ -657,9 +660,9 @@ function App() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <FiTarget className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p className="mb-2">Nenhum projeto ativo encontrado</p>
+                <p className="mb-2">{t('dashboard.noActiveProjects')}</p>
                 <Link to="/projeto" className="text-blue-600 hover:underline text-sm">
-                  Criar novo projeto
+                  {t('dashboard.createNewProject')}
                 </Link>
               </div>
             )}
@@ -677,7 +680,7 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Gráfico de Horas */}
             <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Horas da Semana</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.weekHours')}</h3>
 
               {error ? (
                 <div className="flex items-center justify-center h-32 text-red-500">
@@ -815,19 +818,19 @@ function App() {
                   <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-gray-200">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                      <span className="text-xs text-gray-600">Aprovado</span>
+                      <span className="text-xs text-gray-600">{t('dashboard.approved')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                      <span className="text-xs text-gray-600">Pendente</span>
+                      <span className="text-xs text-gray-600">{t('dashboard.pending')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-green-500 rounded"></div>
-                      <span className="text-xs text-gray-600">Hoje</span>
+                      <span className="text-xs text-gray-600">{t('dashboard.today')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                      <span className="text-xs text-gray-600">Hora extra</span>
+                      <span className="text-xs text-gray-600">{t('dashboard.overtime')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div 
@@ -842,7 +845,7 @@ function App() {
                           )`
                         }}
                       ></div>
-                      <span className="text-xs text-gray-600">Abaixo da meta</span>
+                      <span className="text-xs text-gray-600">{t('dashboard.belowGoal')}</span>
                     </div>
                   </div>
                 </>
@@ -859,7 +862,7 @@ function App() {
 
             {/* Menu de Ações Rápidas */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.quickActions')}</h3>
               <div className="space-y-3">
                 <Link 
                   to="/formulario-ponto" 
@@ -869,8 +872,8 @@ function App() {
                     <FiFileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-red-700">Registrar Ponto</p>
-                    <p className="text-sm text-gray-500">Registrar horários de trabalho</p>
+                    <p className="font-medium text-gray-900 group-hover:text-red-700">{t('dashboard.registerTime')}</p>
+                    <p className="text-sm text-gray-500">{t('dashboard.registerTimeDesc')}</p>
                   </div>
                 </Link>
                 
@@ -883,8 +886,8 @@ function App() {
                       <FiUserCheck className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 group-hover:text-green-700">Painel Administrativo</p>
-                      <p className="text-sm text-gray-500">Gerencie funcionários e horas</p>
+                      <p className="font-medium text-gray-900 group-hover:text-green-700">{t('menu.adminPanel')}</p>
+                      <p className="text-sm text-gray-500">{t('dashboard.adminPanelDesc')}</p>
                     </div>
                   </Link>
                 )}
@@ -897,15 +900,15 @@ function App() {
                     <FiCalendar className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-purple-700">Histórico</p>
-                    <p className="text-sm text-gray-500">Ver registros</p>
+                    <p className="font-medium text-gray-900 group-hover:text-purple-700">{t('menu.history')}</p>
+                    <p className="text-sm text-gray-500">{t('dashboard.historyDesc')}</p>
                   </div>
                 </Link>
               </div>
               
               {/* Seção de Exportação */}
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Exportar Relatórios</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('dashboard.exportReports')}</h4>
                 <div className="space-y-2">
                   <button 
                     onClick={() => setModalExportPDF(true)}
@@ -915,8 +918,8 @@ function App() {
                       <FiDownload className="w-4 h-4" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900 group-hover:text-blue-700">Exportar PDF</p>
-                      <p className="text-xs text-gray-500">Relatório de ponto</p>
+                      <p className="text-sm font-medium text-gray-900 group-hover:text-blue-700">{t('dashboard.exportPDF')}</p>
+                      <p className="text-xs text-gray-500">{t('dashboard.exportPDFDesc')}</p>
                     </div>
                   </button>
                   
@@ -928,8 +931,8 @@ function App() {
                       <FiGrid className="w-4 h-4" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900 group-hover:text-green-700">Exportar CSV</p>
-                      <p className="text-xs text-gray-500">Relatório completo</p>
+                      <p className="text-sm font-medium text-gray-900 group-hover:text-green-700">{t('dashboard.exportCSV')}</p>
+                      <p className="text-xs text-gray-500">{t('dashboard.exportCSVDesc')}</p>
                     </div>
                   </button>
                 </div>
@@ -939,7 +942,7 @@ function App() {
 
           {/* Atividades Recentes */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Atividades Recentes</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.recentActivities')}</h3>
 
             {!loading && !error && timeRecords?.length > 0 ? (
               <div className="space-y-3">
@@ -951,7 +954,7 @@ function App() {
                         record.saida1 ? 'bg-red-500' : 'bg-blue-500'
                       }`}></div>
                       <span className="text-sm text-gray-900">
-                        {record.entrada1 ? 'Entrada registrada' :
+                        {record.entrada1 ? t('dashboard.newEntry') :
                          record.saida1 ? 'Saída registrada' :
                          record.entrada2 ? 'Entrada 2 registrada' :
                          record.saida2 ? 'Saída 2 registrada' : 'Registro de ponto'}
@@ -983,7 +986,7 @@ function App() {
               to="/projeto" 
               className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg text-center transition-colors flex items-center justify-center gap-2"
             >
-              <FiTarget className="w-5 h-5" /> Gerenciar Projetos
+              <FiTarget className="w-5 h-5" /> {t('dashboard.manageProjects')}
             </Link>
           </div>
 
@@ -1003,13 +1006,13 @@ function App() {
                     return `${hours}h ${minutes}m`
                   })()}
                 </p>
-                <p className="text-sm text-gray-500">Horas esta semana</p>
+                <p className="text-sm text-gray-500">{t('dashboard.hoursThisWeek')}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600">
-                  {userData?.carga_horaria ? `${userData.carga_horaria}h/semana` : '40h/semana'}
+                  {userData?.carga_horaria ? `${userData.carga_horaria}h${t('dashboard.perWeek')}` : `40h${t('dashboard.perWeek')}`}
                 </p>
-                <p className="text-sm text-gray-500">Carga horária</p>
+                <p className="text-sm text-gray-500">{t('dashboard.workload')}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-purple-600">
@@ -1025,7 +1028,7 @@ function App() {
                     return `${percentage}%`
                   })()}
                 </p>
-                <p className="text-sm text-gray-500">Meta da semana</p>
+                <p className="text-sm text-gray-500">{t('dashboard.weekGoal')}</p>
               </div>
             </div>
           </div>

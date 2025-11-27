@@ -1,4 +1,5 @@
 import DashboardCard from './DashboardCard'
+import { useLanguage } from '../../hooks/useLanguage.jsx'
 import { FiClock, FiCalendar, FiBriefcase } from 'react-icons/fi'
 
 function DashboardCards({ 
@@ -6,14 +7,19 @@ function DashboardCards({
   horasHoje = '07:45',
   horasPendentes = '00:00',
   projetoAtual = 'YourTime v2.0',
-  status = 'Trabalhando',
+  status = null,
   isWorking = true 
 }) {
+  const { t } = useLanguage()
+  
+  // Se status não foi passado, usar a tradução baseada em isWorking
+  const displayStatus = status || (isWorking ? t('dashboard.working') : t('dashboard.offline'))
+  
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
       {/* Card Saldo de Horas */}
       <DashboardCard 
-        title="Saldo de Horas"
+        title={t('dashboard.hoursBalance')}
         value={saldoHoras}
         iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />}
         bgColor="bg-green-100"
@@ -23,7 +29,7 @@ function DashboardCards({
       
       {/* Card Horas Hoje */}
       <DashboardCard 
-        title="Horas Aprovadas"
+        title={t('dashboard.hoursToday')}
         value={horasHoje}
         iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />}
         bgColor="bg-blue-100"
@@ -33,7 +39,7 @@ function DashboardCards({
 
       {/* Card Horas Pendentes */}
       <DashboardCard 
-        title="Horas Pendentes"
+        title={t('dashboard.pendingHours')}
         value={horasPendentes}
         iconElement={<FiClock className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />}
         bgColor="bg-yellow-100"
@@ -43,7 +49,7 @@ function DashboardCards({
       
       {/* Card Projeto Atual */}
       <DashboardCard 
-        title="Projeto Atual"
+        title={t('dashboard.currentProject')}
         value={projetoAtual}
         iconElement={<FiBriefcase className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />}
         bgColor="bg-purple-100"
@@ -53,8 +59,8 @@ function DashboardCards({
       
       {/* Card Status */}
       <DashboardCard 
-        title="Status"
-        value={status}
+        title={t('dashboard.status')}
+        value={displayStatus}
         bgColor="bg-green-100"
         valueColor="text-green-600"
         iconElement={

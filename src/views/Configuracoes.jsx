@@ -5,9 +5,12 @@ import ConfigService from '../services/ConfigService'
 import ConfiguracoesSkeleton from '../components/ui/ConfiguracoesSkeleton'
 import CacheService from '../services/CacheService'
 import { supabase } from '../config/supabase'
+import { useLanguage } from '../hooks/useLanguage.jsx'
 import { FiMail, FiBell, FiClock, FiBarChart2, FiSave, FiRotateCcw } from 'react-icons/fi'
+import { MdTranslate } from 'react-icons/md'
 
 function Configuracoes() {
+  const { t } = useLanguage()
   const [config, setConfig] = useState({
     email_relatorios: true,
     lembrete_registro: true,
@@ -16,7 +19,8 @@ function Configuracoes() {
     horas_semanais: 40,
     fuso_horario: 'America/Sao_Paulo',
     formato_exportacao: 'PDF',
-    incluir_graficos_pdf: true
+    incluir_graficos_pdf: true,
+    language: 'pt-BR'
   })
   const [isLoading, setIsLoading] = useState(false) // Inicia como false
   const [showSkeleton, setShowSkeleton] = useState(false) // Controla skeleton
@@ -123,7 +127,8 @@ function Configuracoes() {
       horas_semanais: config.horas_semanais,
       fuso_horario: config.fuso_horario,
       formato_exportacao: config.formato_exportacao,
-      incluir_graficos_pdf: config.incluir_graficos_pdf
+      incluir_graficos_pdf: config.incluir_graficos_pdf,
+      language: config.language
     }
 
     const result = await ConfigService.atualizarConfiguracoes(userId, configParaSalvar)
@@ -181,7 +186,7 @@ function Configuracoes() {
   }
 
   return (
-    <MainLayout title="Configurações" subtitle="Personalize suas preferências">
+    <MainLayout title={t('settings.title')} subtitle={t('settings.subtitle')}>
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-8">
@@ -189,7 +194,7 @@ function Configuracoes() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <FiBell className="w-5 h-5" />
-                Notificações
+                {t('settings.notifications')}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -198,8 +203,8 @@ function Configuracoes() {
                       <FiMail className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Email de Relatórios</p>
-                      <p className="text-sm text-gray-500">Receber relatórios semanais por email</p>
+                      <p className="font-medium text-gray-900">{t('settings.emailReports')}</p>
+                      <p className="text-sm text-gray-500">{t('settings.emailReportsDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -218,8 +223,8 @@ function Configuracoes() {
                       <FiClock className="w-5 h-5 text-orange-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Lembrete de Registro</p>
-                      <p className="text-sm text-gray-500">Receber lembretes para marcar ponto (início, intervalo e fim do expediente)</p>
+                      <p className="font-medium text-gray-900">{t('settings.reminderRecord')}</p>
+                      <p className="text-sm text-gray-500">{t('settings.reminderRecordDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -239,12 +244,12 @@ function Configuracoes() {
             <div className="border-t border-gray-200 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <FiClock className="w-5 h-5" />
-                Jornada de Trabalho
+                {t('settings.workSchedule')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hora de Entrada Padrão
+                    {t('settings.startTime')}
                   </label>
                   <input 
                     type="time" 
@@ -255,7 +260,7 @@ function Configuracoes() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hora de Saída Padrão
+                    {t('settings.endTime')}
                   </label>
                   <input 
                     type="time" 
@@ -266,7 +271,7 @@ function Configuracoes() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Horas Semanais
+                    {t('settings.weeklyHours')}
                   </label>
                   <input 
                     type="number" 
@@ -279,7 +284,7 @@ function Configuracoes() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fuso Horário
+                    {t('settings.timezone')}
                   </label>
                   <select 
                     value={config.fuso_horario}
@@ -298,7 +303,7 @@ function Configuracoes() {
             <div className="border-t border-gray-200 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <FiBarChart2 className="w-5 h-5" />
-                Relatórios
+                {t('settings.reports')}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -307,8 +312,8 @@ function Configuracoes() {
                       <FiBarChart2 className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Incluir gráficos nos relatórios PDF</p>
-                      <p className="text-sm text-gray-500">Adiciona gráficos visuais ao exportar relatórios em PDF</p>
+                      <p className="font-medium text-gray-900">{t('settings.includeCharts')}</p>
+                      <p className="text-sm text-gray-500">{t('settings.includeChartsDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -320,6 +325,34 @@ function Configuracoes() {
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações de Idioma */}
+            <div className="border-t border-gray-200 pt-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MdTranslate className="w-5 h-5" />
+                {t('settings.language')}
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('settings.interfaceLanguage')}
+                  </label>
+                  <select 
+                    value={config.language}
+                    onChange={(e) => handleChange('language', e.target.value)}
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
+                  >
+                    <option value="pt-BR">🇧🇷 Português (Brasil)</option>
+                    <option value="en-US">🇺🇸 English (United States)</option>
+                    <option value="es-ES">🇪🇸 Español (España)</option>
+                    <option value="fr-FR">🇫🇷 Français (France)</option>
+                  </select>
+                  <p className="mt-2 text-sm text-gray-500">
+                    {t('settings.languageDesc')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -335,11 +368,11 @@ function Configuracoes() {
               {isSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Salvando...
+                  {t('settings.saving')}
                 </>
               ) : (
                 <>
-                  Salvar
+                  {t('common.save')}
                 </>
               )}
             </button>
@@ -348,7 +381,7 @@ function Configuracoes() {
               disabled={isSaving}
               className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg transition-colors"
             >
-              Restaurar Padrões
+              {t('settings.restoreDefaults')}
             </button>
           </div>
         </div>

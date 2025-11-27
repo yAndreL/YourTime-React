@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabase.js'
 import MainLayout from '../layout/MainLayout'
 import NotificationService from '../../services/NotificationService'
+import { useLanguage } from '../../hooks/useLanguage'
 import { 
   FiFileText,
   FiClock,
@@ -13,6 +14,7 @@ import {
 } from 'react-icons/fi'
 
 function FormularioPonto() {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     data: '',
     observacao: '',
@@ -52,7 +54,7 @@ function FormularioPonto() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        setErro('Usuário não autenticado')
+        setErro(t('validation.userNotAuthenticated'))
         return
       }
 
@@ -69,7 +71,7 @@ function FormularioPonto() {
         setUsuarioAtual(profile)
       }
     } catch (error) {
-      setErro('Erro ao carregar dados do usuário')
+      setErro(t('validation.errorLoadingUser'))
     }
   }
 
@@ -127,25 +129,25 @@ function FormularioPonto() {
     
     // Entrada 1 é obrigatória
     if (!entrada1) {
-      setErro('Entrada 1 é obrigatória')
+      setErro(t('validation.entry1Required'))
       return false
     }
 
     // Se tem saída 1, deve ser depois da entrada 1
     if (saida1 && entrada1 >= saida1) {
-      setErro('Saída 1 deve ser depois da Entrada 1')
+      setErro(t('validation.exit1AfterEntry1'))
       return false
     }
 
     // Se tem entrada 2, deve ser depois da saída 1
     if (entrada2 && saida1 && entrada2 <= saida1) {
-      setErro('Entrada 2 deve ser depois da Saída 1')
+      setErro(t('validation.entry2AfterExit1'))
       return false
     }
 
     // Se tem saída 2, deve ser depois da entrada 2
     if (saida2 && entrada2 && saida2 <= entrada2) {
-      setErro('Saída 2 deve ser depois da Entrada 2')
+      setErro(t('validation.exit2AfterEntry2'))
       return false
     }
 
@@ -224,7 +226,7 @@ function FormularioPonto() {
     const dataSelecionada = new Date(formData.data + 'T00:00:00')
     
     if (dataSelecionada > hoje) {
-      setErro('Não é permitido registrar ponto para datas futuras.')
+      setErro(t('validation.futureDate'))
       return
     }
 
@@ -248,8 +250,11 @@ function FormularioPonto() {
       if (registrosExistentes && registrosExistentes.length > 0) {
         const registro = registrosExistentes[0]
         const horarios = `${registro.entrada1 || '--'} - ${registro.saida1 || '--'}${registro.entrada2 ? ` | ${registro.entrada2} - ${registro.saida2 || '--'}` : ''}`
-        const statusTexto = registro.status === 'P' ? 'Pendente' : registro.status === 'A' ? 'Aprovado' : 'Rejeitado'
-        setErro(`Já existe um registro para ${formData.data} (${horarios}) com status: ${statusTexto}. Vá ao Histórico para editar ou deletar este registro.`)
+        const statusTexto = registro.status === 'P' ? t('history.pending') : registro.status === 'A' ? t('history.approved') : t('history.rejected')
+        setErro(t('validation.duplicateRecord')
+          .replace('{date}', formData.data)
+          .replace('{times}', horarios)
+          .replace('{status}', statusTexto))
         setLoading(false)
         return
       }
@@ -332,14 +337,14 @@ function FormularioPonto() {
       
     } catch (error) {
 
-      setErro(`Erro ao registrar ponto: ${error.message}`)
+      setErro(t('validation.errorSavingRecord').replace('{error}', error.message))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <MainLayout title="Registrar Ponto" subtitle={usuarioAtual ? `Olá, ${usuarioAtual.nome}` : ''}>
+    <MainLayout title={t('timeRecordForm.title')} subtitle={usuarioAtual ? `${t('timeRecordForm.hello')}, ${usuarioAtual.nome}` : ''}>
       {/* Projeto Selecionado */}
       {projetoSelecionado && (
         <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
@@ -349,7 +354,7 @@ function FormularioPonto() {
               style={{ backgroundColor: projetoSelecionado.cor_identificacao }}
             ></div>
             <div>
-              <div className="text-sm font-medium text-blue-900">Registrando ponto para:</div>
+              <div className="text-sm font-medium text-blue-900">{t('timeRecordForm.title')}:</div>
               <div className="text-lg font-bold text-blue-700">{projetoSelecionado.nome}</div>
             </div>
           </div>
@@ -360,8 +365,8 @@ function FormularioPonto() {
         <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg flex items-center gap-2">
           <FiAlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
           <div>
-            <div className="text-sm font-medium text-yellow-900">Nenhum projeto selecionado</div>
-            <div className="text-xs text-yellow-700 mt-0.5">Selecione um projeto na página inicial antes de registrar o ponto</div>
+            <div className="text-sm font-medium text-yellow-900">{t('timeRecordForm.noProjectSelected')}</div>
+            <div className="text-xs text-yellow-700 mt-0.5">{t('timeRecordForm.selectProjectMsg')}</div>
           </div>
         </div>
       )}
@@ -374,7 +379,7 @@ function FormularioPonto() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="data" className="block text-sm font-semibold text-gray-700 mb-1">
-                    Data <span className="text-red-500">*</span>
+                    {t('timeRecordForm.date')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -389,7 +394,7 @@ function FormularioPonto() {
                 </div>
                 <div>
                   <label htmlFor="observacao" className="block text-sm font-semibold text-gray-700 mb-1">
-                    Observação
+                    {t('timeRecordForm.observation')}
                   </label>
                   <input
                     type="text"
@@ -397,7 +402,7 @@ function FormularioPonto() {
                     name="observacao"
                     value={formData.observacao}
                     onChange={handleChange}
-                    placeholder="Observação opcional"
+                    placeholder={t('timeRecordForm.observationPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder:text-gray-400 text-sm"
                   />
                 </div>
@@ -407,12 +412,12 @@ function FormularioPonto() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2 text-sm">
                   <FiClock className="w-4 h-4" />
-                  Jornada 1 <span className="text-red-500">*</span>
+                  {t('timeRecordForm.shift1')} <span className="text-red-500">*</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="entrada1" className="block text-xs font-medium text-gray-700 mb-1">
-                      Entrada <span className="text-red-500">*</span>
+                      {t('timeRecordForm.entry')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="time"
@@ -427,7 +432,7 @@ function FormularioPonto() {
                   </div>
                   <div>
                     <label htmlFor="saida1" className="block text-xs font-medium text-gray-700 mb-1">
-                      Saída
+                      {t('timeRecordForm.exit')}
                     </label>
                     <input
                       type="time"
@@ -446,12 +451,12 @@ function FormularioPonto() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2 text-sm">
                   <FiClock className="w-4 h-4" />
-                  Jornada 2 (Opcional)
+                  {t('timeRecordForm.shift2')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="entrada2" className="block text-xs font-medium text-gray-700 mb-1">
-                      Entrada
+                      {t('timeRecordForm.entry')}
                     </label>
                     <input
                       type="time"
@@ -465,7 +470,7 @@ function FormularioPonto() {
                   </div>
                   <div>
                     <label htmlFor="saida2" className="block text-xs font-medium text-gray-700 mb-1">
-                      Saída
+                      {t('timeRecordForm.exit')}
                     </label>
                     <input
                       type="time"
@@ -484,17 +489,17 @@ function FormularioPonto() {
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2 text-sm">
                   <FiCheckCircle className="w-4 h-4" />
-                  Resumo do Ponto
+                  {t('timeRecordForm.summary')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white rounded-lg p-2 shadow-sm">
-                    <span className="text-xs text-gray-600">Pausa Almoço</span>
+                    <span className="text-xs text-gray-600">{t('timeRecordForm.lunchBreak')}</span>
                     <p className="text-lg font-bold text-blue-600 mt-0.5">
                       {calcularPausaAlmoco()} min
                     </p>
                   </div>
                   <div className="bg-white rounded-lg p-2 shadow-sm">
-                    <span className="text-xs text-gray-600">Total Trabalhado</span>
+                    <span className="text-xs text-gray-600">{t('timeRecordForm.totalWorked')}</span>
                     <p className="text-lg font-bold text-green-600 mt-0.5">
                       {calcularTotalTrabalhado()}
                     </p>
@@ -505,20 +510,20 @@ function FormularioPonto() {
                 <div className="mt-3 pt-3 border-t border-blue-300">
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700">Jornada 1:</span>
+                      <span className="font-medium text-gray-700">{t('timeRecordForm.shift1')}:</span>
                       <span className="text-blue-700">
                         {formData.entrada1 && formData.saida1 
                           ? `${formData.entrada1} - ${formData.saida1}` 
-                          : 'Não definida'
+                          : t('timeRecordForm.notDefined')
                         }
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700">Jornada 2:</span>
+                      <span className="font-medium text-gray-700">{t('timeRecordForm.shift2')}:</span>
                       <span className="text-green-700">
                         {formData.entrada2 && formData.saida2 
                           ? `${formData.entrada2} - ${formData.saida2}` 
-                          : 'Não definida'
+                          : t('timeRecordForm.notDefined')
                         }
                       </span>
                     </div>
@@ -549,7 +554,7 @@ function FormularioPonto() {
                   className="flex-1 px-4 py-2.5 bg-white text-gray-700 border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   <FiX className="w-4 h-4" />
-                  Cancelar
+                  {t('timeRecordForm.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -563,7 +568,7 @@ function FormularioPonto() {
                     </>
                   ) : (
                     <>
-                      Registrar Ponto
+                      {t('timeRecordForm.register')}
                     </>
                   )}
                 </button>

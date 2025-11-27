@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import NotificationBell from '../ui/NotificationBell'
 import { supabase } from '../../config/supabase'
 import { useSecureCache } from '../../hooks/useSecureCache'
+import { useLanguage } from '../../hooks/useLanguage.jsx'
+import { MdTranslate } from 'react-icons/md'
 
 function MainLayout({ children, title, subtitle }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profile, setProfile] = useState(null)
+  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false)
+  const languageRef = useRef(null)
   const navigate = useNavigate()
+  const { currentLanguage, changeLanguage, t } = useLanguage()
   
   // Ativa o gerenciamento seguro de cache
   useSecureCache()
@@ -27,6 +32,30 @@ function MainLayout({ children, title, subtitle }) {
     // Atualizar do banco em background
     carregarPerfil()
   }, [])
+
+  // Fechar dropdown de idioma ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (languageRef.current && !languageRef.current.contains(event.target)) {
+        setLanguageDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLanguageChange = async (languageCode) => {
+    setLanguageDropdownOpen(false)
+    await changeLanguage(languageCode)
+  }
+
+  const languages = [
+    { code: 'pt-BR', name: 'Português', flag: '🇧🇷' },
+    { code: 'en-US', name: 'English', flag: '🇺🇸' },
+    { code: 'es-ES', name: 'Español', flag: '🇪🇸' },
+    { code: 'fr-FR', name: 'Français', flag: '🇫🇷' }
+  ]
 
   const carregarPerfil = async () => {
     try {
@@ -80,6 +109,46 @@ function MainLayout({ children, title, subtitle }) {
 
               {/* Notifications and User Profile */}
               <div className="flex items-center gap-2 sm:gap-4">
+                {/* Language Selector */}
+                <div ref={languageRef} className="relative">
+                  <button
+                    onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
+                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors relative"
+                    aria-label="Selecionar idioma"
+                  >
+                    <MdTranslate className="w-6 h-6" />
+                  </button>
+
+                  {/* Language Dropdown */}
+                  {languageDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-fadeIn">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-500 uppercase">
+                          Idioma / Language
+                        </p>
+                      </div>
+                      
+                      {languages.map((language) => (
+                        <button
+                          key={language.code}
+                          onClick={() => handleLanguageChange(language.code)}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-3 ${
+                            currentLanguage === language.code 
+                              ? 'bg-blue-50 text-blue-600 font-medium' 
+                              : 'text-gray-700'
+                          }`}
+                        >
+                          <span className="text-lg">{language.flag}</span>
+                          <span>{language.name}</span>
+                          {currentLanguage === language.code && (
+                            <span className="ml-auto text-blue-600">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Notification Bell */}
                 <NotificationBell />
 

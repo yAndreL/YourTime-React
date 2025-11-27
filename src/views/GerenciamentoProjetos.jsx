@@ -4,6 +4,7 @@ import MainLayout from '../components/layout/MainLayout'
 import Modal from '../components/ui/Modal'
 import GerenciamentoProjetosSkeleton from '../components/ui/GerenciamentoProjetosSkeleton'
 import { useModal } from '../hooks/useModal'
+import { useLanguage } from '../hooks/useLanguage'
 import CacheService from '../services/CacheService'
 import { 
   FiTarget, 
@@ -22,6 +23,7 @@ import {
 } from 'react-icons/fi'
 
 function GerenciamentoProjetos() {
+  const { t } = useLanguage()
   const { modalState, showSuccess, showError, showConfirm, closeModal: closeNotificationModal } = useModal()
   
   // Funções auxiliares de cache
@@ -808,13 +810,13 @@ function GerenciamentoProjetos() {
   }
 
   return (
-    <MainLayout title="Gerenciamento de Projetos" subtitle="Controle e organize seus projetos">
+    <MainLayout title={t('projects.title')} subtitle={t('projects.subtitle')}>
       {/* Header com Botão de Novo Projeto */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <FiTarget className="w-7 h-7" />
-            Projetos
+            {t('projects.projects')}
           </h2>
         </div>
         {isAdmin && (
@@ -823,7 +825,7 @@ function GerenciamentoProjetos() {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
           >
             <FiPlus className="w-5 h-5" />
-            Novo Projeto
+            {t('projects.newProject')}
           </button>
         )}
       </div>
@@ -854,31 +856,31 @@ function GerenciamentoProjetos() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
               <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.total}</div>
               <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
-                <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4" /> Total
+                <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.total')}
               </div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
               <div className="text-xl sm:text-2xl font-bold text-green-600">{estatisticas.ativos}</div>
               <div className="text-xs sm:text-sm text-green-700 flex items-center justify-center gap-1">
-                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Ativos
+                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.actives')}
               </div>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
               <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
               <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
-                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Concluídos
+                <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.concluded')}
               </div>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 text-center">
               <div className="text-xl sm:text-2xl font-bold text-yellow-600">{estatisticas.pausados}</div>
               <div className="text-xs sm:text-sm text-yellow-700 flex items-center justify-center gap-1">
-                <FiCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Pausados
+                <FiCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.paused')}
               </div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 text-center col-span-2 sm:col-span-1">
               <div className="text-xl sm:text-2xl font-bold text-red-600">{estatisticas.cancelados}</div>
               <div className="text-xs sm:text-sm text-red-700 flex items-center justify-center gap-1">
-                <FiXCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Cancelados
+                <FiXCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.cancelled')}
               </div>
             </div>
           </div>
@@ -887,46 +889,46 @@ function GerenciamentoProjetos() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.statusLabel')}</label>
                 <select
                   name="status"
                   value={filters.status}
                   onChange={handleFilterChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="todos">Todos os Status</option>
-                  <option value="ativo">Ativo</option>
-                  <option value="pausado">Pausado</option>
-                  <option value="concluido">Concluído</option>
-                  <option value="cancelado">Cancelado</option>
+                  <option value="todos">{t('projects.allStatus')}</option>
+                  <option value="ativo">{t('projects.statusActive')}</option>
+                  <option value="pausado">{t('projects.statusPaused')}</option>
+                  <option value="concluido">{t('projects.statusCompleted')}</option>
+                  <option value="cancelado">{t('projects.statusCancelled')}</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Prioridade:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.priority')}</label>
                 <select
                   name="prioridade"
                   value={filters.prioridade}
                   onChange={handleFilterChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="todas">Todas as Prioridades</option>
-                  <option value="baixa">🔹 Baixa</option>
-                  <option value="media">🔸 Média</option>
-                  <option value="alta">🔶 Alta</option>
-                  <option value="urgente">🔺 Urgente</option>
+                  <option value="todas">{t('projects.allPriorities')}</option>
+                  <option value="baixa">🔹 {t('projects.priorityLow')}</option>
+                  <option value="media">🔸 {t('projects.priorityMedium')}</option>
+                  <option value="alta">🔶 {t('projects.priorityHigh')}</option>
+                  <option value="urgente">🔺 {t('projects.priorityUrgent')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Empresa:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.companyLabel')}</label>
                 <select
                   name="empresa"
                   value={filters.empresa}
                   onChange={handleFilterChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Todas as Empresas</option>
+                  <option value="">{t('projects.allCompanies')}</option>
                   {empresas.map(empresa => (
                     <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>
                   ))}
@@ -934,14 +936,14 @@ function GerenciamentoProjetos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Responsável:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.responsible')}</label>
                 <select
                   name="responsavel"
                   value={filters.responsavel}
                   onChange={handleFilterChange}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Todos os Responsáveis</option>
+                  <option value="">{t('projects.allResponsibles')}</option>
                   {usuarios.map(usuario => (
                     <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>
                   ))}
@@ -957,7 +959,7 @@ function GerenciamentoProjetos() {
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                 >
                   <FiRotateCcw className="w-4 h-4" />
-                  Limpar Filtros
+                  {t('history.clear')}
                 </button>
               </div>
             )}
@@ -1005,21 +1007,21 @@ function GerenciamentoProjetos() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                       <div>
-                        <span className="font-medium text-gray-700">Empresa:</span>
+                        <span className="font-medium text-gray-700">{t('projects.companyField')}</span>
                         <p className="text-gray-600 truncate">{projeto.empresas?.nome || '-'}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Responsável:</span>
+                        <span className="font-medium text-gray-700">{t('projects.responsibleField')}</span>
                         <p className="text-gray-600 truncate">{projeto.profiles?.nome || '-'}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Período:</span>
+                        <span className="font-medium text-gray-700">{t('projects.periodField')}</span>
                         <p className="text-gray-600 text-xs sm:text-sm">
                           {formatDate(projeto.data_inicio)} - {formatDate(projeto.data_fim)}
                         </p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Orçamento:</span>
+                        <span className="font-medium text-gray-700">{t('projects.budgetField')}</span>
                         <p className="text-gray-600">{formatCurrency(projeto.orcamento)}</p>
                       </div>
                     </div>
@@ -1029,7 +1031,7 @@ function GerenciamentoProjetos() {
                     {isProjetoAtrasado(projeto) && !isAdmin && (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
                         <FiAlertCircle className="w-3 h-3" />
-                        Atrasado
+                        {t('projects.delayed')}
                       </span>
                     )}
                     {isAdmin && (
@@ -1039,14 +1041,14 @@ function GerenciamentoProjetos() {
                           className="px-2 sm:px-3 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded-md hover:bg-blue-600 transition-colors flex items-center gap-1"
                         >
                           <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4" /> 
-                          <span className="hidden sm:inline">Editar</span>
+                          <span className="hidden sm:inline">{t('projects.edit')}</span>
                         </button>
                         <button
                           onClick={() => handleDelete(projeto.id)}
                           className="px-2 sm:px-3 py-1 bg-red-500 text-white text-xs sm:text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-1"
                         >
                           <FiTrash2 className="w-3 h-3 sm:w-4 sm:h-4" /> 
-                          <span className="hidden sm:inline">Excluir</span>
+                          <span className="hidden sm:inline">{t('projects.exclude')}</span>
                         </button>
                       </>
                     )}
@@ -1056,7 +1058,7 @@ function GerenciamentoProjetos() {
                 {projeto.horas_estimadas && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex justify-between text-xs sm:text-sm mb-2">
-                      <span className="font-medium text-gray-700">Progresso das Horas:</span>
+                      <span className="font-medium text-gray-700">{t('projects.hoursProgress')}</span>
                       <span className="text-gray-600">
                         {projeto.horasTrabalhadas || 0} / {projeto.horas_estimadas}h
                       </span>
@@ -1316,19 +1318,6 @@ function GerenciamentoProjetos() {
           </div>
         )}
       </div>
-
-      {/* Modal de Notificações */}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={closeNotificationModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.confirmText}
-        cancelText={modalState.cancelText}
-        showCancel={modalState.showCancel}
-        onConfirm={modalState.onConfirm}
-      />
     </MainLayout>
   )
 }

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../config/supabase'
 import { useModal } from '../hooks/useModal'
 import { useToast } from '../hooks/useToast'
+import { useLanguage } from '../hooks/useLanguage'
 import Modal from '../components/ui/Modal'
 import MainLayout from '../components/layout/MainLayout'
 import PerfilSkeleton from '../components/ui/PerfilSkeleton'
@@ -10,6 +11,7 @@ import CacheService from '../services/CacheService'
 import { FiEdit2, FiSave, FiX, FiUser, FiBriefcase, FiCalendar, FiClock, FiCamera, FiUpload } from 'react-icons/fi'
 
 function Perfil() {
+  const { t, currentLanguage } = useLanguage()
   const navigate = useNavigate()
   const { userId } = useParams() // Pega o ID do usuário da URL (se existir)
   const { modalState, showError: showModalError, closeModal } = useModal()
@@ -668,11 +670,11 @@ function Perfil() {
   const formatDate = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString + 'T00:00:00')
-    return date.toLocaleDateString('pt-BR', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    })
+    const locale = currentLanguage === 'en-US' ? 'en-US' : 'pt-BR'
+    const options = currentLanguage === 'en-US' 
+      ? { month: 'long', day: 'numeric', year: 'numeric' }  // "November 26, 2025"
+      : { day: 'numeric', month: 'long', year: 'numeric' } // "26 de novembro de 2025"
+    return date.toLocaleDateString(locale, options)
   }
 
   // Mostra skeleton apenas se estiver demorando E não tiver dados
@@ -695,8 +697,8 @@ function Perfil() {
 
   return (
     <MainLayout 
-      title={isViewingOtherUser ? 'Perfil do Funcionário' : 'Perfil'}
-      subtitle={isViewingOtherUser ? userData?.nome : 'Gerencie suas informações pessoais'}
+      title={isViewingOtherUser ? t('profile.title') : t('profile.title')}
+      subtitle={isViewingOtherUser ? userData?.nome : t('profile.subtitle')}
     >
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md border border-gray-200">
@@ -802,7 +804,7 @@ function Perfil() {
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiBriefcase className="w-3.5 h-3.5" /> Cargo
+                      <FiBriefcase className="w-3.5 h-3.5" /> {t('profile.position')}
                     </label>
                     {isEditing && isAdmin ? (
                       <input
@@ -810,19 +812,19 @@ function Perfil() {
                         name="cargo"
                         value={formData.cargo}
                         onChange={handleInputChange}
-                        placeholder="Ex: Desenvolvedor, Analista..."
+                        placeholder={t('profile.positionPlaceholder')}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                        {userData?.cargo || 'Não definido'}
+                        {userData?.cargo || t('profile.positionNotDefined')}
                       </p>
                     )}
                   </div>
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiBriefcase className="w-3.5 h-3.5" /> Departamento
+                      <FiBriefcase className="w-3.5 h-3.5" /> {t('profile.department')}
                     </label>
                     {isEditing ? (
                       <input
@@ -830,19 +832,19 @@ function Perfil() {
                         name="departamento"
                         value={formData.departamento}
                         onChange={handleInputChange}
-                        placeholder="Ex: TI, RH, Comercial..."
+                        placeholder={t('profile.departmentPlaceholder')}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                        {userData?.departamento || 'Não definido'}
+                        {userData?.departamento || t('profile.departmentNotDefined')}
                       </p>
                     )}
                   </div>
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiCalendar className="w-3.5 h-3.5" /> Data de Admissão
+                      <FiCalendar className="w-3.5 h-3.5" /> {t('profile.admissionDate')}
                     </label>
                     <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
                       {formatDate(userData?.data_admissao)}
@@ -851,35 +853,35 @@ function Perfil() {
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiUser className="w-3.5 h-3.5" /> Nova Senha
+                      <FiUser className="w-3.5 h-3.5" /> {t('profile.newPassword')}
                     </label>
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       disabled={!isEditing}
-                      placeholder={isEditing ? "Deixe em branco para manter a senha atual" : "••••••••"}
+                      placeholder={isEditing ? t('profile.newPasswordPlaceholder') : t('profile.passwordMask')}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiUser className="w-3.5 h-3.5" /> Confirmar Nova Senha
+                      <FiUser className="w-3.5 h-3.5" /> {t('profile.confirmPassword')}
                     </label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={!isEditing}
-                      placeholder={isEditing ? "Confirme a nova senha" : "••••••••"}
+                      placeholder={isEditing ? t('profile.confirmPasswordPlaceholder') : t('profile.passwordMask')}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                     />
                   </div>
                   
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-1">
-                      <FiClock className="w-3.5 h-3.5" /> Carga Horária Semanal
+                      <FiClock className="w-3.5 h-3.5" /> {t('profile.workSchedule')}
                     </label>
                     {isEditing && isAdmin ? (
                       <input
@@ -902,15 +904,15 @@ function Perfil() {
               
               {/* Coluna Direita - Estatísticas */}
               <div className="flex flex-col">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Estatísticas do Mês</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('profile.monthStats')}</h3>
                 <div className="space-y-3">
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                    <p className="text-xs font-medium text-blue-700 mb-1">Horas Trabalhadas</p>
+                    <p className="text-xs font-medium text-blue-700 mb-1">{t('profile.hoursWorked')}</p>
                     <p className="text-2xl font-bold text-blue-600">{statistics.horasTrabalhadas}</p>
                   </div>
                   
                   <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
-                    <p className="text-xs font-medium text-orange-700 mb-1">Horas Extras</p>
+                    <p className="text-xs font-medium text-orange-700 mb-1">{t('profile.overtimeHours')}</p>
                     <p className="text-2xl font-bold text-orange-600">{statistics.horasExtras || '0h 0m'}</p>
                   </div>
                   
@@ -922,7 +924,7 @@ function Perfil() {
                     <p className={`text-xs font-medium ${
                       statistics.saldoHoras.startsWith('+') ? 'text-green-700' : 'text-red-700'
                     } mb-1`}>
-                      Saldo de Horas
+                      {t('profile.hoursBalance')}
                     </p>
                     <p className={`text-2xl font-bold ${
                       statistics.saldoHoras.startsWith('+') ? 'text-green-600' : 'text-red-600'
@@ -932,14 +934,14 @@ function Perfil() {
                   </div>
                   
                   <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
-                    <p className="text-xs font-medium text-purple-700 mb-1">Projetos Ativos</p>
+                    <p className="text-xs font-medium text-purple-700 mb-1">{t('profile.activeProjects')}</p>
                     <p className="text-2xl font-bold text-purple-600">{statistics.projetosAtivos}</p>
                   </div>
                 </div>
 
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-xs text-gray-600 italic">
-                    💡 <strong>Nota:</strong> As estatísticas são calculadas automaticamente com base nos seus registros de ponto do mês atual. O saldo considera 8h/dia útil (22 dias úteis/mês). Horas extras são contabilizadas quando o registro diário ultrapassa 8 horas.
+                    {t('profile.statsNote')}
                   </p>
                 </div>
               </div>
@@ -955,7 +957,7 @@ function Perfil() {
                       disabled={saving}
                       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {saving ? 'Salvando...' : 'Salvar'}
+                      {saving ? t('profile.savingButton') : t('profile.saveButton')}
                     </button>
                     <button
                       onClick={handleCancel}
@@ -963,7 +965,7 @@ function Perfil() {
                       className="flex items-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FiX className="w-4 h-4" />
-                      Cancelar
+                      {t('profile.cancelButton')}
                     </button>
                   </>
                 ) : (
@@ -972,7 +974,7 @@ function Perfil() {
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
                   >
                     <FiEdit2 className="w-4 h-4" />
-                    Editar Perfil
+                    {t('profile.editProfileButton')}
                   </button>
                 )}
               </div>
@@ -980,19 +982,6 @@ function Perfil() {
           </div>
         </div>
       </div>
-
-      {/* Modal de Notificações */}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={closeModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.confirmText}
-        cancelText={modalState.cancelText}
-        showCancel={modalState.showCancel}
-        onConfirm={modalState.onConfirm}
-      />
     </MainLayout>
   )
 }

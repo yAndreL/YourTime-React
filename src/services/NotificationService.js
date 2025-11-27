@@ -2,6 +2,20 @@
 // Serviço para gerenciamento de notificações in-app e emails
 
 import { supabase } from '../config/supabase'
+import { translations } from '../i18n/translations'
+
+// Função auxiliar para obter tradução
+const t = (language, key) => {
+  const keys = key.split('.')
+  let value = translations[language] || translations['pt-BR']
+  
+  for (const k of keys) {
+    value = value?.[k]
+    if (!value) return key
+  }
+  
+  return value || key
+}
 
 class NotificationService {
   /**
@@ -243,11 +257,19 @@ class NotificationService {
 
       // Criar notificação para cada admin (exceto o próprio usuário)
       const promises = adminsParaNotificar.map(async (admin) => {
+        // Buscar idioma do admin
+        const { data: adminProfile } = await supabase
+          .from('profiles')
+          .select('language')
+          .eq('id', admin.id)
+          .single()
+        
+        const language = adminProfile?.language || 'pt-BR'
 
         const result = await this.criarNotificacao({
           userId: admin.id,
-          titulo: 'Ponto Aguardando Aprovação',
-          mensagem: `registrou um ponto e aguarda aprovação`,
+          titulo: t(language, 'notifications.pendingApprovalTitle'),
+          mensagem: t(language, 'notifications.pendingApprovalMessage'),
           tipo: 'aprovacao_pendente',
           agendamentoId,
           metadata: { 
@@ -272,10 +294,19 @@ class NotificationService {
    * Notifica usuário sobre aprovação de ponto
    */
   static async notificarPontoAprovado(userId, agendamentoId, data) {
+    // Buscar idioma do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single()
+    
+    const language = profile?.language || 'pt-BR'
+    
     return await this.criarNotificacao({
       userId,
-      titulo: 'Ponto aprovado',
-      mensagem: `Seu registro de ponto do dia ${data} foi aprovado.`,
+      titulo: t(language, 'notifications.approvedTitle'),
+      mensagem: t(language, 'notifications.approvedMessage').replace('{date}', data),
       tipo: 'ponto_aprovado',
       agendamentoId,
       metadata: { data }
@@ -286,10 +317,19 @@ class NotificationService {
    * Notifica usuário sobre rejeição de ponto
    */
   static async notificarPontoRejeitado(userId, agendamentoId, data, motivo) {
+    // Buscar idioma do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single()
+    
+    const language = profile?.language || 'pt-BR'
+    
     return await this.criarNotificacao({
       userId,
-      titulo: 'Ponto rejeitado',
-      mensagem: `Seu registro de ponto do dia ${data} foi rejeitado. Motivo: ${motivo}`,
+      titulo: t(language, 'notifications.rejectedTitle'),
+      mensagem: t(language, 'notifications.rejectedMessage').replace('{date}', data).replace('{reason}', motivo),
       tipo: 'ponto_rejeitado',
       agendamentoId,
       metadata: { data, motivo }
@@ -300,16 +340,25 @@ class NotificationService {
    * Envia lembrete para registrar ponto
    */
   static async enviarLembretePonto(userId, momento) {
+    // Buscar idioma do usuário
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', userId)
+      .single()
+    
+    const language = profile?.language || 'pt-BR'
+    
     const mensagens = {
-      inicio: 'Não esqueça de registrar sua entrada!',
-      intervalo: 'Hora do intervalo! Registre sua saída e retorno.',
-      fim: 'Fim do expediente chegando. Lembre-se de registrar sua saída!'
+      inicio: t(language, 'notifications.reminderStart'),
+      intervalo: t(language, 'notifications.reminderBreak'),
+      fim: t(language, 'notifications.reminderEnd')
     }
 
     return await this.criarNotificacao({
       userId,
-      titulo: 'Lembrete de Ponto',
-      mensagem: mensagens[momento] || 'Lembre-se de registrar seu ponto.',
+      titulo: t(language, 'notifications.reminderTitle'),
+      mensagem: mensagens[momento] || t(language, 'notifications.reminderDefault'),
       tipo: 'lembrete_ponto',
       metadata: { momento }
     })

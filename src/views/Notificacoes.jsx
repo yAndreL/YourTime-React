@@ -1,19 +1,93 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiBell, FiClock, FiCheckCircle, FiXCircle, FiAlertCircle, FiInfo, FiTrash2, FiCheck } from 'react-icons/fi'
+import { FiBell, FiClock, FiCheckCircle, FiXCircle, FiAlertCircle, FiInfo, FiTrash2, FiCheck, FiCalendar } from 'react-icons/fi'
 import NotificationService from '../services/NotificationService'
 import { supabase } from '../config/supabase'
 import MainLayout from '../components/layout/MainLayout'
+import { useLanguage } from '../hooks/useLanguage'
 
 function Notificacoes() {
+  const { t, currentLanguage } = useLanguage()
   const [notifications, setNotifications] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [filter, setFilter] = useState('all') // all, unread, read
   const navigate = useNavigate()
 
+  // Função para traduzir notificações antigas
+  const translateNotification = (notification) => {
+    const { titulo, mensagem, metadata } = notification
+    
+    // Mapear títulos conhecidos para chaves de tradução
+    const tituloMap = {
+      'Ponto Aguardando Aprovação': 'notifications.pendingApprovalTitle',
+      'Ponto aguardando aprovação': 'notifications.pendingApprovalTitle',
+      'Ponto aprovado': 'notifications.approvedTitle',
+      'Ponto Aprovado': 'notifications.approvedTitle',
+      'Ponto rejeitado': 'notifications.rejectedTitle',
+      'Ponto Rejeitado': 'notifications.rejectedTitle',
+      'Lembrete de Ponto': 'notifications.reminderTitle',
+      'Lembrete de ponto': 'notifications.reminderTitle',
+    }
+    
+    const mensagemMap = {
+      'registrou um ponto e aguarda aprovação': 'notifications.pendingApprovalMessage',
+      'Não esqueça de registrar sua entrada!': 'notifications.reminderStart',
+      'Hora do intervalo! Registre sua saída e retorno.': 'notifications.reminderBreak',
+      'Fim do expediente chegando. Lembre-se de registrar sua saída!': 'notifications.reminderEnd',
+      'Lembre-se de registrar seu ponto.': 'notifications.reminderDefault',
+    }
+    
+    let tituloTraduzido = titulo
+    let mensagemTraduzida = mensagem
+    
+    // Traduzir título se encontrado no mapa
+    if (tituloMap[titulo]) {
+      tituloTraduzido = t(tituloMap[titulo])
+    }
+    
+    // Traduzir mensagem se encontrada no mapa
+    if (mensagemMap[mensagem]) {
+      mensagemTraduzida = t(mensagemMap[mensagem])
+    } else if (mensagem.includes('foi aprovado') || mensagem.includes('has been approved')) {
+      // Mensagem de aprovação com data - extrair data da mensagem
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      const data = dataMatch ? dataMatch[0] : (metadata?.data || metadata?.data_formatada)
+      if (data) {
+        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', data)
+      }
+    } else if (mensagem.includes('foi rejeitado') || mensagem.includes('has been rejected')) {
+      // Mensagem de rejeição com data e motivo
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      const data = dataMatch ? dataMatch[0] : metadata?.data
+      const motivo = metadata?.motivo || 'Não especificado'
+      if (data) {
+        mensagemTraduzida = t('notifications.rejectedMessage')
+          .replace('{date}', data)
+          .replace('{reason}', motivo)
+      }
+    } else if (mensagem.includes('Seu registro de ponto do dia')) {
+      // Padrão específico das notificações antigas de aprovação
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      if (dataMatch) {
+        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', dataMatch[0])
+      }
+    }
+    
+    return {
+      ...notification,
+      titulo: tituloTraduzido,
+      mensagem: mensagemTraduzida
+    }
+  }
+
   useEffect(() => {
     carregarNotificacoes()
   }, [])
+
+  // Recarregar e traduzir notificações quando o idioma mudar
+  useEffect(() => {
+    carregarNotificacoes()
+  }, [currentLanguage])
 
   const getCurrentUserId = async () => {
     try {
@@ -38,7 +112,9 @@ function Notificacoes() {
     const result = await NotificationService.buscarNotificacoes(userId)
     
     if (result.success) {
-      setNotifications(result.data || [])
+      // Traduzir todas as notificações ao carregar
+      const notificacoesTraduzidas = (result.data || []).map(n => translateNotification(n))
+      setNotifications(notificacoesTraduzidas)
     }
     setIsLoading(false)
   }
@@ -118,7 +194,7 @@ function Notificacoes() {
   }
 
   const formatarTempo = (timestamp) => {
-    if (!timestamp) return 'Recente'
+    if (!timestamp) return t('notifications.recent')
     
     const data = new Date(timestamp)
     const agora = new Date()
@@ -127,15 +203,16 @@ function Notificacoes() {
     const diffHoras = Math.floor(diffMins / 60)
     const diffDias = Math.floor(diffHoras / 24)
 
-    if (diffMins < 1) return 'Agora'
-    if (diffMins === 1) return 'Há 1 minuto'
-    if (diffMins < 60) return `Há ${diffMins} minutos`
-    if (diffHoras === 1) return 'Há 1 hora'
-    if (diffHoras < 24) return `Há ${diffHoras} horas`
-    if (diffDias === 1) return 'Há 1 dia'
-    if (diffDias < 7) return `Há ${diffDias} dias`
+    if (diffMins < 1) return t('notifications.now')
+    if (diffMins === 1) return t('notifications.minuteAgo')
+    if (diffMins < 60) return t('notifications.minutesAgo').replace('{minutes}', diffMins)
+    if (diffHoras === 1) return t('notifications.hourAgo')
+    if (diffHoras < 24) return t('notifications.hoursAgo').replace('{hours}', diffHoras)
+    if (diffDias === 1) return t('notifications.dayAgo')
+    if (diffDias < 7) return t('notifications.daysAgo').replace('{days}', diffDias)
     
-    return data.toLocaleDateString('pt-BR', { 
+    const locale = currentLanguage === 'en-US' ? 'en-US' : 'pt-BR'
+    return data.toLocaleDateString(locale, { 
       day: '2-digit', 
       month: '2-digit',
       year: 'numeric',
@@ -153,7 +230,7 @@ function Notificacoes() {
   const unreadCount = notifications.filter(n => !n.lida).length
 
   return (
-    <MainLayout title="Notificações">
+    <MainLayout title={t('notifications.title')}>
       <div className="max-w-4xl mx-auto">
         {/* Header com filtros */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
@@ -161,9 +238,9 @@ function Notificacoes() {
             <div className="flex items-center gap-3">
               <FiBell className="w-6 h-6 text-blue-600" />
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Todas as Notificações</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('notifications.allNotifications')}</h2>
                 <p className="text-sm text-gray-500">
-                  {unreadCount > 0 ? `${unreadCount} não lida${unreadCount !== 1 ? 's' : ''}` : 'Nenhuma notificação não lida'}
+                  {unreadCount > 0 ? `${unreadCount} ${unreadCount !== 1 ? t('notifications.unreadCountPlural') : t('notifications.unreadCount')}` : t('notifications.noUnreadNotifications')}
                 </p>
               </div>
             </div>
@@ -178,7 +255,7 @@ function Notificacoes() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Todas
+                {t('notifications.all')}
               </button>
               <button
                 onClick={() => setFilter('unread')}
@@ -188,7 +265,7 @@ function Notificacoes() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Não lidas
+                {t('notifications.unread')}
               </button>
               <button
                 onClick={() => setFilter('read')}
@@ -198,7 +275,7 @@ function Notificacoes() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Lidas
+                {t('notifications.read')}
               </button>
             </div>
           </div>
@@ -211,7 +288,7 @@ function Notificacoes() {
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
               >
                 <FiCheck className="w-4 h-4" />
-                Marcar todas como lidas
+                {t('notifications.markAllRead')}
               </button>
             </div>
           )}
@@ -221,20 +298,20 @@ function Notificacoes() {
         {isLoading ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-500">Carregando notificações...</p>
+            <p className="mt-4 text-gray-500">{t('notifications.loadingNotifications')}</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <FiBell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {filter === 'unread' ? 'Nenhuma notificação não lida' : 
-               filter === 'read' ? 'Nenhuma notificação lida' : 
-               'Nenhuma notificação'}
+              {filter === 'unread' ? t('notifications.noUnreadFound') : 
+               filter === 'read' ? t('notifications.noReadFound') : 
+               t('notifications.noNotifications')}
             </h3>
             <p className="text-gray-500">
-              {filter === 'all' ? 'Você não tem notificações ainda.' : 
-               filter === 'unread' ? 'Todas as suas notificações já foram lidas.' :
-               'Você não tem notificações lidas.'}
+              {filter === 'all' ? t('notifications.noNotificationsYet') : 
+               filter === 'unread' ? t('notifications.allRead') :
+               t('notifications.noReadNotifications')}
             </p>
           </div>
         ) : (
@@ -283,8 +360,9 @@ function Notificacoes() {
                         </p>
 
                         {notificacao.metadata?.data_formatada && (
-                          <p className="text-xs text-gray-500 mb-2">
-                            📅 Data do ponto: {notificacao.metadata.data_formatada}
+                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                            <FiCalendar className="w-3 h-3" />
+                            {t('notifications.timeEntryDate')} {notificacao.metadata.data_formatada}
                           </p>
                         )}
 
@@ -301,7 +379,7 @@ function Notificacoes() {
                                 onClick={() => handleNotificacaoClick(notificacao)}
                                 className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
                               >
-                                Ver ponto
+                                {t('notifications.viewTimeEntry')}
                               </button>
                             )}
                             
@@ -309,20 +387,20 @@ function Notificacoes() {
                               <button
                                 onClick={() => handleMarcarComoLida(notificacao.id)}
                                 className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition-colors flex items-center gap-1"
-                                title="Marcar como lida"
+                                title={t('notifications.markRead')}
                               >
                                 <FiCheck className="w-3 h-3" />
-                                Marcar lida
+                                {t('notifications.markRead')}
                               </button>
                             )}
                             
                             <button
                               onClick={() => handleDeletarNotificacao(notificacao.id)}
                               className="px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded hover:bg-red-100 transition-colors flex items-center gap-1"
-                              title="Deletar"
+                              title={t('notifications.delete')}
                             >
                               <FiTrash2 className="w-3 h-3" />
-                              Deletar
+                              {t('notifications.delete')}
                             </button>
                           </div>
                         </div>

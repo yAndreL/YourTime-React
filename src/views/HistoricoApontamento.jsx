@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import MainLayout from '../components/layout/MainLayout'
 import { supabase } from '../config/supabase.js'
 import CacheService from '../services/CacheService'
+import { useLanguage } from '../hooks/useLanguage'
 import { FiCalendar, FiRotateCcw, FiClock } from 'react-icons/fi'
 
 function HistoricoApontamento() {
+  const { t } = useLanguage()
   // Funções auxiliares de cache
   const getCachedData = (key) => {
     try {
@@ -375,15 +377,15 @@ function HistoricoApontamento() {
   }
 
   return (
-    <MainLayout title="Histórico de Apontamentos" subtitle="Consulte e analise seus registros de ponto">
+    <MainLayout title={t('history.title')} subtitle={t('history.subtitle')}>
       {/* Resumo do Período */}
       {!loading && filteredApontamentos.length > 0 && (
         <div className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Resumo do Período</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('history.periodSummary')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-blue-600">{filteredApontamentos.length}</div>
-              <div className="text-sm text-blue-700 font-medium">Registros</div>
+              <div className="text-sm text-blue-700 font-medium">{t('history.records')}</div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-green-600">
@@ -392,7 +394,7 @@ function HistoricoApontamento() {
                   return total + parseInt(h) + parseInt(m) / 60
                 }, 0).toFixed(1)}h
               </div>
-              <div className="text-sm text-green-700 font-medium">Total Trabalhado</div>
+              <div className="text-sm text-green-700 font-medium">{t('history.totalWorked')}</div>
             </div>
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-purple-600">
@@ -409,7 +411,7 @@ function HistoricoApontamento() {
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
             <div>
               <label htmlFor="dataInicio" className="block text-sm font-medium text-gray-700 mb-1">
-                Data Início:
+                {t('history.startDate')}
               </label>
               <input
                 type="date"
@@ -422,7 +424,7 @@ function HistoricoApontamento() {
             </div>
             <div>
               <label htmlFor="dataFim" className="block text-sm font-medium text-gray-700 mb-1">
-                Data Fim:
+                {t('history.endDate')}
               </label>
               <input
                 type="date"
@@ -444,7 +446,7 @@ function HistoricoApontamento() {
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
               >
-                <option value="">Todos os Projetos</option>
+                <option value="">{t('history.allProjects')}</option>
                 {projetos.map(projeto => (
                   <option key={projeto.id} value={projeto.nome}>{projeto.nome}</option>
                 ))}
@@ -457,7 +459,7 @@ function HistoricoApontamento() {
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? 'Carregando...' : 'Pesquisar'}
+                {loading ? 'Carregando...' : t('history.search')}
               </button>
               <button
                 type="button"
@@ -465,7 +467,7 @@ function HistoricoApontamento() {
                 disabled={loading}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
               >
-                Limpar
+                {t('history.clear')}
               </button>
             </div>
           </form>

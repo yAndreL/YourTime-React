@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabase.js'
 import { useToast } from '../../hooks/useToast'
+import { useLanguage } from '../../hooks/useLanguage'
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiCalendar, FiClock, FiLock, FiCheck, FiArrowLeft } from 'react-icons/fi'
 
 function CadastroUser() {
+  const { t } = useLanguage()
   const { showSuccess, showError } = useToast()
   const [formData, setFormData] = useState({
     nome: '',
@@ -137,7 +139,7 @@ function CadastroUser() {
     }
 
     if (!validarFormatoEmail(email)) {
-      setEmailError('email inválido')
+      setEmailError(t('validation.emailInvalid').toLowerCase())
       return false
     }
 
@@ -162,7 +164,7 @@ function CadastroUser() {
     
     // Telefone deve ter 11 dígitos e o terceiro dígito deve ser 9
     if (cleaned.length !== 11 || cleaned.charAt(2) !== '9') {
-      setTelefoneError('telefone inválido')
+      setTelefoneError(t('validation.phoneInvalid').toLowerCase())
       return false
     }
 
@@ -360,46 +362,46 @@ function CadastroUser() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
-            <FiUser className="w-6 h-6" />
-            Cadastro de Funcionário
+    <div className="min-h-screen bg-gray-50 py-3 px-3">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h1 className="text-xl font-bold text-center text-gray-800 mb-4 flex items-center justify-center gap-2">
+            <FiUser className="w-5 h-5" />
+            {t('employeeForm.title')}
           </h1>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Informações Pessoais */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h2 className="text-base font-semibold text-blue-800 mb-3 flex items-center gap-2">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <h2 className="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">
                 <FiUser className="w-4 h-4" />
-                Informações Pessoais
+                {t('employeeForm.personalInfo')}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome Completo
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.fullName')}
                   </label>
                   <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiUser className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="text"
                       name="nome"
                       value={formData.nome}
                       onChange={handleChange}
                       required
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      placeholder="Nome completo do funcionário"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                      placeholder={t('employeeForm.fullNamePlaceholder')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.email')}
                   </label>
                   <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiMail className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="email"
                       name="email"
@@ -407,12 +409,12 @@ function CadastroUser() {
                       onChange={handleChange}
                       onBlur={handleEmailBlur}
                       required
-                      className={`w-full pl-9 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 text-sm ${
+                      className={`w-full pl-8 pr-2 py-1.5 border rounded-md focus:outline-none focus:ring-2 text-xs ${
                         emailError 
                           ? 'border-red-500 focus:ring-red-500' 
                           : 'border-gray-300 focus:ring-blue-500'
                       }`}
-                      placeholder="funcionario@empresa.com"
+                      placeholder={t('employeeForm.emailPlaceholder')}
                     />
                   </div>
                   {emailError && (
@@ -421,23 +423,23 @@ function CadastroUser() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Telefone
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.phone')}
                   </label>
                   <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiPhone className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="tel"
                       name="telefone"
                       value={formData.telefone}
                       onChange={handleChange}
                       onBlur={handleTelefoneBlur}
-                      className={`w-full pl-9 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 text-sm ${
+                      className={`w-full pl-8 pr-2 py-1.5 border rounded-md focus:outline-none focus:ring-2 text-xs ${
                         telefoneError 
                           ? 'border-red-500 focus:ring-red-500' 
                           : 'border-gray-300 focus:ring-blue-500'
                       }`}
-                      placeholder="(11) 99999-9999"
+                      placeholder={t('employeeForm.phonePlaceholder')}
                       maxLength="15"
                     />
                   </div>
@@ -449,17 +451,17 @@ function CadastroUser() {
             </div>
 
             {/* Informações Profissionais */}
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h2 className="text-base font-semibold text-green-800 mb-3 flex items-center gap-2">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <h2 className="text-sm font-semibold text-green-800 mb-2 flex items-center gap-2">
                 <FiBriefcase className="w-4 h-4" />
-                Informações Profissionais
+                {t('employeeForm.professionalInfo')}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Empresas <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.companies')} <span className="text-red-500">*</span>
                   </label>
-                  <div className="bg-white border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <div className="bg-white border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
                     {empresas.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-3">
                         Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.
@@ -491,24 +493,24 @@ function CadastroUser() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
+                  <p className="text-xs text-gray-500 mt-1">
                     {empresasSelecionadas.length === 0 
-                      ? 'Selecione uma ou mais empresas para vincular este funcionário'
-                      : `${empresasSelecionadas.length} empresa(s) selecionada(s)`}
+                      ? t('employeeForm.selectCompanies')
+                      : `${empresasSelecionadas.length} ${t('employeeForm.companies').toLowerCase()} ${empresasSelecionadas.length === 1 ? 'selecionada' : 'selecionadas'}`}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Departamento (opcional)
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.department')}
                   </label>
                   <select
                     name="departamento"
                     value={formData.departamento}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                   >
-                    <option value="">Selecione o departamento</option>
+                    <option value="">{t('employeeForm.selectDepartment')}</option>
                     <option value="Tecnologia">Tecnologia</option>
                     <option value="Recursos Humanos">Recursos Humanos</option>
                     <option value="Financeiro">Financeiro</option>
@@ -522,11 +524,11 @@ function CadastroUser() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Carga Horária Semanal
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.weeklyHours')}
                   </label>
                   <div className="relative">
-                    <FiClock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiClock className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="number"
                       name="carga_horaria"
@@ -535,7 +537,7 @@ function CadastroUser() {
                       min="20"
                       max="60"
                       required
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                       placeholder="40"
                     />
                   </div>
@@ -545,34 +547,34 @@ function CadastroUser() {
             </div>
 
             {/* Informações de Acesso */}
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <h2 className="text-base font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <h2 className="text-sm font-semibold text-yellow-800 mb-2 flex items-center gap-2">
                 <FiLock className="w-4 h-4" />
-                Informações de Acesso
+                {t('employeeForm.accessInfo')}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nível de Acesso <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.accessLevel')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="acesso"
                     value={formData.acesso}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                   >
-                    <option value="user">Usuário</option>
+                    <option value="user">{t('employeeForm.user')}</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Senha <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.password')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiLock className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="password"
                       name="senha"
@@ -580,55 +582,55 @@ function CadastroUser() {
                       onChange={handleChange}
                       required
                       minLength={6}
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      placeholder="Mínimo 6 caracteres"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                      placeholder={t('employeeForm.minCharacters')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirmar Senha <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('employeeForm.confirmPassword')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <FiLock className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
                     <input 
                       type="password"
                       name="confirmarSenha"
                       value={formData.confirmarSenha}
                       onChange={handleChange}
                       required
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      placeholder="Confirme a senha"
+                      className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                      placeholder={t('employeeForm.confirmPasswordPlaceholder')}
                     />
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Link 
                 to="/painel-admin"
-                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"
+                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-xs"
               >
-                <FiArrowLeft className="w-4 h-4" />
-                Voltar ao Painel
+                <FiArrowLeft className="w-3.5 h-3.5" />
+                {t('employeeForm.backToPanel')}
               </Link>
               
               <button 
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-xs"
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Cadastrando...
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                    {t('common.loading')}...
                   </>
                 ) : (
                   <>
-                    <FiCheck className="w-4 h-4" />
-                    Cadastrar Funcionário
+                    <FiCheck className="w-3.5 h-3.5" />
+                    {t('employeeForm.registerEmployee')}
                   </>
                 )}
               </button>

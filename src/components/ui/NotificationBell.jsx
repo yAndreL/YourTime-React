@@ -1,16 +1,86 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiBell, FiClock, FiCheckCircle, FiXCircle, FiAlertCircle, FiInfo } from 'react-icons/fi'
+import { FiBell, FiClock, FiCheckCircle, FiXCircle, FiAlertCircle, FiInfo, FiCalendar } from 'react-icons/fi'
 import NotificationService from '../../services/NotificationService'
 import { supabase } from '../../config/supabase'
+import { useLanguage } from '../../hooks/useLanguage'
 
 function NotificationBell() {
+  const { t, currentLanguage } = useLanguage()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
+
+  // Função para traduzir notificações antigas
+  const translateNotification = (notification) => {
+    const { titulo, mensagem, metadata } = notification
+    
+    // Mapear títulos conhecidos para chaves de tradução
+    const tituloMap = {
+      'Ponto Aguardando Aprovação': 'notifications.pendingApprovalTitle',
+      'Ponto aguardando aprovação': 'notifications.pendingApprovalTitle',
+      'Ponto aprovado': 'notifications.approvedTitle',
+      'Ponto Aprovado': 'notifications.approvedTitle',
+      'Ponto rejeitado': 'notifications.rejectedTitle',
+      'Ponto Rejeitado': 'notifications.rejectedTitle',
+      'Lembrete de Ponto': 'notifications.reminderTitle',
+      'Lembrete de ponto': 'notifications.reminderTitle',
+    }
+    
+    const mensagemMap = {
+      'registrou um ponto e aguarda aprovação': 'notifications.pendingApprovalMessage',
+      // Mensagens de ponto aprovado/rejeitado são dinâmicas com data
+      'Não esqueça de registrar sua entrada!': 'notifications.reminderStart',
+      'Hora do intervalo! Registre sua saída e retorno.': 'notifications.reminderBreak',
+      'Fim do expediente chegando. Lembre-se de registrar sua saída!': 'notifications.reminderEnd',
+      'Lembre-se de registrar seu ponto.': 'notifications.reminderDefault',
+    }
+    
+    let tituloTraduzido = titulo
+    let mensagemTraduzida = mensagem
+    
+    // Traduzir título se encontrado no mapa
+    if (tituloMap[titulo]) {
+      tituloTraduzido = t(tituloMap[titulo])
+    }
+    
+    // Traduzir mensagem se encontrada no mapa
+    if (mensagemMap[mensagem]) {
+      mensagemTraduzida = t(mensagemMap[mensagem])
+    } else if (mensagem.includes('foi aprovado') || mensagem.includes('has been approved')) {
+      // Mensagem de aprovação com data - extrair data da mensagem
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      const data = dataMatch ? dataMatch[0] : (metadata?.data || metadata?.data_formatada)
+      if (data) {
+        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', data)
+      }
+    } else if (mensagem.includes('foi rejeitado') || mensagem.includes('has been rejected')) {
+      // Mensagem de rejeição com data e motivo
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      const data = dataMatch ? dataMatch[0] : metadata?.data
+      const motivo = metadata?.motivo || 'Não especificado'
+      if (data) {
+        mensagemTraduzida = t('notifications.rejectedMessage')
+          .replace('{date}', data)
+          .replace('{reason}', motivo)
+      }
+    } else if (mensagem.includes('Seu registro de ponto do dia')) {
+      // Padrão específico das notificações antigas de aprovação
+      const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/)
+      if (dataMatch) {
+        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', dataMatch[0])
+      }
+    }
+    
+    return {
+      ...notification,
+      titulo: tituloTraduzido,
+      mensagem: mensagemTraduzida
+    }
+  }
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -20,7 +90,7 @@ function NotificationBell() {
       const userId = await getCurrentUserId()
       if (userId) {
         const channel = NotificationService.subscribeToNotifications(userId, (novaNotificacao) => {
-          setNotifications(prev => [novaNotificacao, ...prev])
+          setNotifications(prev => [translateNotification(novaNotificacao), ...prev])
           setUnreadCount(prev => prev + 1)
         })
 
@@ -32,6 +102,11 @@ function NotificationBell() {
 
     initNotifications()
   }, [])
+
+  // Recarregar e traduzir notificações quando o idioma mudar
+  useEffect(() => {
+    carregarNotificacoes()
+  }, [currentLanguage])
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -70,7 +145,9 @@ function NotificationBell() {
     const result = await NotificationService.buscarNotificacoes(userId)
     
     if (result.success) {
-      setNotifications(result.data || [])
+      // Traduzir todas as notificações ao carregar
+      const notificacoesTraduzidas = (result.data || []).map(n => translateNotification(n))
+      setNotifications(notificacoesTraduzidas)
       
       // Contar não lidas
       const countResult = await NotificationService.contarNaoLidas(userId)
@@ -176,7 +253,7 @@ function NotificationBell() {
   }
 
   const formatarTempo = (timestamp) => {
-    if (!timestamp) return 'Recente'
+    if (!timestamp) return t('notifications.recent')
     
     const data = new Date(timestamp)
     const agora = new Date()
@@ -185,15 +262,16 @@ function NotificationBell() {
     const diffHoras = Math.floor(diffMins / 60)
     const diffDias = Math.floor(diffHoras / 24)
 
-    if (diffMins < 1) return 'Agora'
-    if (diffMins === 1) return 'Há 1 minuto'
-    if (diffMins < 60) return `Há ${diffMins} minutos`
-    if (diffHoras === 1) return 'Há 1 hora'
-    if (diffHoras < 24) return `Há ${diffHoras} horas`
-    if (diffDias === 1) return 'Há 1 dia'
-    if (diffDias < 7) return `Há ${diffDias} dias`
+    if (diffMins < 1) return t('notifications.now')
+    if (diffMins === 1) return t('notifications.minuteAgo')
+    if (diffMins < 60) return t('notifications.minutesAgo').replace('{minutes}', diffMins)
+    if (diffHoras === 1) return t('notifications.hourAgo')
+    if (diffHoras < 24) return t('notifications.hoursAgo').replace('{hours}', diffHoras)
+    if (diffDias === 1) return t('notifications.dayAgo')
+    if (diffDias < 7) return t('notifications.daysAgo').replace('{days}', diffDias)
     
-    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    const locale = currentLanguage === 'en-US' ? 'en-US' : 'pt-BR'
+    return data.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })
   }
 
   return (
@@ -231,13 +309,13 @@ function NotificationBell() {
         <div className="absolute right-0 mt-2 w-96 max-[620px]:w-[min(calc(100vw-1rem),250px)] max-[620px]:right-0 max-[620px]:mr-0.5 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
           {/* Header */}
           <div className="px-3 max-[620px]:px-1.5 py-3 max-[620px]:py-2 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-lg gap-2">
-            <h3 className="text-base max-[620px]:text-xs font-semibold text-gray-900 flex-shrink-0">Notificações</h3>
+            <h3 className="text-base max-[620px]:text-xs font-semibold text-gray-900 flex-shrink-0">{t('notifications.title')}</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarcarTodasComoLidas}
                 className="text-[10px] max-[620px]:text-[8px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap flex-shrink-0"
               >
-                Marcar todas como lidas
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -247,14 +325,14 @@ function NotificationBell() {
             {isLoading ? (
               <div className="p-8 text-center text-gray-500">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-sm">Carregando...</p>
+                <p className="mt-2 text-sm">{t('notifications.loading')}</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 max-[620px]:p-4 text-center text-gray-500">
                 <svg className="w-16 h-16 max-[620px]:w-12 max-[620px]:h-12 mx-auto mb-4 max-[620px]:mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="text-sm max-[620px]:text-xs">Nenhuma notificação</p>
+                <p className="text-sm max-[620px]:text-xs">{t('notifications.noNotifications')}</p>
               </div>
             ) : (
               notifications.map((notificacao) => (
@@ -289,7 +367,7 @@ function NotificationBell() {
                         )}
                       </p>
                       {notificacao.metadata?.data_formatada && (
-                        <p className="text-xs max-[620px]:text-[10px] text-gray-500 mt-1">Data: {notificacao.metadata.data_formatada}</p>
+                        <p className="text-xs max-[620px]:text-[10px] text-gray-500 mt-1">{t('notifications.date')} {notificacao.metadata.data_formatada}</p>
                       )}
                       <p className="text-xs max-[620px]:text-[10px] text-gray-400 mt-1">{formatarTempo(notificacao.created_at)}</p>
                     </div>
@@ -333,7 +411,7 @@ function NotificationBell() {
                 }}
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center"
               >
-                Ver todas as notificações
+                {t('notifications.viewAll')}
               </button>
             </div>
           )}

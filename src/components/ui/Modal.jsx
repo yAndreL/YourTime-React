@@ -124,23 +124,25 @@ const Modal = ({
           {children || <p className="text-gray-700 whitespace-pre-line">{message}</p>}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
-          {showCancel && (
+        {/* Footer - Oculto quando há children sem necessidade de botões */}
+        {(!children || showCancel) && (
+          <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+            {showCancel && (
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                {cancelText}
+              </button>
+            )}
             <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              onClick={handleConfirm}
+              className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}
             >
-              {cancelText}
+              {confirmText}
             </button>
-          )}
-          <button
-            onClick={handleConfirm}
-            className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}
-          >
-            {confirmText}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { FiArrowLeft, FiLoader, FiMail, FiAlertCircle } from 'react-icons/fi'
 import { enviarCodigoRecuperacao } from '../services/EmailService'
+import { useLanguage } from '../hooks/useLanguage'
 
 function VerificarCodigo() {
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const email = location.state?.email
@@ -73,7 +75,7 @@ function VerificarCodigo() {
     const codigoDigitado = codigo.join('')
 
     if (codigoDigitado.length !== 6) {
-      setErro('Por favor, preencha todos os 6 dígitos')
+      setErro(t('validation.fillAllDigits'))
       setLoading(false)
       return
     }
@@ -88,7 +90,7 @@ function VerificarCodigo() {
         } 
       })
     } else {
-      setErro('Código inválido. Verifique e tente novamente.')
+      setErro(t('validation.invalidCode'))
       setCodigo(['', '', '', '', '', ''])
       inputRefs[0].current.focus()
     }
@@ -126,7 +128,7 @@ function VerificarCodigo() {
         setMensagemSucesso('')
       }, 20000)
     } catch (error) {
-      setErro('Erro ao reenviar código. Tente novamente.')
+      setErro(t('validation.errorResendingCode'))
     } finally {
       setReenviando(false)
     }

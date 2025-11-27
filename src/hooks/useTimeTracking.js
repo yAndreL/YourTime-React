@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase.js'
+import { useLanguage } from './useLanguage.jsx'
 
 export function useTimeTracking() {
+  const { t } = useLanguage()
   const [userData, setUserData] = useState(null)
   const [timeRecords, setTimeRecords] = useState([])
   const [loading, setLoading] = useState(true)
@@ -184,7 +186,7 @@ export function useTimeTracking() {
       horasHoje: calculateTodayApprovedHours(),
       horasPendentes: calculateTodayPendingHours(),
       projetoAtual: userData?.cargo || 'Desenvolvimento',
-      status: 'Trabalhando',
+      status: t('dashboard.working'),
       isWorking: true,
       timeRecords: timeRecords
     }
@@ -192,7 +194,15 @@ export function useTimeTracking() {
 
   // Dados semanais formatados para gráficos (apenas semana atual e registros aprovados)
   const getWeeklyChartData = () => {
-    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+    const weekDays = [
+      t('dashboard.monday'),
+      t('dashboard.tuesday'),
+      t('dashboard.wednesday'),
+      t('dashboard.thursday'),
+      t('dashboard.friday'),
+      t('dashboard.saturday'),
+      t('dashboard.sunday')
+    ]
     
     // ✅ CORREÇÃO: Usar horário LOCAL da máquina do usuário
     const today = new Date()

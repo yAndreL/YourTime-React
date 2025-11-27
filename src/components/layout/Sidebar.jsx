@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabase'
+import { useLanguage } from '../../hooks/useLanguage.jsx'
 import { 
   FiHome, 
   FiFileText, 
@@ -16,6 +17,7 @@ import {
 function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useLanguage()
   
   // Carregar do cache IMEDIATAMENTE (sem delay)
   const getCachedRole = () => {
@@ -81,16 +83,16 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
   }
 
   const menuItems = [
-    { path: '/', icon: FiHome, label: 'Dashboard' },
-    { path: '/formulario-ponto', icon: FiFileText, label: 'Registrar Ponto' },
-    { path: '/painel-admin', icon: FiUserCheck, label: 'Painel Administrativo', adminOnly: true },
-    { path: '/historico', icon: FiCalendar, label: 'Histórico' },
-    { path: '/projeto', icon: FiTarget, label: 'Projetos' }
+    { path: '/', icon: FiHome, label: t('menu.dashboard') },
+    { path: '/formulario-ponto', icon: FiFileText, label: t('menu.timeRecord') },
+    { path: '/painel-admin', icon: FiUserCheck, label: t('menu.adminPanel'), adminOnly: true },
+    { path: '/historico', icon: FiCalendar, label: t('menu.history') },
+    { path: '/projeto', icon: FiTarget, label: t('menu.projects') }
   ]
 
   const settingsItems = [
-    { path: '/perfil', icon: FiUser, label: 'Perfil' },
-    { path: '/configuracoes', icon: FiSettings, label: 'Configurações' }
+    { path: '/perfil', icon: FiUser, label: t('menu.profile') },
+    { path: '/configuracoes', icon: FiSettings, label: t('menu.settings') }
   ]
 
   const handleLogout = async () => {
@@ -158,7 +160,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">
-              Configurações
+              {t('menu.personal')}
             </div>
             <div className="space-y-2">
               {settingsItems.map((item) => {
@@ -188,7 +190,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
               onClick={handleLogout}
               className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <FiLogOut className="mr-3 w-5 h-5" /> Sair
+              <FiLogOut className="mr-3 w-5 h-5" /> {t('menu.logout')}
             </button>
           </div>
         </nav>

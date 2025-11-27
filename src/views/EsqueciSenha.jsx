@@ -34,7 +34,7 @@ function EsqueciSenha() {
       })
     } catch (error) {
       console.error('Erro ao enviar email:', error)
-      setErro('Erro ao enviar email. Tente novamente mais tarde.')
+      setErro(t('validation.errorSendingEmail'))
     } finally {
       setLoading(false)
     }

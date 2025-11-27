@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Modal from '../components/ui/Modal'
 import { useModal } from '../hooks/useModal'
+import { useLanguage } from '../hooks/useLanguage'
 import { supabase } from '../config/supabase'
 import { FiMail, FiLock, FiLoader } from 'react-icons/fi'
 import logoYourTime from '../assets/yourtimelogo.png'
 
 function Login() {
+  const { t } = useLanguage()
   const { modalState, showError, closeModal: closeNotificationModal } = useModal()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -96,7 +98,7 @@ function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email
+                {t('login.email')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -110,7 +112,7 @@ function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="seu@email.com"
+                  placeholder={t('login.emailPlaceholder')}
                   required
                 />
               </div>
@@ -118,7 +120,7 @@ function Login() {
 
             <div>
               <label htmlFor="senha" className="block text-sm font-semibold text-gray-700 mb-2">
-                Senha
+                {t('login.password')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -132,7 +134,7 @@ function Login() {
                   onChange={(e) => setSenha(e.target.value)}
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="••••••••"
+                  placeholder={t('login.passwordPlaceholder')}
                   required
                 />
               </div>
@@ -146,10 +148,10 @@ function Login() {
               {loading ? (
                 <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  Entrando...
+                  {t('common.loading')}...
                 </>
               ) : (
-                'Entrar'
+                t('login.loginButton')
               )}
             </button>
           </form>
@@ -160,24 +162,11 @@ function Login() {
               to="/esqueci-senha" 
               className="block text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
             >
-              Esqueceu sua senha?
+              {t('login.forgotPassword')}
             </Link>
           </div>
         </div>
       </div>
-
-      {/* Modal de Notificações */}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={closeNotificationModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.confirmText}
-        cancelText={modalState.cancelText}
-        showCancel={modalState.showCancel}
-        onConfirm={modalState.onConfirm}
-      />
     </div>
   )
 }

@@ -2,21 +2,23 @@
 // Componente para mostrar resumo detalhado dos registros de ponto
 
 import { useState } from 'react'
+import { useLanguage } from '../hooks/useLanguage'
 import { FiRefreshCw, FiClock, FiEye, FiEyeOff } from 'react-icons/fi'
 
 function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
+  const { t, currentLanguage } = useLanguage()
   const [showDetails, setShowDetails] = useState(false)
 
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Resumo de Ponto</h3>
-          <div className="text-sm text-gray-500">Carregando...</div>
+          <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.timeRecordSummary')}</h3>
+          <div className="text-sm text-gray-500">{t('common.loading')}...</div>
         </div>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Carregando registros...</span>
+          <span className="ml-2 text-gray-600">{t('common.loading')}...</span>
         </div>
       </div>
     )
@@ -49,25 +51,25 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Resumo de Ponto</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.timeRecordSummary')}</h3>
           {onRefresh && (
             <button
               onClick={onRefresh}
               className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
             >
-              <FiRefreshCw className="w-4 h-4" /> Atualizar
+              <FiRefreshCw className="w-4 h-4" /> {t('common.refresh')}
             </button>
           )}
         </div>
         <div className="text-center py-8">
           <FiClock className="text-gray-400 w-12 h-12 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum Registro de Ponto</h3>
-          <p className="text-gray-500 mb-4">Ainda não há registros de ponto cadastrados para esta semana.</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('dashboard.timeRecordSummary')}</h3>
+          <p className="text-gray-500 mb-4">{t('dashboard.noTimeRecords')}</p>
           <button
             onClick={() => window.location.href = '/formulario-ponto'}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
-            Registrar Primeiro Ponto
+            {t('dashboard.registerTime')}
           </button>
         </div>
       </div>
@@ -106,7 +108,7 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Resumo de Ponto</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.timeRecordSummary')}</h3>
         <button
           onClick={() => setShowDetails(!showDetails)}
           className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
@@ -114,12 +116,12 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
           {showDetails ? (
             <>
               <FiEyeOff className="w-4 h-4" />
-              Ocultar Detalhes
+              {t('common.hide')}
             </>
           ) : (
             <>
               <FiEye className="w-4 h-4" />
-              Ver Detalhes
+              {t('dashboard.viewDetails')}
             </>
           )}
         </button>
@@ -131,48 +133,50 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
           <div className="text-xl sm:text-2xl font-bold text-blue-600">
             {horas}h {minutos}m
           </div>
-          <div className="text-xs sm:text-sm text-blue-800">Total de Horas</div>
+          <div className="text-xs sm:text-sm text-blue-800">{t('dashboard.totalHours')}</div>
         </div>
 
         <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
           <div className="text-xl sm:text-2xl font-bold text-green-600">
             {diasTrabalhados}
           </div>
-          <div className="text-xs sm:text-sm text-green-800">Dias Trabalhados</div>
+          <div className="text-xs sm:text-sm text-green-800">{t('dashboard.workedDays')}</div>
         </div>
 
         <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
           <div className="text-xl sm:text-2xl font-bold text-purple-600">
             {diasTrabalhados > 0 ? Math.round(totalHoras / diasTrabalhados / 60 * 10) / 10 : 0}h
           </div>
-          <div className="text-xs sm:text-sm text-purple-800">Média por Dia</div>
+          <div className="text-xs sm:text-sm text-purple-800">{t('dashboard.averagePerDay')}</div>
         </div>
       </div>
 
       {/* Detalhes dos Registros */}
       {showDetails && (
         <div className="border-t pt-4">
-          <h4 className="text-md font-semibold text-gray-900 mb-3">Registros Detalhados</h4>
+          <h4 className="text-md font-semibold text-gray-900 mb-3">{t('dashboard.detailedRecords')}</h4>
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {timeRecords.map((record, index) => (
               <div key={record.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">
-                    {new Date(record.data).toLocaleDateString('pt-BR', {
+                    {new Date(record.data).toLocaleDateString(currentLanguage === 'en-US' ? 'en-US' : 'pt-BR', {
                       weekday: 'long',
-                      day: 'numeric',
-                      month: 'short'
+                      year: 'numeric',
+                      month: currentLanguage === 'en-US' ? 'short' : 'short',
+                      day: 'numeric'
                     })}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    {record.entrada1 && `Entrada: ${record.entrada1}`}
-                    {record.saida1 && ` | Saída: ${record.saida1}`}
-                    {record.entrada2 && ` | Entrada 2: ${record.entrada2}`}
-                    {record.saida2 && ` | Saída 2: ${record.saida2}`}
+                    {record.entrada1 && `${t('history.entry1')}: ${record.entrada1}`}
+                    {record.saida1 && ` | ${t('history.exit1')}: ${record.saida1}`}
+                    {record.entrada2 && ` | ${t('history.entry2')}: ${record.entrada2}`}
+                    {record.saida2 && ` | ${t('history.exit2')}: ${record.saida2}`}
                   </div>
                   {record.observacao && (
-                    <div className="text-sm text-blue-600 mt-1">
-                      📝 {record.observacao}
+                    <div className="text-sm text-blue-600 mt-1 flex items-center gap-1">
+                      <span className="inline-flex items-center justify-center w-4 h-4 bg-blue-100 rounded-full text-blue-600 font-semibold text-xs">i</span>
+                      {record.observacao}
                     </div>
                   )}
                 </div>
@@ -204,7 +208,7 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
                     })()}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {record.pausa_almoco > 0 && `${record.pausa_almoco}min intervalo`}
+                    {record.pausa_almoco > 0 && `${record.pausa_almoco}min ${t('common.break')}`}
                   </div>
                 </div>
               </div>

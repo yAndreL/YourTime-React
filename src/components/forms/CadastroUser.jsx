@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowIcon } from '../ui/Icons'
+import { useLanguage } from '../../hooks/useLanguage'
 
 function CadastroUser() {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -31,23 +33,23 @@ function CadastroUser() {
     const newErrors = {}
 
     if (!formData.nome.trim()) {
-      newErrors.nome = 'Nome é obrigatório'
+      newErrors.nome = t('validation.nameRequired')
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email é obrigatório'
+      newErrors.email = t('validation.emailRequired')
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email inválido'
+      newErrors.email = t('validation.emailInvalid')
     }
 
     if (!formData.senha) {
-      newErrors.senha = 'Senha é obrigatória'
+      newErrors.senha = t('validation.passwordRequired')
     } else if (formData.senha.length < 6) {
-      newErrors.senha = 'Senha deve ter pelo menos 6 caracteres'
+      newErrors.senha = t('validation.passwordMinLength')
     }
 
     if (formData.senha !== formData.confirmarSenha) {
-      newErrors.confirmarSenha = 'Senhas não conferem'
+      newErrors.confirmarSenha = t('validation.passwordsNotMatch')
     }
 
     return newErrors

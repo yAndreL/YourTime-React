@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase'
 import Modal from './ui/Modal'
 import { useModal } from '../hooks/useModal'
 import { useToast } from '../hooks/useToast'
+import { useLanguage } from '../hooks/useLanguage'
 import { 
   FiBriefcase, 
   FiPlus, 
@@ -16,6 +17,7 @@ import {
 } from 'react-icons/fi'
 
 function GerenciamentoEmpresas() {
+  const { t } = useLanguage()
   const { modalState, showModal: showModalConfirm, closeModal } = useModal()
   const toast = useToast()
   const [empresas, setEmpresas] = useState([])
@@ -152,7 +154,7 @@ function GerenciamentoEmpresas() {
           .eq('id', empresaSelecionada.id)
 
         if (error) throw error
-        toast.showSuccess('Empresa atualizada com sucesso!')
+        toast.showSuccess(t('companies.companyUpdated'))
       } else {
         // Criar nova empresa vinculada ao superior_empresa_id do usuário
         const { error } = await supabase
@@ -168,7 +170,7 @@ function GerenciamentoEmpresas() {
           })
 
         if (error) throw error
-        toast.showSuccess('Empresa cadastrada com sucesso!')
+        toast.showSuccess(t('companies.companyRegistered'))
       }
 
       setShowFormModal(false)
@@ -186,12 +188,12 @@ function GerenciamentoEmpresas() {
         .eq('id', empresa.id)
 
       if (error) throw error
-      
+
       // Toast amarelo para desativação, verde para ativação
       if (empresa.is_active) {
-        toast.showWarning('Empresa desativada com sucesso!')
+        toast.showWarning(t('companies.companyDeactivated'))
       } else {
-        toast.showSuccess('Empresa ativada com sucesso!')
+        toast.showSuccess(t('companies.companyActivated'))
       }
       
       carregarEmpresas()
@@ -204,7 +206,7 @@ function GerenciamentoEmpresas() {
     // Abrir modal de confirmação com tipo "delete"
     showModalConfirm({
       title: 'Confirmar Exclusão',
-      message: `Tem certeza que deseja excluir a empresa "${empresa.nome}"?\n\nEsta ação não pode ser desfeita e todos os projetos vinculados a esta empresa também serão removidos.`,
+      message: `${t('companies.confirmDelete')} "${empresa.nome}"?\n\n${t('companies.deleteWarning')}`,
       type: 'delete',
       showCancel: true,
       confirmText: 'Confirmar',
@@ -218,7 +220,7 @@ function GerenciamentoEmpresas() {
 
           if (error) throw error
           
-          toast.showError('Empresa excluída com sucesso!')
+          toast.showError(t('companies.companyDeleted'))
           closeModal()
           carregarEmpresas()
         } catch (error) {
@@ -246,7 +248,7 @@ function GerenciamentoEmpresas() {
         <div>
           <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
             <FiBriefcase className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-600" />
-            Gerenciamento de Empresas
+            {t('admin.companyManagement')}
           </h2>
         </div>
         <button
@@ -254,7 +256,7 @@ function GerenciamentoEmpresas() {
           className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm"
         >
           <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
-          Empresa
+          {t('admin.addCompany')}
         </button>
       </div>
 
@@ -305,7 +307,7 @@ function GerenciamentoEmpresas() {
                     ? 'bg-green-100 text-green-800'
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {empresa.is_active ? 'Ativa' : 'Inativa'}
+                  {empresa.is_active ? t('admin.active') : t('admin.inactive')}
                 </span>
               </div>
 
@@ -338,7 +340,7 @@ function GerenciamentoEmpresas() {
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                 >
                   <FiEdit2 className="w-4 h-4" />
-                  Editar
+                  {t('admin.edit')}
                 </button>
                 <button
                   onClick={() => handleToggleStatus(empresa)}
@@ -368,14 +370,14 @@ function GerenciamentoEmpresas() {
       <Modal
         isOpen={showFormModal}
         onClose={() => setShowFormModal(false)}
-        title={editando ? 'Editar Empresa' : 'Cadastrar Nova Empresa'}
+        title={editando ? t('companies.editCompany') : t('companies.registerCompany')}
         type="info"
         showCancel={false}
       >
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome da Empresa *
+              {t('companies.companyName')} *
             </label>
             <input
               type="text"
@@ -384,13 +386,13 @@ function GerenciamentoEmpresas() {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ex: YourTime Ltda"
+              placeholder={t('companies.companyNamePlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              CNPJ
+              {t('companies.cnpj')}
             </label>
             <input
               type="text"
@@ -398,13 +400,13 @@ function GerenciamentoEmpresas() {
               value={formData.cnpj}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="00.000.000/0000-00"
+              placeholder={t('companies.cnpjPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Endereço
+              {t('companies.address')}
             </label>
             <input
               type="text"
@@ -412,13 +414,13 @@ function GerenciamentoEmpresas() {
               value={formData.endereco}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Rua, número, cidade - UF"
+              placeholder={t('companies.addressPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Telefone
+              {t('companies.phone')}
             </label>
             <input
               type="tel"
@@ -426,13 +428,13 @@ function GerenciamentoEmpresas() {
               value={formData.telefone}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="(00) 00000-0000"
+              placeholder={t('companies.phonePlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              {t('companies.email')}
             </label>
             <input
               type="email"
@@ -440,7 +442,7 @@ function GerenciamentoEmpresas() {
               value={formData.email}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="contato@empresa.com"
+              placeholder={t('companies.emailPlaceholder')}
             />
           </div>
 
@@ -450,30 +452,32 @@ function GerenciamentoEmpresas() {
               onClick={() => setShowFormModal(false)}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
-              Cancelar
+              {t('companies.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              {editando ? 'Atualizar' : 'Cadastrar'}
+              {editando ? t('companies.update') : t('companies.register')}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal de Notificações */}
-      <Modal
-        isOpen={modalState.isOpen}
-        onClose={closeModal}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.confirmText}
-        cancelText={modalState.cancelText}
-        showCancel={modalState.showCancel}
-        onConfirm={modalState.onConfirm}
-      />
+      {/* Modal de Confirmação (apenas para delete) */}
+      {modalState.showCancel && (
+        <Modal
+          isOpen={modalState.isOpen}
+          onClose={closeModal}
+          title={modalState.title}
+          message={modalState.message}
+          type={modalState.type}
+          confirmText={modalState.confirmText}
+          cancelText={modalState.cancelText}
+          showCancel={modalState.showCancel}
+          onConfirm={modalState.onConfirm}
+        />
+      )}
     </div>
   )
 }
