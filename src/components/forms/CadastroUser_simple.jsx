@@ -464,7 +464,7 @@ function CadastroUser() {
                   <div className="bg-white border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
                     {empresas.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-3">
-                        Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.
+                        {t('employeeForm.noCompaniesMessage')}
                       </p>
                     ) : (
                       <div className="space-y-1.5">

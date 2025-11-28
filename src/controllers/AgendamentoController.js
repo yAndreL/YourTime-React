@@ -146,7 +146,7 @@ class AgendamentoController {
 
       return {
         success: true,
-        message: 'Ponto registrado com sucesso!',
+        message: 'timeRecordForm.saved', // Translation key to be used with t() function
         agendamento
       }
 

@@ -30,6 +30,18 @@ function Configuracoes() {
   const [toastType, setToastType] = useState('success')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
+  // Bloquear scroll do body quando modal aberto
+  useEffect(() => {
+    if (showConfirmModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showConfirmModal])
+
   useEffect(() => {
     carregarConfiguracoes()
   }, [])

@@ -235,7 +235,7 @@ function GerenciamentoEmpresas() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando empresas...</p>
+          <p className="mt-4 text-gray-600">{t('companies.loadingCompanies')}</p>
         </div>
       </div>
     )
@@ -264,14 +264,14 @@ function GerenciamentoEmpresas() {
       {empresas.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-12 text-center">
           <FiBriefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg mb-2">Nenhuma empresa cadastrada</p>
-          <p className="text-gray-500 mb-6">Comece cadastrando sua primeira empresa</p>
+          <p className="text-gray-600 text-lg mb-2">{t('companies.noCompaniesRegistered')}</p>
+          <p className="text-gray-500 mb-6">{t('companies.firstCompanyPrompt')}</p>
           <button
             onClick={abrirModalNovo}
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <FiPlus className="w-5 h-5" />
-            Cadastrar Primeira Empresa
+            {t('companies.registerFirstCompany')}
           </button>
         </div>
       ) : (

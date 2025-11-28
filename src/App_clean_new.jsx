@@ -753,7 +753,7 @@ function App() {
                                 item.isToday ? 'text-green-600 font-semibold' : 
                                 'text-gray-600'
                               }`}>
-                                {item.dia} {item.isToday && '(hoje)'}
+                                {item.dia} {item.isToday && `(${t('dashboard.today').toLowerCase()})`}
                               </span>
                             </div>
 
@@ -853,8 +853,8 @@ function App() {
                 <div className="flex items-center justify-center h-32 text-gray-500">
                   <div className="text-center">
                     <FiTrendingUp className="text-gray-400 w-12 h-12 mx-auto mb-2" />
-                    <div>Nenhum dado de horas disponível</div>
-                    <div className="text-sm text-gray-400 mt-1">Registre seu primeiro ponto para ver o gráfico</div>
+                    <div>{t('dashboard.noHoursData')}</div>
+                    <div className="text-sm text-gray-400 mt-1">{t('dashboard.registerFirstEntry')}</div>
                   </div>
                 </div>
               )}
@@ -969,13 +969,13 @@ function App() {
 
                 {timeRecords.length === 0 && (
                   <div className="text-center py-4 text-gray-500">
-                    Nenhum registro de ponto encontrado
+                    {t('dashboard.noTimeRecordsFound')}
                   </div>
                 )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-32 text-gray-500">
-                {loading ? 'Carregando atividades...' : 'Nenhuma atividade registrada'}
+                {loading ? t('dashboard.loadingActivities') : t('dashboard.noActivitiesRegistered')}
               </div>
             )}
           </div>

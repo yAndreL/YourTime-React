@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
-import { FiX, FiDownload, FiCheck } from 'react-icons/fi'
+import { FiX, FiDownload, FiCheck, FiChevronDown, FiInfo } from 'react-icons/fi'
 import { supabase } from '../config/supabase'
 import Toast from './ui/Toast'
+import { useLanguage } from '../hooks/useLanguage'
 
 function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
+  const { t, currentLanguage } = useLanguage()
+  
   // Função para calcular a semana atual (Segunda a Sexta)
   const getWeekRange = () => {
     const today = new Date()
@@ -43,6 +46,19 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
   const [modalError, setModalError] = useState({ isOpen: false, message: '', code: '' })
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [infoExpanded, setInfoExpanded] = useState(false) // Estado para expansão da seção de informações
+
+  // Bloquear scroll do body quando modal aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   // Carregar funcionários
   useEffect(() => {
@@ -89,7 +105,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         console.error('Erro ao carregar funcionários:', error)
         setModalError({
           isOpen: true,
-          message: 'Erro ao carregar funcionários',
+          message: t('export.errorLoadingEmployees'),
           code: error.message
         })
       } finally {
@@ -138,11 +154,11 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
 
   const getStatusTexto = (status) => {
     const statusMap = {
-      'A': 'Aprovado',
-      'P': 'Pendente',
-      'R': 'Rejeitado'
+      'A': t('export.approved'),
+      'P': t('export.pending'),
+      'R': t('export.rejected')
     }
-    return statusMap[status] || status
+    return statusMap[status] || '-'
   }
 
   const escaparCSV = (valor) => {
@@ -159,7 +175,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
     if (funcionariosSelecionados.length === 0) {
       setModalError({
         isOpen: true,
-        message: 'Selecione pelo menos um funcionário',
+        message: t('export.selectAtLeastOne'),
         code: ''
       })
       return
@@ -168,7 +184,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
     if (!dataInicio || !dataFim) {
       setModalError({
         isOpen: true,
-        message: 'Selecione o período',
+        message: t('export.selectPeriod'),
         code: ''
       })
       return
@@ -183,10 +199,12 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
       // BOM para compatibilidade com Excel
       const BOM = '\uFEFF'
       
+      const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US'
+      
       // Cabeçalho do relatório - bem centralizado
-      csvLines.push(',,,,,,,,,,,,RELATÓRIO DE REGISTROS DE PONTO')
-      csvLines.push(`,,,,,,,,,,,,Período: ${formatarData(dataInicio)} até ${formatarData(dataFim)}`)
-      csvLines.push(`,,,,,,,,,,,,Gerado em: ${new Date().toLocaleString('pt-BR')}`)
+      csvLines.push(`,,,,,,,,,,,,${t('export.timeRecordsReport')}`)
+      csvLines.push(`,,,,,,,,,,,,${t('export.period')} ${formatarData(dataInicio)} - ${formatarData(dataFim)}`)
+      csvLines.push(`,,,,,,,,,,,,${t('export.generatedAt')} ${new Date().toLocaleString(locale)}`)
       csvLines.push('')
       csvLines.push('')
 
@@ -207,8 +225,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         if (error) throw error
 
         if (registros.length === 0) {
-          csvLines.push(`Funcionário: ${funcionario.nome}`)
-          csvLines.push('Nenhum registro encontrado no período selecionado')
+          csvLines.push(`${t('export.employee')} ${funcionario.nome}`)
+          csvLines.push(t('export.noRecords'))
           csvLines.push('')
           csvLines.push('---')
           csvLines.push('')
@@ -216,12 +234,12 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         }
 
         // ============ SEÇÃO 1: DADOS DO FUNCIONÁRIO (TABELA CENTRALIZADA) ============
-        csvLines.push(',,DADOS DO FUNCIONÁRIO')
-        csvLines.push(',,Campo,Valor')
-        csvLines.push(`,,Nome,${escaparCSV(funcionario.nome)}`)
-        csvLines.push(`,,Email,${escaparCSV(funcionario.email)}`)
-        csvLines.push(`,,Cargo,${escaparCSV(funcionario.cargo || 'Não definido')}`)
-        csvLines.push(`,,Departamento,${escaparCSV(funcionario.departamento || 'Não definido')}`)
+        csvLines.push(`,,${t('common.employee').toUpperCase()}`)
+        csvLines.push(`,,${t('common.field')},${t('common.value')}`)
+        csvLines.push(`,,${t('profile.name')},${escaparCSV(funcionario.nome)}`)
+        csvLines.push(`,,${t('profile.email')},${escaparCSV(funcionario.email)}`)
+        csvLines.push(`,,${t('profile.position')},${escaparCSV(funcionario.cargo || t('export.notDefined'))}`)
+        csvLines.push(`,,${t('profile.department')},${escaparCSV(funcionario.departamento || t('export.notDefined'))}`)
         csvLines.push('')
         csvLines.push('')
 
@@ -292,8 +310,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         csvLines.push('')
 
         // ============ SEÇÃO 3: GRÁFICO DE BARRAS - HORAS POR DIA ============
-        csvLines.push(',,HORAS TRABALHADAS POR DIA (Selecione para Gráfico de Barras)')
-        csvLines.push(',,Data,Horas Normais (até 8h),Horas Extras (acima de 8h),Total,Status')
+        csvLines.push(`,,${t('export.workedHoursPerDay').toUpperCase()} (${t('export.barChartTip').replace('💡 ', '')})`)
+        csvLines.push(`,,${t('export.date')},${t('export.normalHoursUpTo8')},${t('export.extraHoursAbove8')},${t('export.total')},${t('export.status')}`)
         dadosDetalhados.forEach(dia => {
           // Extrair número de horas do formato "Xh YYmin"
           const match = dia.totalHoras.match(/(\d+)h\s*(\d+)min/)
@@ -307,26 +325,26 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
           csvLines.push(`,,${dia.data},${horasNormais.toFixed(2)},${horasExtras.toFixed(2)},${totalHoras.toFixed(2)},${dia.status}`)
         })
         csvLines.push('')
-        csvLines.push(',,💡 Dica: Selecione os dados acima e crie um Gráfico de Barras Empilhadas!')
+        csvLines.push(`,,${t('export.barChartTip')}`)
         csvLines.push('')
 
         // ============ SEÇÃO 4: TABELA DETALHADA DE REGISTROS ============
-        csvLines.push(',,REGISTROS DETALHADOS - PONTO POR PONTO')
+        csvLines.push(`,,${t('export.timeRecordsReport')}`)
         csvLines.push([
           '',
           '',
-          'Data',
-          'Entrada 1',
-          'Saída 1',
-          'Intervalo Início',
-          'Intervalo Fim',
-          'Duração',
-          'Entrada 2',
-          'Saída 2',
-          'Total',
-          'Status',
-          'Projeto',
-          'Observações'
+          t('export.date'),
+          t('export.entry1'),
+          t('export.exit1'),
+          t('export.breakStart'),
+          t('export.breakEnd'),
+          t('export.duration'),
+          t('export.entry2'),
+          t('export.exit2'),
+          t('export.total'),
+          t('export.status'),
+          t('notifications.project'),
+          t('export.observations')
         ].map(escaparCSV).join(','))
 
         dadosDetalhados.forEach(dia => {
@@ -365,8 +383,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
       
       link.setAttribute('href', url)
       const nomeArquivo = funcionariosSelecionados.length === 1
-        ? `relatorio_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome.replace(/\s+/g, '_')}_${dataInicio}_${dataFim}.csv`
-        : `relatorio_multiplos_funcionarios_${dataInicio}_${dataFim}.csv`
+        ? `${t('export.fileName')}_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome.replace(/\s+/g, '_')}_${dataInicio}_${dataFim}.csv`
+        : `${t('export.fileName')}_multiple_${dataInicio}_${dataFim}.csv`
       
       link.setAttribute('download', nomeArquivo)
       link.style.visibility = 'hidden'
@@ -375,7 +393,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      setToastMessage('CSV gerado com sucesso!')
+      setToastMessage(t('export.csvGenerated'))
       setShowToast(true)
       
       setTimeout(() => {
@@ -386,7 +404,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
 
       setModalError({
         isOpen: true,
-        message: 'Erro ao gerar CSV',
+        message: t('export.errorGeneratingCSV'),
         code: error.message
       })
     } finally {
@@ -407,9 +425,9 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
           {/* Header */}
           <div className="p-6 border-b border-gray-200 flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Exportar para CSV</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{t('common.exportToCSV')}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Selecione os funcionários e o período para gerar o relatório
+                {t('export.selectEmployees')}
               </p>
             </div>
             <button
@@ -427,8 +445,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {isAdmin 
-                  ? 'Selecione os funcionários' 
-                  : 'Funcionário'
+                  ? t('export.selectEmployees')
+                  : t('common.employee')
                 }
               </label>
               
@@ -439,8 +457,8 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
                   disabled={loading || gerando}
                 >
                   {funcionariosSelecionados.length === funcionarios.length 
-                    ? 'Desmarcar todos' 
-                    : 'Selecionar todos'
+                    ? t('export.deselectAllEmployees') 
+                    : t('export.selectAllEmployees')
                   }
                 </button>
               )}
@@ -448,11 +466,11 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               <div className="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                 {loading ? (
                   <div className="p-4 text-center text-gray-500">
-                    Carregando funcionários...
+                    {t('export.loadingEmployees')}
                   </div>
                 ) : funcionarios.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">
-                    Nenhum funcionário encontrado
+                    {t('export.noEmployeesFound')}
                   </div>
                 ) : (
                   funcionarios.map((funcionario) => (
@@ -472,7 +490,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">{funcionario.nome}</div>
                         <div className="text-sm text-gray-500">
-                          {funcionario.cargo || 'Cargo não definido'} • {funcionario.email}
+                          {funcionario.cargo || t('export.positionNotDefined')} • {funcionario.email}
                         </div>
                       </div>
                       {funcionariosSelecionados.includes(funcionario.id) && (
@@ -488,7 +506,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data Início
+                  {t('export.startDate')}
                 </label>
                 <input
                   type="date"
@@ -500,7 +518,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data Fim
+                  {t('export.endDate')}
                 </label>
                 <input
                   type="date"
@@ -512,16 +530,36 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               </div>
             </div>
 
-            {/* Informações sobre o CSV */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">O arquivo CSV incluirá:</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Dados do(s) funcionário(s) selecionado(s)</li>
-                <li>• Estatísticas do período (total de horas, extras, média)</li>
-                <li>• Dados estruturados para gráficos</li>
-                <li>• Tabela detalhada de todos os registros</li>
-                <li>• Informações de intervalo e projetos</li>
-              </ul>
+            {/* Informações sobre o CSV - Breadcrumb Expansível */}
+            <div className="border border-blue-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setInfoExpanded(!infoExpanded)}
+                className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left"
+                type="button"
+              >
+                <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                  <FiInfo className="flex-shrink-0" />
+                  {t('export.csvIncludes')}
+                </span>
+                <div className={`text-blue-600 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                  <FiChevronDown />
+                </div>
+              </button>
+              <div
+                className={`transition-all duration-300 ease-in-out ${
+                  infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
+                  <ul className="text-sm text-blue-700 space-y-1 ml-4 list-disc">
+                    <li>{t('export.csvIncludeEmployeeData')}</li>
+                    <li>{t('export.csvIncludeStats')}</li>
+                    <li>{t('export.csvIncludeGraphData')}</li>
+                    <li>{t('export.csvIncludeDetailedTable')}</li>
+                    <li>{t('export.csvIncludeIntervalProjects')}</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -532,7 +570,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               disabled={gerando}
               className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancelar
+              {t('export.cancel')}
             </button>
             <button
               onClick={gerarCSV}
@@ -542,12 +580,12 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               {gerando ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  Gerando CSV...
+                  {t('export.generating')}...
                 </>
               ) : (
                 <>
                   <FiDownload size={20} />
-                  Exportar CSV
+                  {t('common.exportToCSV')}
                 </>
               )}
             </button>
@@ -564,7 +602,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
         >
           <div className="p-4 w-full h-full flex items-center justify-center">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative z-[10001]">
-            <h3 className="text-lg font-bold text-red-600 mb-2">Erro</h3>
+            <h3 className="text-lg font-bold text-red-600 mb-2">{t('export.errorMessage')}</h3>
             <p className="text-gray-700 mb-2">{modalError.message}</p>
             {modalError.code && (
               <p className="text-sm text-gray-500 mb-4">Código: {modalError.code}</p>
@@ -573,7 +611,7 @@ function ExportCSVModal({ isOpen, onClose, isAdmin = false }) {
               onClick={() => setModalError({ isOpen: false, message: '', code: '' })}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Fechar
+              {t('export.closeButton')}
             </button>
             </div>
           </div>

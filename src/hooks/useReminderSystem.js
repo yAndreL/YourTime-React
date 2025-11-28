@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import NotificationService from '../services/NotificationService'
 import ConfigService from '../services/ConfigService'
 import { supabase } from '../config/supabase'
+import { getLocalDateString } from '../utils/dateUtils'
 
 /**
  * Hook que gerencia lembretes automáticos para registro de ponto
@@ -67,7 +68,7 @@ function useReminderSystem() {
 
       const agora = new Date()
       const horaAtual = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`
-      const hoje = agora.toISOString().split('T')[0]
+      const hoje = getLocalDateString()
 
       // Horário de entrada
       if (horaAtual === horarios.entrada && lastCheckRef.current.entrada !== hoje) {

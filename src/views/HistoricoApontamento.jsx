@@ -351,25 +351,25 @@ function HistoricoApontamento() {
     switch (status) {
       case 'A':
         return { 
-          text: 'Aprovado', 
+          text: t('history.approved'), 
           color: 'bg-green-100 text-green-800 border-green-300',
           icon: '✓'
         }
       case 'R':
         return { 
-          text: 'Rejeitado', 
+          text: t('history.rejected'), 
           color: 'bg-red-100 text-red-800 border-red-300',
           icon: '✗'
         }
       case 'P':
         return { 
-          text: 'Pendente', 
+          text: t('history.pending'), 
           color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
           icon: <FiClock className="w-4 h-4" />
         }
       default:
         return { 
-          text: 'Sem Status', 
+          text: t('history.noStatus'), 
           color: 'bg-gray-100 text-gray-800 border-gray-300',
           icon: '?'
         }
@@ -459,7 +459,7 @@ function HistoricoApontamento() {
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? 'Carregando...' : t('history.search')}
+                {loading ? t('common.loading') : t('history.search')}
               </button>
               <button
                 type="button"
@@ -476,11 +476,11 @@ function HistoricoApontamento() {
         <div className="space-y-3">
           {showSkeleton ? (
             <div className="bg-gray-50 rounded-lg border border-gray-300 p-6 text-center">
-              <p className="text-gray-500">Carregando apontamentos...</p>
+              <p className="text-gray-500">{t('history.loadingRecords')}</p>
             </div>
           ) : filteredApontamentos.length === 0 ? (
             <div className="bg-gray-50 rounded-lg border border-gray-300 p-6 text-center">
-              <p className="text-gray-500">Nenhum apontamento encontrado para os filtros selecionados.</p>
+              <p className="text-gray-500">{t('history.noRecordsForFilters')}</p>
             </div>
           ) : (
             filteredApontamentos.map(apontamento => {
@@ -500,7 +500,7 @@ function HistoricoApontamento() {
                   </div>
                   <div className="text-right">
                     <div className="text-xl font-bold text-green-600">{apontamento.horasTrabalhadas}</div>
-                    <div className="text-xs text-gray-600">Horas</div>
+                    <div className="text-xs text-gray-600">{t('history.hoursLabel')}</div>
                   </div>
                 </div>
 
@@ -508,25 +508,25 @@ function HistoricoApontamento() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="text-center">
                     <div className="bg-green-50 border border-green-200 rounded p-2">
-                      <div className="text-xs text-green-700 font-medium">Entrada 1</div>
+                      <div className="text-xs text-green-700 font-medium">{t('history.entry1Label')}</div>
                       <div className="text-sm font-bold text-green-800">{apontamento.entrada1}</div>
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="bg-red-50 border border-red-200 rounded p-2">
-                      <div className="text-xs text-red-700 font-medium">Saída 1</div>
+                      <div className="text-xs text-red-700 font-medium">{t('history.exit1Label')}</div>
                       <div className="text-sm font-bold text-red-800">{apontamento.saida1}</div>
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="bg-green-50 border border-green-200 rounded p-2">
-                      <div className="text-xs text-green-700 font-medium">Entrada 2</div>
+                      <div className="text-xs text-green-700 font-medium">{t('history.entry2Label')}</div>
                       <div className="text-sm font-bold text-green-800">{apontamento.entrada2}</div>
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="bg-red-50 border border-red-200 rounded p-2">
-                      <div className="text-xs text-red-700 font-medium">Saída 2</div>
+                      <div className="text-xs text-red-700 font-medium">{t('history.exit2Label')}</div>
                       <div className="text-sm font-bold text-red-800">{apontamento.saida2}</div>
                     </div>
                   </div>
@@ -535,7 +535,7 @@ function HistoricoApontamento() {
                 {/* Anotações */}
                 {apontamento.anotacoes && (
                   <div className="mt-2 bg-gray-50 rounded p-2 border border-gray-200">
-                    <div className="text-xs text-gray-600 font-medium mb-1">Anotações:</div>
+                    <div className="text-xs text-gray-600 font-medium mb-1">{t('history.notes')}</div>
                     <div className="text-sm text-gray-800">{apontamento.anotacoes}</div>
                   </div>
                 )}

@@ -5,9 +5,11 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import supabaseService from '../services/SupabaseService.js'
 import DatabaseSetup from '../utils/databaseSetup.js'
+import { useLanguage } from '../hooks/useLanguage'
 import { FiCheckCircle, FiXCircle, FiSettings } from 'react-icons/fi'
 
 function DatabaseSetupView() {
+  const { t } = useLanguage()
   const [connectionStatus, setConnectionStatus] = useState(null)
   const [databaseStatus, setDatabaseStatus] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -79,7 +81,7 @@ function DatabaseSetupView() {
       </h3>
       
       <p className={`mb-3 ${status?.success ? 'text-green-700' : 'text-red-700'}`}>
-        {status?.message || 'Carregando...'}
+        {status?.message || t('common.loading')}
       </p>
       
       {details && (

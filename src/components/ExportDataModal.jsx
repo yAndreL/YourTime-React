@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { FiX, FiDownload, FiFileText, FiFile, FiCheckCircle, FiAlertTriangle, FiXCircle } from 'react-icons/fi'
 import { supabase } from '../config/supabase'
 import ExcelJS from 'exceljs'
+import { useLanguage } from '../hooks/useLanguage'
 
 // Função auxiliar para gerar gráficos via QuickChart
 const gerarGraficoQuickChart = async (config) => {
@@ -27,6 +28,8 @@ const gerarGraficoQuickChart = async (config) => {
 }
 
 function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
+  const { t, currentLanguage } = useLanguage()
+  
   // Função para calcular a semana atual (Segunda a Sexta)
   const getWeekRange = () => {
     const today = new Date()
@@ -63,6 +66,19 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState('success') // 'success', 'error', 'warning'
+  const [searchTerm, setSearchTerm] = useState('') // Estado para pesquisa
+
+  // Bloquear scroll do body quando modal aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   // Função auxiliar para mostrar toast
   const mostrarToast = (mensagem, tipo = 'success') => {
@@ -113,7 +129,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         }
       } catch (error) {
 
-        mostrarToast(`Erro ao carregar funcionários: ${error.message}`, 'error')
+        mostrarToast(`${t('export.errorLoadingEmployees')}: ${error.message}`, 'error')
       } finally {
         setLoading(false)
       }
@@ -155,19 +171,23 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
   }
 
   const traduzirStatus = (status) => {
-    const statusMap = { 'A': 'Aprovado', 'P': 'Pendente', 'R': 'Rejeitado' }
+    const statusMap = { 
+      'A': t('export.approved'), 
+      'P': t('export.pending'), 
+      'R': t('export.rejected') 
+    }
     return statusMap[status] || status
   }
 
   // ========== GERAR CSV SIMPLES (DADOS BRUTOS) ==========
   const gerarCSVSimples = async () => {
     if (funcionariosSelecionados.length === 0) {
-      mostrarToast('Selecione pelo menos um funcionário', 'warning')
+      mostrarToast(t('export.selectAtLeastOne'), 'warning')
       return
     }
 
     if (!dataInicio || !dataFim) {
-      mostrarToast('Selecione o período', 'warning')
+      mostrarToast(t('export.selectPeriod'), 'warning')
       return
     }
 
@@ -177,10 +197,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
       const csvLines = []
       const BOM = '\uFEFF'
       
+      const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US'
+      
       // Header simples
-      csvLines.push('RELATÓRIO DE REGISTROS DE PONTO - DADOS BRUTOS')
-      csvLines.push(`Período: ${formatarData(dataInicio)} até ${formatarData(dataFim)}`)
-      csvLines.push(`Gerado em: ${new Date().toLocaleString('pt-BR')}`)
+      csvLines.push(`${t('export.timeRecordsReport')} - ${t('export.rawData').toUpperCase()}`)
+      csvLines.push(`${t('export.period')}: ${formatarData(dataInicio)} ${t('dashboard.of')} ${formatarData(dataFim)}`)
+      csvLines.push(`${t('export.generatedAt')}: ${new Date().toLocaleString(locale)}`)
       csvLines.push('')
 
       for (const funcionarioId of funcionariosSelecionados) {
@@ -203,28 +225,28 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         if (error) throw error
 
         if (registros.length === 0) {
-          csvLines.push(`Funcionário: ${funcionario.nome} - Nenhum registro encontrado`)
+          csvLines.push(`${t('export.employee')}: ${funcionario.nome} - ${t('export.noRecords')}`)
           csvLines.push('')
           continue
         }
 
         // Dados do funcionário
-        csvLines.push(`Funcionário: ${escaparCSV(funcionario.nome)}`)
-        csvLines.push(`Email: ${escaparCSV(funcionario.email)}`)
-        csvLines.push(`Cargo: ${escaparCSV(funcionario.cargo || 'Não definido')}`)
-        csvLines.push(`Departamento: ${escaparCSV(funcionario.departamento || 'Não definido')}`)
+        csvLines.push(`${t('export.employee')}: ${escaparCSV(funcionario.nome)}`)
+        csvLines.push(`${t('profile.email')}: ${escaparCSV(funcionario.email)}`)
+        csvLines.push(`${t('profile.position')}: ${escaparCSV(funcionario.cargo || t('export.notDefined'))}`)
+        csvLines.push(`${t('profile.department')}: ${escaparCSV(funcionario.departamento || t('export.notDefined'))}`)
         csvLines.push('')
 
         // Tabela de registros
         csvLines.push([
-          'Data',
-          'Entrada 1',
-          'Saída 1',
-          'Entrada 2',
-          'Saída 2',
-          'Total Horas',
-          'Status',
-          'Projeto'
+          t('export.date'),
+          t('export.entry1'),
+          t('export.exit1'),
+          t('export.entry2'),
+          t('export.exit2'),
+          t('export.totalHours'),
+          t('export.status'),
+          t('notifications.project')
         ].join(','))
 
         registros.forEach(reg => {
@@ -256,8 +278,8 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
       const link = document.createElement('a')
       
       const nomeArquivo = funcionariosSelecionados.length === 1
-        ? `registros_ponto_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome?.replace(/\s+/g, '_')}_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.csv`
-        : `registros_ponto_multiplos_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.csv`
+        ? `${t('export.fileName')}_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome?.replace(/\s+/g, '_')}_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.csv`
+        : `${t('export.fileName')}_multiple_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.csv`
       
       link.href = url
       link.download = nomeArquivo
@@ -266,11 +288,11 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      mostrarToast('CSV gerado com sucesso!', 'success')
+      mostrarToast(t('export.csvGenerated'), 'success')
 
     } catch (error) {
 
-      mostrarToast(`Erro ao gerar CSV: ${error.message}`, 'error')
+      mostrarToast(`${t('export.errorGeneratingCSV')}: ${error.message}`, 'error')
     } finally {
       setGerando(false)
     }
@@ -279,12 +301,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
   // ========== GERAR XLSX FORMATADO COM EXCELJS (100% JAVASCRIPT) ==========
   const gerarXLSX = async () => {
     if (funcionariosSelecionados.length === 0) {
-      mostrarToast('Selecione pelo menos um funcionário', 'warning')
+      mostrarToast(t('export.selectAtLeastOne'), 'warning')
       return
     }
 
     if (!dataInicio || !dataFim) {
-      mostrarToast('Selecione o período', 'warning')
+      mostrarToast(t('export.selectPeriod'), 'warning')
       return
     }
 
@@ -378,7 +400,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         })
 
         // ==================== CRIAR PLANILHA COM EXCELJS ====================
-        const worksheet = workbook.addWorksheet('Relatório de Ponto')
+        const worksheet = workbook.addWorksheet(t('export.reportTitle'))
 
         // Estilos
         const headerStyle = {
@@ -440,33 +462,33 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         // Header Principal
         worksheet.mergeCells(`B${row}:H${row}`)
         const headerCell = worksheet.getCell(`B${row}`)
-        headerCell.value = 'RELATÓRIO DE REGISTROS DE PONTO'
+        headerCell.value = t('export.timeRecordsReport').toUpperCase()
         headerCell.style = headerStyle
         worksheet.getRow(row).height = 30
         row++
 
         worksheet.mergeCells(`B${row}:H${row}`)
-        worksheet.getCell(`B${row}`).value = `Período: ${formatarData(dataInicio)} a ${formatarData(dataFim)}`
+        worksheet.getCell(`B${row}`).value = `${t('export.period')}: ${formatarData(dataInicio)} ${t('dashboard.of')} ${formatarData(dataFim)}`
         worksheet.getCell(`B${row}`).style = { ...cellStyle, alignment: { horizontal: 'center' } }
         row += 2
 
         // Seção 1: Dados do Funcionário
         worksheet.mergeCells(`B${row}:C${row}`)
-        worksheet.getCell(`B${row}`).value = '📋 DADOS DO FUNCIONÁRIO'
+        worksheet.getCell(`B${row}`).value = `📋 ${t('common.employee').toUpperCase()}`
         worksheet.getCell(`B${row}`).style = sectionStyle
         row++
 
-        worksheet.getCell(`B${row}`).value = 'Campo'
+        worksheet.getCell(`B${row}`).value = t('common.field')
         worksheet.getCell(`B${row}`).style = tableHeaderStyle
-        worksheet.getCell(`C${row}`).value = 'Valor'
+        worksheet.getCell(`C${row}`).value = t('common.value')
         worksheet.getCell(`C${row}`).style = tableHeaderStyle
         row++
 
         const dadosFuncionario = [
-          ['Nome', funcionario.nome],
-          ['E-mail', funcionario.email],
-          ['Cargo', funcionario.cargo || 'Não definido'],
-          ['Departamento', funcionario.departamento || 'Não definido']
+          [t('profile.name'), funcionario.nome],
+          [t('profile.email'), funcionario.email],
+          [t('profile.position'), funcionario.cargo || t('export.notDefined')],
+          [t('profile.department'), funcionario.departamento || t('export.notDefined')]
         ]
 
         dadosFuncionario.forEach(([campo, valor]) => {
@@ -481,25 +503,25 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
         // Seção 2: Estatísticas
         worksheet.mergeCells(`B${row}:C${row}`)
-        worksheet.getCell(`B${row}`).value = '📊 ESTATÍSTICAS DO PERÍODO'
+        worksheet.getCell(`B${row}`).value = `📊 ${t('export.statistics').toUpperCase()}`
         worksheet.getCell(`B${row}`).style = sectionStyle
         
         worksheet.mergeCells(`F${row}:H${row}`)
-        worksheet.getCell(`F${row}`).value = '📈 DISTRIBUIÇÃO POR STATUS'
+        worksheet.getCell(`F${row}`).value = `📈 ${t('export.statusDistribution').toUpperCase()}`
         worksheet.getCell(`F${row}`).style = sectionStyle
         row++
 
         // Headers estatísticas
-        worksheet.getCell(`B${row}`).value = 'Métrica'
+        worksheet.getCell(`B${row}`).value = t('export.metric')
         worksheet.getCell(`B${row}`).style = tableHeaderStyle
-        worksheet.getCell(`C${row}`).value = 'Valor'
+        worksheet.getCell(`C${row}`).value = t('common.value')
         worksheet.getCell(`C${row}`).style = tableHeaderStyle
 
-        worksheet.getCell(`F${row}`).value = 'Status'
+        worksheet.getCell(`F${row}`).value = t('export.status')
         worksheet.getCell(`F${row}`).style = tableHeaderStyle
-        worksheet.getCell(`G${row}`).value = 'Quantidade'
+        worksheet.getCell(`G${row}`).value = t('export.quantity')
         worksheet.getCell(`G${row}`).style = tableHeaderStyle
-        worksheet.getCell(`H${row}`).value = 'Percentual'
+        worksheet.getCell(`H${row}`).value = t('export.percentage')
         worksheet.getCell(`H${row}`).style = tableHeaderStyle
         row++
 
@@ -507,10 +529,10 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
         // Dados estatísticas
         const stats = [
-          ['Total de Horas Trabalhadas', formatarHoras(totalHorasTrabalhadas)],
-          ['Total de Horas Extras', formatarHoras(totalHorasExtras)],
-          ['Dias Úteis Trabalhados', diasUteis.toString()],
-          ['Média Diária', formatarHoras(totalHorasTrabalhadas / diasUteis)]
+          [t('export.totalHours'), formatarHoras(totalHorasTrabalhadas)],
+          [t('export.overtimeHours'), formatarHoras(totalHorasExtras)],
+          [t('export.workedDays'), diasUteis.toString()],
+          [t('export.averagePerDay'), formatarHoras(totalHorasTrabalhadas / diasUteis)]
         ]
 
         stats.forEach(([metrica, valor]) => {
@@ -524,9 +546,9 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         // Dados status
         row = startRow
         const statusDist = [
-          ['Aprovado', diasAprovados, ((diasAprovados / diasUteis) * 100).toFixed(1) + '%', 'FF dcfce7', 'FF166534'],
-          ['Pendente', diasPendentes, ((diasPendentes / diasUteis) * 100).toFixed(1) + '%', 'FFfef3c7', 'FF92400e'],
-          ['Rejeitado', diasRejeitados, ((diasRejeitados / diasUteis) * 100).toFixed(1) + '%', 'FFfee2e2', 'FF991b1b']
+          [t('export.approved'), diasAprovados, ((diasAprovados / diasUteis) * 100).toFixed(1) + '%', 'FF dcfce7', 'FF166534'],
+          [t('export.pending'), diasPendentes, ((diasPendentes / diasUteis) * 100).toFixed(1) + '%', 'FFfef3c7', 'FF92400e'],
+          [t('export.rejected'), diasRejeitados, ((diasRejeitados / diasUteis) * 100).toFixed(1) + '%', 'FFfee2e2', 'FF991b1b']
         ].filter(([, qtd]) => qtd > 0)
 
         statusDist.forEach(([status, qtd, perc, bg, fg]) => {
@@ -550,11 +572,11 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
         // Seção 3: Horas por Dia
         worksheet.mergeCells(`B${row}:H${row}`)
-        worksheet.getCell(`B${row}`).value = '📊 HORAS TRABALHADAS POR DIA'
+        worksheet.getCell(`B${row}`).value = `📊 ${t('export.workedHoursPerDay').toUpperCase()}`
         worksheet.getCell(`B${row}`).style = sectionStyle
         row++
 
-        const horasHeaders = ['Data', 'Horas Normais', 'Horas Extras', 'Total', 'Status']
+        const horasHeaders = [t('export.date'), t('export.normalHours'), t('export.extraHours'), t('export.total'), t('export.status')]
         horasHeaders.forEach((header, idx) => {
           const col = String.fromCharCode(66 + idx) // B, C, D, E, F
           worksheet.getCell(`${col}${row}`).value = header
@@ -574,8 +596,8 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
           const statusCell = worksheet.getCell(`F${row}`)
           statusCell.value = dia.status
-          const statusColor = dia.status === 'Aprovado' ? ['FFdcfce7', 'FF166534'] :
-                             dia.status === 'Pendente' ? ['FFfef3c7', 'FF92400e'] :
+          const statusColor = dia.status === t('export.approved') ? ['FFdcfce7', 'FF166534'] :
+                             dia.status === t('export.pending') ? ['FFfef3c7', 'FF92400e'] :
                              ['FFfee2e2', 'FF991b1b']
           statusCell.style = {
             ...cellStyle,
@@ -590,12 +612,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
         // Seção 4: Registros Detalhados
         worksheet.mergeCells(`B${row}:K${row}`)
-        worksheet.getCell(`B${row}`).value = '📝 REGISTROS DETALHADOS - PONTO POR PONTO'
+        worksheet.getCell(`B${row}`).value = `📝 ${t('export.detailedRecords').toUpperCase()}`
         worksheet.getCell(`B${row}`).style = sectionStyle
         row++
 
-        const detailHeaders = ['Data', 'Entrada 1', 'Saída 1', 'Intervalo Início', 'Intervalo Fim', 
-                              'Duração', 'Entrada 2', 'Saída 2', 'Total', 'Status', 'Projeto']
+        const detailHeaders = [t('export.date'), t('export.entry1'), t('export.exit1'), t('export.breakStart'), t('export.breakEnd'), 
+                              t('export.duration'), t('export.entry2'), t('export.exit2'), t('export.total'), t('export.status'), t('notifications.project')]
         detailHeaders.forEach((header, idx) => {
           const col = String.fromCharCode(66 + idx)
           worksheet.getCell(`${col}${row}`).value = header
@@ -625,8 +647,8 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
 
           const statusCell = worksheet.getCell(`K${row}`)
           statusCell.value = reg.status
-          const statusColor = reg.status === 'Aprovado' ? ['FFdcfce7', 'FF166534'] :
-                             reg.status === 'Pendente' ? ['FFfef3c7', 'FF92400e'] :
+          const statusColor = reg.status === t('export.approved') ? ['FFdcfce7', 'FF166534'] :
+                             reg.status === t('export.pending') ? ['FFfef3c7', 'FF92400e'] :
                              ['FFfee2e2', 'FF991b1b']
           statusCell.style = {
             ...cellStyle,
@@ -730,14 +752,14 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
             labels: labels,
             datasets: [
               {
-                label: 'Horas Normais',
+                label: t('export.normalHours'),
                 data: horasNormais,
                 backgroundColor: 'rgba(59, 130, 246, 0.8)',
                 borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: 1
               },
               {
-                label: 'Horas Extras',
+                label: t('export.extraHours'),
                 data: horasExtras,
                 backgroundColor: 'rgba(245, 158, 11, 0.8)',
                 borderColor: 'rgba(245, 158, 11, 1)',
@@ -750,7 +772,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
             plugins: {
               title: {
                 display: true,
-                text: '📊 Horas Trabalhadas por Dia',
+                text: `📊 ${t('export.workedHoursPerDay')}`,
                 font: { size: 18, weight: 'bold' },
                 color: '#1e3a8a'
               },
@@ -762,12 +784,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
             scales: {
               x: {
                 stacked: true,
-                title: { display: true, text: 'Data', font: { size: 12 } }
+                title: { display: true, text: t('export.date'), font: { size: 12 } }
               },
               y: {
                 stacked: true,
                 beginAtZero: true,
-                title: { display: true, text: 'Horas', font: { size: 12 } },
+                title: { display: true, text: t('dashboard.hours'), font: { size: 12 } },
                 ticks: { stepSize: 2 }
               }
             }
@@ -796,7 +818,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
           const pieChartConfig = {
             type: 'doughnut',
             data: {
-              labels: ['✅ Aprovados', '⏳ Pendentes', '❌ Rejeitados'],
+              labels: [`✅ ${t('export.approved')}`, `⏳ ${t('export.pending')}`, `❌ ${t('export.rejected')}`],
               datasets: [{
                 data: [diasAprovados, diasPendentes, diasRejeitados],
                 backgroundColor: [
@@ -913,148 +935,15 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
         }
       }
 
-      // ==================== CRIAR PLANILHA DE GRÁFICOS ====================
-      const chartSheet = workbook.addWorksheet('📊 Gráficos')
-      
-      chartSheet.columns = [
-        { width: 3 }, { width: 25 }, { width: 15 }, { width: 15 }, { width: 3 }
-      ]
-
-      let chartRow = 2
-
-      // Título
-      chartSheet.mergeCells(`B${chartRow}:D${chartRow}`)
-      const chartTitle = chartSheet.getCell(`B${chartRow}`)
-      chartTitle.value = '✅ GRÁFICOS INCLUÍDOS AUTOMATICAMENTE'
-      chartTitle.style = {
-        font: { bold: true, size: 16, color: { argb: 'FFFFFFFF' } },
-        fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10b981' } },
-        alignment: { vertical: 'middle', horizontal: 'center' }
-      }
-      chartSheet.getRow(chartRow).height = 30
-      chartRow += 2
-
-      // Instruções
-      const instructions = [
-        '🎉 Os gráficos já foram inseridos automaticamente na coluna I!',
-        '',
-        '📊 Gráficos incluídos:',
-        '   1. Horas Trabalhadas por Dia (Barras Empilhadas)',
-        '   2. Distribuição por Status (Pizza/Donut)',
-        '   3. Resumo Total de Horas (Barras Horizontais)',
-        '',
-        '📍 Localização:',
-        '   • Vá para a aba "Relatório de Ponto"',
-        '   • Role para a direita até a coluna I',
-        '   • Os gráficos estão posicionados ao lado das tabelas de dados',
-        '',
-        '💡 DICA: Os gráficos são imagens PNG de alta qualidade!',
-        '💡 Você pode redimensioná-los ou movê-los conforme necessário.',
-        '',
-        '� Se precisar criar gráficos adicionais:',
-        '   • Os dados estão nas tabelas formatadas',
-        '   • Use Inserir > Gráfico no Excel/LibreOffice',
-        '   • Selecione os dados da tabela desejada'
-      ]
-
-      instructions.forEach(instruction => {
-        chartSheet.getCell(`B${chartRow}`).value = instruction
-        chartSheet.getCell(`B${chartRow}`).style = {
-          alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
-          font: { size: 11 }
-        }
-        chartSheet.getRow(chartRow).height = 20
-        chartRow++
-      })
-
-      chartRow += 2
-
-      // Resumo Visual Colorido
-      chartSheet.mergeCells(`B${chartRow}:D${chartRow}`)
-      chartSheet.getCell(`B${chartRow}`).value = '📈 RESUMO VISUAL'
-      chartSheet.getCell(`B${chartRow}`).style = {
-        font: { bold: true, size: 14, color: { argb: 'FFFFFFFF' } },
-        fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3b82f6' } },
-        alignment: { vertical: 'middle', horizontal: 'center' }
-      }
-      chartRow++
-
-      // Coletar dados totais de todos os funcionários
-      let totalGeralHoras = 0
-      let totalGeralExtras = 0
-      let totalGeralAprovados = 0
-      let totalGeralPendentes = 0
-      let totalGeralRejeitados = 0
-
-      // Reprocessar para obter totais gerais (já temos os dados, vamos somar)
-      for (const funcionarioId of funcionariosSelecionados) {
-        const { data: registros } = await supabase
-          .from('agendamento')
-          .select('*')
-          .eq('user_id', funcionarioId)
-          .gte('data', dataInicio)
-          .lte('data', dataFim)
-
-        if (registros) {
-          registros.forEach(reg => {
-            const totalDia = calcularHoras(reg.entrada1, reg.saida1) + calcularHoras(reg.entrada2, reg.saida2)
-            totalGeralHoras += totalDia
-            if (totalDia > 8) totalGeralExtras += (totalDia - 8)
-            
-            if (reg.status === 'A') totalGeralAprovados++
-            else if (reg.status === 'P') totalGeralPendentes++
-            else if (reg.status === 'R') totalGeralRejeitados++
-          })
-        }
-      }
-
-      chartRow++
-      
-      // Cards visuais
-      const cards = [
-        { label: '⏰ Total de Horas', value: formatarHoras(totalGeralHoras), color: 'FF3b82f6', textColor: 'FFFFFFFF' },
-        { label: '⚡ Horas Extras', value: formatarHoras(totalGeralExtras), color: 'FFf59e0b', textColor: 'FFFFFFFF' },
-        { label: '✅ Aprovados', value: totalGeralAprovados, color: 'FF10b981', textColor: 'FFFFFFFF' },
-        { label: '⏳ Pendentes', value: totalGeralPendentes, color: 'FFfbbf24', textColor: 'FF000000' },
-        { label: '❌ Rejeitados', value: totalGeralRejeitados, color: 'FFef4444', textColor: 'FFFFFFFF' }
-      ]
-
-      cards.forEach(card => {
-        chartSheet.getCell(`B${chartRow}`).value = card.label
-        chartSheet.getCell(`B${chartRow}`).style = {
-          font: { bold: true, color: { argb: card.textColor } },
-          fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: card.color } },
-          alignment: { vertical: 'middle', horizontal: 'center' },
-          border: {
-            top: { style: 'thin' }, bottom: { style: 'thin' },
-            left: { style: 'thin' }, right: { style: 'thin' }
-          }
-        }
-        chartSheet.getRow(chartRow).height = 30
-
-        chartSheet.mergeCells(`C${chartRow}:D${chartRow}`)
-        chartSheet.getCell(`C${chartRow}`).value = card.value
-        chartSheet.getCell(`C${chartRow}`).style = {
-          font: { bold: true, size: 14, color: { argb: card.textColor } },
-          fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: card.color } },
-          alignment: { vertical: 'middle', horizontal: 'center' },
-          border: {
-            top: { style: 'thin' }, bottom: { style: 'thin' },
-            left: { style: 'thin' }, right: { style: 'thin' }
-          }
-        }
-        chartRow++
-      })
-
-      // Gerar arquivo e fazer download
+      // Second worksheet removed - graphs are now embedded in main sheet only      // Gerar arquivo e fazer download
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       
       const nomeArquivo = funcionariosSelecionados.length === 1
-        ? `relatorio_ponto_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome?.replace(/\s+/g, '_')}_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.xlsx`
-        : `relatorio_ponto_multiplos_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.xlsx`
+        ? `${t('export.fileName')}_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome?.replace(/\s+/g, '_')}_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.xlsx`
+        : `${t('export.fileName')}_multiple_${formatarData(dataInicio)}_a_${formatarData(dataFim)}.xlsx`
       
       link.href = url
       link.download = nomeArquivo
@@ -1063,11 +952,11 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      mostrarToast('XLSX gerado com sucesso!', 'success')
+      mostrarToast(t('export.excelGenerated'), 'success')
 
     } catch (error) {
 
-      mostrarToast(`Erro ao gerar XLSX: ${error.message}`, 'error')
+      mostrarToast(`${t('export.errorGeneratingExcel')}: ${error.message}`, 'error')
     } finally {
       setGerando(false)
     }
@@ -1111,7 +1000,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800">Exportar Registros</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{t('common.exportTitle')}</h2>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1126,7 +1015,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Carregando...</p>
+                  <p className="mt-4 text-gray-600">{t('common.loading')}</p>
                 </div>
               ) : (
                 <>
@@ -1134,20 +1023,38 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                   {isAdmin && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Funcionários
+                        {t('admin.employees')}
                       </label>
+                      
+                      {/* Campo de Pesquisa */}
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          placeholder={t('admin.searchPlaceholder')}
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      
                       <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
                         <label className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
                           <input
                             type="checkbox"
-                            checked={funcionariosSelecionados.length === funcionarios.length}
+                            checked={funcionariosSelecionados.length === funcionarios.filter(f => 
+                              f.nome.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).length && funcionarios.filter(f => 
+                              f.nome.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).length > 0}
                             onChange={toggleTodos}
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                           />
-                          <span className="font-medium text-gray-700">Selecionar Todos</span>
+                          <span className="font-medium text-gray-700">{t('export.selectAll')}</span>
                         </label>
                         <div className="border-t border-gray-200 my-2"></div>
-                        {funcionarios.map(func => (
+                        {funcionarios
+                          .filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .map(func => (
                           <label
                             key={func.id}
                             className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
@@ -1161,6 +1068,9 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                             <span className="text-gray-700">{func.nome}</span>
                           </label>
                         ))}
+                        {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                          <p className="text-center text-gray-500 py-4">{t('export.noEmployeesFound')}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1169,7 +1079,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Data Início
+                        {t('export.startDate')}
                       </label>
                       <input
                         type="date"
@@ -1181,7 +1091,7 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Data Fim
+                        {t('export.endDate')}
                       </label>
                       <input
                         type="date"
@@ -1191,15 +1101,6 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                         disabled={gerando}
                       />
                     </div>
-                  </div>
-
-                  {/* Info Box */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                    <h3 className="font-medium text-blue-900 mb-2">📄 Escolha o formato:</h3>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• <strong>CSV</strong> - Dados brutos, para análise/integração</li>
-                      <li>• <strong>XLSX</strong> - Relatório visual com tabelas, cores e gráficos</li>
-                    </ul>
                   </div>
                 </>
               )}
@@ -1215,12 +1116,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                 {gerando ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Gerando...</span>
+                    <span>{t('export.generating')}...</span>
                   </>
                 ) : (
                   <>
                     <FiFile className="w-5 h-5" />
-                    <span>Exportar CSV (Dados Brutos)</span>
+                    <span>{t('export.csvButtonLabel')}</span>
                   </>
                 )}
               </button>
@@ -1233,12 +1134,12 @@ function ExportDataModal({ isOpen, onClose, isAdmin = false }) {
                 {gerando ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Gerando...</span>
+                    <span>{t('export.generating')}...</span>
                   </>
                 ) : (
                   <>
                     <FiFileText className="w-5 h-5" />
-                    <span>Exportar XLSX (Relatório)</span>
+                    <span>{t('export.excelButtonLabel')}</span>
                   </>
                 )}
               </button>

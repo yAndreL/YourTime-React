@@ -23,7 +23,7 @@ import {
 } from 'react-icons/fi'
 
 function GerenciamentoProjetos() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const { modalState, showSuccess, showError, showConfirm, closeModal: closeNotificationModal } = useModal()
   
   // Funções auxiliares de cache
@@ -86,6 +86,18 @@ function GerenciamentoProjetos() {
   const [editingProject, setEditingProject] = useState(null)
   const [isAdmin, setIsAdmin] = useState(getCachedAdminStatus())
   const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null)
+  
+  // Bloquear scroll do body quando modal aberto
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isModalOpen])
   
   // Inicializar filtros do sessionStorage ou usar valores padrão
   const getSavedFilters = () => {
@@ -685,7 +697,7 @@ function GerenciamentoProjetos() {
 
   const handleDelete = async (projetoId) => {
     showConfirm(
-      'Tem certeza que deseja excluir este projeto? Todos os agendamentos vinculados a ele também serão excluídos. Esta ação não pode ser desfeita.',
+      t('projects.deleteConfirmMessage'),
       async () => {
         try {
           setLoading(true)
@@ -717,14 +729,14 @@ function GerenciamentoProjetos() {
           }
 
           await carregarProjetos(user?.id, false)
-          showSuccess('Projeto e agendamentos vinculados excluídos com sucesso!')
+          showSuccess(t('projects.projectDeleted'))
         } catch (error) {
           showError(error.message || 'Erro ao excluir projeto')
         } finally {
           setLoading(false)
         }
       },
-      'Confirmar Exclusão'
+      t('projects.deleteConfirmTitle')
     )
   }
 
@@ -740,11 +752,11 @@ function GerenciamentoProjetos() {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'ativo': return 'Ativo'
-      case 'pausado': return 'Pausado'
-      case 'concluido': return 'Concluído'
-      case 'cancelado': return 'Cancelado'
-      default: return 'Indefinido'
+      case 'ativo': return t('projects.statusActive')
+      case 'pausado': return t('projects.statusPaused')
+      case 'concluido': return t('projects.statusCompleted')
+      case 'cancelado': return t('projects.statusCancelled')
+      default: return t('projects.undefined')
     }
   }
 
@@ -760,11 +772,11 @@ function GerenciamentoProjetos() {
 
   const getPrioridadeText = (prioridade) => {
     switch (prioridade) {
-      case 'baixa': return '🔹 Baixa'
-      case 'media': return '🔸 Média'
-      case 'alta': return '🔶 Alta'
-      case 'urgente': return '🔺 Urgente'
-      default: return '❓ Indefinida'
+      case 'baixa': return `🔹 ${t('projects.priorityLow')}`
+      case 'media': return `🔸 ${t('projects.priorityMedium')}`
+      case 'alta': return `🔶 ${t('projects.priorityHigh')}`
+      case 'urgente': return `🔺 ${t('projects.priorityUrgent')}`
+      default: return t('projects.undefinedPriority')
     }
   }
 
@@ -781,9 +793,11 @@ function GerenciamentoProjetos() {
 
   const formatCurrency = (value) => {
     if (!value) return '-'
-    return new Intl.NumberFormat('pt-BR', {
+    const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US'
+    const currency = locale === 'pt-BR' ? 'BRL' : 'USD'
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'BRL'
+      currency: currency
     }).format(value)
   }
 
@@ -973,8 +987,8 @@ function GerenciamentoProjetos() {
           {projetosFiltrados.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8 text-center">
               <FiFolder className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 text-lg font-medium">Nenhum projeto encontrado</p>
-              <p className="text-gray-400 text-sm mt-2">Crie um novo projeto ou ajuste os filtros</p>
+              <p className="text-gray-500 text-lg font-medium">{t('projects.noProjectsFound')}</p>
+              <p className="text-gray-400 text-sm mt-2">{t('projects.createNewOrAdjustFilters')}</p>
             </div>
           ) : (
             projetosFiltrados.map(projeto => (
@@ -996,7 +1010,7 @@ function GerenciamentoProjetos() {
                       {isProjetoAtrasado(projeto) && isAdmin && (
                         <span className="px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
                           <FiAlertCircle className="w-3 h-3" />
-                          Atrasado
+                          {t('projects.delayed')}
                         </span>
                       )}
                     </div>
@@ -1108,7 +1122,7 @@ function GerenciamentoProjetos() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nome do Projeto: *
+                        {t('projects.modalProjectName')}
                       </label>
                       <input
                         type="text"
@@ -1122,7 +1136,7 @@ function GerenciamentoProjetos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Empresa:
+                        {t('projects.modalCompany')}
                       </label>
                       <select
                         name="empresa_id"
@@ -1130,7 +1144,7 @@ function GerenciamentoProjetos() {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">Selecionar empresa</option>
+                        <option value="">{t('projects.modalSelectCompany')}</option>
                         {empresas.map(empresa => (
                           <option key={empresa.id} value={empresa.id}>
                             {empresa.nome}
@@ -1142,7 +1156,7 @@ function GerenciamentoProjetos() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Descrição:
+                      {t('projects.modalDescription')}
                     </label>
                     <textarea
                       name="descricao"
@@ -1156,7 +1170,7 @@ function GerenciamentoProjetos() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Data de Início:
+                        {t('projects.modalStartDate')}
                       </label>
                       <input
                         type="date"
@@ -1169,7 +1183,7 @@ function GerenciamentoProjetos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Data de Fim:
+                        {t('projects.modalEndDate')}
                       </label>
                       <input
                         type="date"
@@ -1181,10 +1195,10 @@ function GerenciamentoProjetos() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status:
+                        {t('projects.modalStatus')}
                       </label>
                       <select
                         name="status"
@@ -1192,16 +1206,16 @@ function GerenciamentoProjetos() {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="ativo">Ativo</option>
-                        <option value="pausado">Pausado</option>
-                        <option value="concluido">Concluído</option>
-                        <option value="cancelado">Cancelado</option>
+                        <option value="ativo">{t('projects.statusActive')}</option>
+                        <option value="pausado">{t('projects.statusPaused')}</option>
+                        <option value="concluido">{t('projects.statusCompleted')}</option>
+                        <option value="cancelado">{t('projects.statusCancelled')}</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prioridade:
+                        {t('projects.modalPriority')}
                       </label>
                       <select
                         name="prioridade"
@@ -1209,39 +1223,18 @@ function GerenciamentoProjetos() {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="baixa">🔹 Baixa</option>
-                        <option value="media">🔸 Média</option>
-                        <option value="alta">🔶 Alta</option>
-                        <option value="urgente">🔺 Urgente</option>
+                        <option value="baixa">🔹 {t('projects.priorityLow')}</option>
+                        <option value="media">🔸 {t('projects.priorityMedium')}</option>
+                        <option value="alta">🔶 {t('projects.priorityHigh')}</option>
+                        <option value="urgente">🔺 {t('projects.priorityUrgent')}</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cor de Identificação:
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="color"
-                          name="cor_identificacao"
-                          value={formData.cor_identificacao}
-                          onChange={handleInputChange}
-                          className="w-12 h-10 border border-gray-300 rounded-md"
-                        />
-                        <input
-                          type="text"
-                          value={formData.cor_identificacao}
-                          onChange={(e) => setFormData(prev => ({ ...prev, cor_identificacao: e.target.value }))}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Orçamento (R$):
+                        {t('projects.modalBudget')}
                       </label>
                       <input
                         type="number"
@@ -1256,7 +1249,7 @@ function GerenciamentoProjetos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Horas Estimadas:
+                        {t('projects.modalEstimatedHours')}
                       </label>
                       <input
                         type="number"
@@ -1270,7 +1263,7 @@ function GerenciamentoProjetos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Responsável:
+                        {t('projects.modalResponsible')}
                       </label>
                       <select
                         name="responsavel_id"
@@ -1278,7 +1271,7 @@ function GerenciamentoProjetos() {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">Selecione um responsável</option>
+                        <option value="">{t('projects.modalSelectResponsible')}</option>
                         {usuarios.map(usuario => (
                           <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>
                         ))}
@@ -1293,14 +1286,14 @@ function GerenciamentoProjetos() {
                       className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {loading ? (
-                        'Salvando...'
+                        t('projects.modalSaving')
                       ) : editingProject ? (
                         <>
-                          <FiSave className="w-5 h-5" /> Atualizar
+                          <FiSave className="w-5 h-5" /> {t('projects.modalUpdate')}
                         </>
                       ) : (
                         <>
-                          <FiPlus className="w-5 h-5" /> Criar
+                          <FiPlus className="w-5 h-5" /> {t('projects.modalCreate')}
                         </>
                       )}
                     </button>
@@ -1309,7 +1302,7 @@ function GerenciamentoProjetos() {
                       onClick={closeModal}
                       className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors flex items-center gap-2"
                     >
-                      <FiX className="w-5 h-5" /> Cancelar
+                      <FiX className="w-5 h-5" /> {t('projects.modalCancel')}
                     </button>
                   </div>
                 </form>
@@ -1318,6 +1311,20 @@ function GerenciamentoProjetos() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmação/notificação */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={closeNotificationModal}
+        title={modalState.title}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        showCancel={modalState.showCancel}
+        onConfirm={modalState.onConfirm}
+      >
+        {modalState.message}
+      </Modal>
     </MainLayout>
   )
 }

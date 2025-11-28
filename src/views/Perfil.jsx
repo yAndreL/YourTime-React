@@ -8,6 +8,7 @@ import Modal from '../components/ui/Modal'
 import MainLayout from '../components/layout/MainLayout'
 import PerfilSkeleton from '../components/ui/PerfilSkeleton'
 import CacheService from '../services/CacheService'
+import { getLocalDateString } from '../utils/dateUtils'
 import { FiEdit2, FiSave, FiX, FiUser, FiBriefcase, FiCalendar, FiClock, FiCamera, FiUpload } from 'react-icons/fi'
 
 function Perfil() {
@@ -244,7 +245,7 @@ function Perfil() {
         nome: profile?.nome || '',
         cargo: profile?.cargo || '',
         departamento: profile?.departamento || '',
-        data_admissao: profile?.data_admissao || new Date().toISOString().split('T')[0],
+        data_admissao: profile?.data_admissao || getLocalDateString(),
         carga_horaria: profile?.carga_horaria || 40,
         user_id: targetUserId,
         role: profile?.role || 'user',
@@ -311,9 +312,20 @@ function Perfil() {
 
   const loadStatisticsFromDB = async (targetUserId) => {
     try {
-      // Buscar horas trabalhadas no mês atual
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-      const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
+      // Buscar horas trabalhadas no mês atual usando timezone local
+      const hoje = new Date()
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
+      
+      const formatarData = (d) => {
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+      
+      const startOfMonth = formatarData(primeiroDia)
+      const endOfMonth = formatarData(ultimoDia)
 
       const { data: hoursData } = await supabase
         .from('agendamento')
@@ -895,7 +907,7 @@ function Perfil() {
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
-                        {userData?.carga_horaria || 40}h/semana
+                        {userData?.carga_horaria || 40}{t('profile.perWeek')}
                       </p>
                     )}
                   </div>

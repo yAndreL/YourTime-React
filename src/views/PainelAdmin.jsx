@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast'
 import { useLanguage } from '../hooks/useLanguage'
 import { supabase } from '../config/supabase.js'
 import NotificationService from '../services/NotificationService'
+import { getLocalDateString } from '../utils/dateUtils'
 import { 
   FiUsers,
   FiCheckCircle, 
@@ -79,7 +80,7 @@ function PainelAdministrativo() {
 
   const definirDataPadrao = () => {
     if (!dataSelecionada) {
-      const hoje = new Date().toISOString().split('T')[0]
+      const hoje = getLocalDateString()
       setDataSelecionada(hoje)
     }
   }
@@ -545,8 +546,8 @@ function PainelAdministrativo() {
                     <div className="ml-3 flex-1">
                       <h3 className="text-sm font-semibold text-yellow-800 mb-2">
                         {diasComPontosPendentes.length === 1 
-                          ? 'Há pontos pendentes de aprovação para o dia:' 
-                          : 'Há pontos pendentes de aprovação para os dias:'}
+                          ? t('admin.pendingForDay') 
+                          : t('admin.pendingForDays')}
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {diasComPontosPendentes.slice(0, 5).map((data, index) => (
@@ -558,7 +559,7 @@ function PainelAdministrativo() {
                                 ? 'bg-yellow-600 text-white'
                                 : 'bg-white text-yellow-700 hover:bg-yellow-100 border border-yellow-300'
                             }`}
-                            title={`Filtrar pontos do dia ${formatarData(data)}`}
+                            title={`${t('admin.filterByDate')} ${formatarData(data)}`}
                           >
                             {formatarData(data)}
                           </button>
@@ -570,17 +571,17 @@ function PainelAdministrativo() {
                               <button
                                 className="px-3 py-1.5 bg-yellow-600 text-white rounded-md text-sm font-medium hover:bg-yellow-700 transition-colors"
                               >
-                                + {diasComPontosPendentes.length - 5} outros
+                                + {diasComPontosPendentes.length - 5} {t('admin.moreDates')}
                               </button>
                               <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-yellow-300 rounded-lg shadow-lg p-3 z-10 hidden group-hover:block">
-                                <p className="text-xs font-semibold text-gray-700 mb-2">Outras datas com pontos pendentes:</p>
+                                <p className="text-xs font-semibold text-gray-700 mb-2">{t('admin.otherPendingDates')}</p>
                                 <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
                                   {diasComPontosPendentes.slice(5).map((data) => (
                                     <button
                                       key={data}
                                       onClick={() => selecionarData(data)}
                                       className="px-2 py-1 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200 rounded text-xs"
-                                      title={`Filtrar pontos do dia ${formatarData(data)}`}
+                                      title={`${t('admin.filterByDate')} ${formatarData(data)}`}
                                     >
                                       {formatarData(data)}
                                     </button>
@@ -617,7 +618,7 @@ function PainelAdministrativo() {
                       <label className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-700 flex items-center gap-1 whitespace-nowrap">
                         {t('admin.dateLabel')}
                         {diasComPontosPendentes.length > 0 && !diasComPontosPendentes.includes(dataSelecionada) && (
-                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-yellow-400 text-yellow-900 rounded-full text-[9px] sm:text-xs font-bold" title="Há pontos pendentes em outras datas">
+                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-yellow-400 text-yellow-900 rounded-full text-[9px] sm:text-xs font-bold" title={t('admin.pendingInOtherDates')}>
                             {diasComPontosPendentes.length}
                           </span>
                         )}
@@ -804,7 +805,7 @@ function PainelAdministrativo() {
                 {loading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Carregando...</p>
+                    <p className="mt-2 text-gray-600">{t('common.loading')}</p>
                   </div>
                 ) : (
                   <table className="min-w-full divide-y divide-gray-200">

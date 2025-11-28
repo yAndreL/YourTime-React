@@ -4,6 +4,7 @@ import { supabase } from '../../config/supabase.js'
 import MainLayout from '../layout/MainLayout'
 import NotificationService from '../../services/NotificationService'
 import { useLanguage } from '../../hooks/useLanguage'
+import { getLocalDateString } from '../../utils/dateUtils'
 import { 
   FiFileText,
   FiClock,
@@ -76,7 +77,7 @@ function FormularioPonto() {
   }
 
   const definirDataPadrao = () => {
-    const hoje = new Date().toISOString().split('T')[0]
+    const hoje = getLocalDateString()
     setFormData(prev => ({ ...prev, data: hoje }))
   }
 
@@ -127,26 +128,41 @@ function FormularioPonto() {
   const validarHorarios = () => {
     const { entrada1, saida1, entrada2, saida2 } = formData
     
-    // Entrada 1 é obrigatória
+    // Todos os campos são obrigatórios
     if (!entrada1) {
       setErro(t('validation.entry1Required'))
       return false
     }
 
-    // Se tem saída 1, deve ser depois da entrada 1
-    if (saida1 && entrada1 >= saida1) {
+    if (!saida1) {
+      setErro(t('validation.exit1Required'))
+      return false
+    }
+
+    if (!entrada2) {
+      setErro(t('validation.entry2Required'))
+      return false
+    }
+
+    if (!saida2) {
+      setErro(t('validation.exit2Required'))
+      return false
+    }
+
+    // Saída 1 deve ser depois da entrada 1
+    if (entrada1 >= saida1) {
       setErro(t('validation.exit1AfterEntry1'))
       return false
     }
 
-    // Se tem entrada 2, deve ser depois da saída 1
-    if (entrada2 && saida1 && entrada2 <= saida1) {
+    // Entrada 2 deve ser depois da saída 1
+    if (entrada2 <= saida1) {
       setErro(t('validation.entry2AfterExit1'))
       return false
     }
 
-    // Se tem saída 2, deve ser depois da entrada 2
-    if (saida2 && entrada2 && saida2 <= entrada2) {
+    // Saída 2 deve ser depois da entrada 2
+    if (saida2 <= entrada2) {
       setErro(t('validation.exit2AfterEntry2'))
       return false
     }
@@ -220,12 +236,10 @@ function FormularioPonto() {
       return
     }
 
-    // Validar se a data não está no futuro
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-    const dataSelecionada = new Date(formData.data + 'T00:00:00')
+    // Validar se a data não está no futuro (usando timezone local)
+    const hoje = getLocalDateString()
     
-    if (dataSelecionada > hoje) {
+    if (formData.data > hoje) {
       setErro(t('validation.futureDate'))
       return
     }
@@ -299,13 +313,6 @@ function FormularioPonto() {
         superior_empresa_id: profileData?.superior_empresa_id || null // ✅ Empresa do usuário
       }
 
-      console.log('📝 Salvando ponto com multitenancy:', {
-        user_id: pontoData.user_id,
-        projeto_id: pontoData.projeto_id,
-        empresa_id: pontoData.empresa_id,
-        superior_empresa_id: pontoData.superior_empresa_id
-      })
-
       const { data, error } = await supabase
         .from('agendamento')
         .insert([pontoData])
@@ -328,7 +335,7 @@ function FormularioPonto() {
       // Limpar cache para forçar atualização no dashboard
       sessionStorage.removeItem('cachedTimeRecords')
 
-      setSucesso('Ponto registrado com sucesso!')
+      setSucesso(t('timeRecordForm.saved'))
 
       // Redirecionar para dashboard
       setTimeout(() => {
@@ -387,7 +394,7 @@ function FormularioPonto() {
                     name="data"
                     value={formData.data}
                     onChange={handleChange}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={getLocalDateString()}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
                     required
                   />

@@ -61,7 +61,7 @@ export const MESSAGES = {
   SUCCESS: {
     LOGIN: 'Login realizado com sucesso!',
     LOGOUT: 'Logout realizado com sucesso!',
-    AGENDAMENTO_SAVED: 'Ponto registrado com sucesso!',
+    AGENDAMENTO_SAVED: 'timeRecordForm.saved', // Translation key
     AGENDAMENTO_DELETED: 'Agendamento removido com sucesso!',
     PROFILE_UPDATED: 'Perfil atualizado com sucesso!',
     CONNECTION_OK: 'Conexão estabelecida com sucesso!'
@@ -82,7 +82,7 @@ export const MESSAGES = {
     DELETE_CONFIRMATION: 'Tem certeza que deseja excluir este item?'
   },
   INFO: {
-    LOADING: 'Carregando...',
+    LOADING: 'common.loading', // Translation key
     NO_DATA: 'Nenhum dado encontrado.',
     CHOOSE_OPTION: 'Selecione uma opção...'
   }

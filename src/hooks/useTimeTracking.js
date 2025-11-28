@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase.js'
 import { useLanguage } from './useLanguage.jsx'
+import { getLocalDateString } from '../utils/dateUtils'
 
 export function useTimeTracking() {
   const { t } = useLanguage()
@@ -67,6 +68,14 @@ export function useTimeTracking() {
     }
   }
 
+  // Função auxiliar para formatar data para banco de dados (YYYY-MM-DD) usando timezone local
+  const formatDateForDB = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   // Buscar registros de ponto (últimos 90 dias para capturar todos os pendentes)
   const fetchTimeRecords = async () => {
     try {
@@ -87,7 +96,7 @@ export function useTimeTracking() {
         .from('agendamento')
         .select('*')
         .eq('user_id', userData.id)
-        .gte('data', startDate.toISOString().split('T')[0])
+        .gte('data', formatDateForDB(startDate))
         .order('data', { ascending: true })
 
       if (recordsError) {
@@ -153,7 +162,7 @@ export function useTimeTracking() {
 
   // Calcular horas aprovadas de hoje (status 'A')
   const calculateTodayApprovedHours = () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDateString()
     const todayRecords = timeRecords.filter(record => record.data === today && record.status === 'A')
 
     if (!todayRecords.length) return '00:00'
@@ -238,7 +247,12 @@ export function useTimeTracking() {
       const targetDate = new Date(startOfWeek)
       targetDate.setDate(startOfWeek.getDate() + index)
 
-      const dateStr = targetDate.toISOString().split('T')[0]
+      // Usar timezone local para construir dateStr
+      const year = targetDate.getFullYear()
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0')
+      const dayNum = String(targetDate.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${dayNum}`
+      
       const record = weekRecords.find(r => r.data === dateStr)
 
       const minutes = record ? calculateDailyWorkedMinutes(record) : 0

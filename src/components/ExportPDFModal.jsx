@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
-import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle } from 'react-icons/fi'
+import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle, FiInfo, FiChevronDown } from 'react-icons/fi';
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import ConfigService from '../services/ConfigService'
+import { useLanguage } from '../hooks/useLanguage'
+import { getLocalDateString } from '../utils/dateUtils'
 
 function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
+  const { t, currentLanguage } = useLanguage()
   const [funcionarios, setFuncionarios] = useState([])
   const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([])
   const [dataInicio, setDataInicio] = useState('')
@@ -15,17 +18,39 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
   const [modalError, setModalError] = useState({ isOpen: false, message: '', code: '' })
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [searchTerm, setSearchTerm] = useState('') // Estado para pesquisa
+  const [infoExpanded, setInfoExpanded] = useState(false) // Estado para expansão da seção de informações
+
+  // Bloquear scroll do body quando modal aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (isOpen) {
       carregarFuncionarios()
-      // Definir período padrão (mês atual)
+      // Definir período padrão (mês atual) usando timezone local
       const hoje = new Date()
       const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
       const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
       
-      setDataInicio(primeiroDia.toISOString().split('T')[0])
-      setDataFim(ultimoDia.toISOString().split('T')[0])
+      // Formatar datas no timezone local
+      const formatarData = (d) => {
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+      
+      setDataInicio(formatarData(primeiroDia))
+      setDataFim(formatarData(ultimoDia))
     }
   }, [isOpen])
 
@@ -115,7 +140,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
     if (funcionariosSelecionados.length === 0) {
       setModalError({
         isOpen: true,
-        message: 'Selecione pelo menos um funcionário para gerar o relatório.',
+        message: t('export.noEmployees'),
         code: 'EXP-001'
       })
       return
@@ -124,7 +149,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
     if (!dataInicio || !dataFim) {
       setModalError({
         isOpen: true,
-        message: 'Selecione o período (data início e data fim) para gerar o relatório.',
+        message: t('validation.periodRequired'),
         code: 'EXP-002'
       })
       return
@@ -167,14 +192,14 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         // Header
         doc.setFontSize(18)
         doc.setFont(undefined, 'bold')
-        doc.text('RELATÓRIO DE PONTO', 105, 20, { align: 'center' })
+        doc.text(t('export.reportTitle'), 105, 20, { align: 'center' })
         
         doc.setFontSize(12)
         doc.setFont(undefined, 'normal')
-        doc.text(`Funcionário: ${funcionario.nome}`, 20, 35)
-        doc.text(`Cargo: ${funcionario.cargo || 'Não definido'}`, 20, 42)
-        doc.text(`Departamento: ${funcionario.departamento || 'Não definido'}`, 20, 49)
-        doc.text(`Período: ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56)
+        doc.text(`${t('export.employee')} ${funcionario.nome}`, 20, 35)
+        doc.text(`${t('export.position')} ${funcionario.cargo || t('export.notDefined')}`, 20, 42)
+        doc.text(`${t('export.department')} ${funcionario.departamento || t('export.notDefined')}`, 20, 49)
+        doc.text(`${t('export.period')} ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56)
 
         // Calcular totais
         let totalHorasTrabalhadas = 0
@@ -224,7 +249,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         // Tabela de registros
         autoTable(doc, {
           startY: 65,
-          head: [['Data', 'Entrada 1', 'Saída 1', 'Intervalo Início', 'Intervalo Fim', 'Duração', 'Entrada 2', 'Saída 2', 'Total', 'Status']],
+          head: [[t('export.date'), t('export.entry1'), t('export.exit1'), t('export.breakStart'), t('export.breakEnd'), t('export.duration'), t('export.entry2'), t('export.exit2'), t('export.total'), t('export.status')]],
           body: tableData,
           theme: 'grid',
           headStyles: { 
@@ -263,7 +288,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         if (incluirGraficos && registros.length > 0) {
           doc.setFontSize(12)
           doc.setFont(undefined, 'bold')
-          doc.text('GRAFICO DE HORAS TRABALHADAS', 20, finalY)
+          doc.text(t('export.workedHoursChart'), 20, finalY)
           
           // Calcular máximo de horas trabalhadas no período
           let maxHorasTrabalhadas = 0
@@ -379,17 +404,17 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
 
         doc.setFontSize(12)
         doc.setFont(undefined, 'bold')
-        doc.text('RESUMO DO PERÍODO', 20, finalY)
+        doc.text(t('export.summary').toUpperCase(), 20, finalY)
         
         doc.setFont(undefined, 'normal')
         doc.setFontSize(10)
-        doc.text(`Total de dias trabalhados: ${diasUteis} dias`, 20, finalY + 10)
-        doc.text(`Total de horas trabalhadas: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17)
-        doc.text(`Horas esperadas (8h/dia): ${formatarHoras(horasEsperadas)}`, 20, finalY + 24)
+        doc.text(`${t('export.workedDays')}: ${diasUteis}`, 20, finalY + 10)
+        doc.text(`${t('export.totalHours')}: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17)
+        doc.text(`${t('export.averagePerDay')}: ${formatarHoras(horasEsperadas)}`, 20, finalY + 24)
         
         // Horas extras com cor laranja
         doc.setTextColor(255, 140, 0) // Laranja
-        doc.text(`Horas extras: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31)
+        doc.text(`${t('export.overtimeHours')}: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31)
         
         // Saldo com cor
         doc.setFont(undefined, 'bold')
@@ -405,10 +430,11 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         doc.setTextColor(128, 128, 128)
         doc.setFontSize(8)
         doc.setFont(undefined, 'italic')
-        doc.text(`Relatório gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 285, { align: 'center' })
+        const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US'
+        doc.text(`${t('export.generatedAt')}: ${new Date().toLocaleString(locale)}`, 105, 285, { align: 'center' })
 
         // Salvar PDF
-        const nomeArquivo = `relatorio-ponto-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`
+        const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`
         doc.save(nomeArquivo)
 
         // Pequeno delay entre PDFs para não travar o navegador
@@ -426,17 +452,17 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
     } catch (error) {
 
       let errorCode = 'EXP-004'
-      let errorMessage = 'Erro ao gerar relatório PDF. Verifique sua conexão com o banco de dados e tente novamente.'
+      let errorMessage = t('export.errorGenerating')
       
       if (error.message.includes('registros')) {
         errorCode = 'EXP-005'
-        errorMessage = 'Nenhum registro de ponto encontrado para o período selecionado.'
+        errorMessage = t('export.noRecords')
       } else if (error.message.includes('autoTable') || error.message.includes('jspdf')) {
         errorCode = 'EXP-006'
-        errorMessage = 'Erro ao formatar o PDF. Por favor, tente novamente.'
+        errorMessage = t('validation.tryAgain')
       } else if (error.code) {
         errorCode = 'DB-001'
-        errorMessage = `Erro de conexão com o banco de dados: ${error.message}`
+        errorMessage = `${t('validation.databaseError')}: ${error.message}`
       }
       
       setModalError({
@@ -456,10 +482,10 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
 
   const getStatusTexto = (status) => {
     switch (status) {
-      case 'A': return 'Aprovado'
-      case 'P': return 'Pendente'
-      case 'R': return 'Rejeitado'
-      default: return 'Sem status'
+      case 'A': return t('export.approved')
+      case 'P': return t('export.pending')
+      case 'R': return t('export.rejected')
+      default: return '-'
     }
   }
 
@@ -472,7 +498,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <FiDownload className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Exportar Relatório de Ponto</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('common.exportTitle')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -488,11 +514,11 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
           <div className="mb-6">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
               <FiCalendar className="w-4 h-4" />
-              Período
+              {t('export.period')}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Data Início</label>
+                <label className="block text-xs text-gray-600 mb-1">{t('export.startDate')}</label>
                 <input
                   type="date"
                   value={dataInicio}
@@ -501,7 +527,7 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
+                <label className="block text-xs text-gray-600 mb-1">{t('export.endDate')}</label>
                 <input
                   type="date"
                   value={dataFim}
@@ -518,8 +544,8 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <FiUsers className="w-4 h-4" />
                 {isAdmin 
-                  ? `Funcionários (${funcionariosSelecionados.length} selecionado${funcionariosSelecionados.length !== 1 ? 's' : ''})`
-                  : 'Seus Dados'
+                  ? `${t('export.selectEmployees')} (${funcionariosSelecionados.length})`
+                  : t('profile.myData')
                 }
               </label>
               {isAdmin && funcionarios.length > 1 && (
@@ -527,21 +553,36 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
                   onClick={selecionarTodos}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  {funcionariosSelecionados.length === funcionarios.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                  {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAll') : t('export.selectAll')}
                 </button>
               )}
             </div>
 
+            {/* Campo de Pesquisa */}
+            {isAdmin && funcionarios.length > 0 && (
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder={t('admin.searchPlaceholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
+
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
               {loading ? (
-                <div className="text-center py-8 text-gray-500">Carregando...</div>
+                <div className="text-center py-8 text-gray-500">{t('common.loading')}...</div>
               ) : funcionarios.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">Nenhum dado encontrado</div>
+                <div className="text-center py-8 text-gray-500">{t('export.noEmployees')}</div>
               ) : (
                 <div className="space-y-2">
-                  {funcionarios.map((funcionario) => (
+                  {funcionarios
+                    .filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((func) => (
                     <label
-                      key={funcionario.id}
+                      key={func.id}
                       className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${
                         !isAdmin 
                           ? 'bg-blue-50 border-blue-200 cursor-default' 
@@ -550,43 +591,64 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
                     >
                       <input
                         type="checkbox"
-                        checked={funcionariosSelecionados.includes(funcionario.id)}
-                        onChange={() => isAdmin && toggleFuncionario(funcionario.id)}
+                        checked={funcionariosSelecionados.includes(func.id)}
+                        onChange={() => isAdmin && toggleFuncionario(func.id)}
                         disabled={!isAdmin}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{funcionario.nome}</p>
+                        <p className="text-sm font-medium text-gray-900">{func.nome}</p>
                         <p className="text-xs text-gray-500">
-                          {funcionario.cargo || 'Sem cargo'} • {funcionario.departamento || 'Sem departamento'}
+                          {func.cargo || t('export.noPosition')} • {func.departamento || t('export.noDepartment')}
                         </p>
                       </div>
                     </label>
                   ))}
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                    <div className="text-center py-4 text-gray-500">{t('export.noEmployeesFound')}</div>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Informações */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>ℹ️ Informações:</strong>
-            </p>
-            <ul className="text-sm text-blue-700 mt-2 space-y-1 ml-4 list-disc">
-              {isAdmin ? (
-                <>
-                  <li>Será gerado um PDF para cada funcionário selecionado</li>
-                  <li>Como administrador, você pode exportar dados de qualquer funcionário</li>
-                </>
-              ) : (
-                <li>Será gerado um PDF com seus registros de ponto</li>
-              )}
-              <li>O relatório inclui: datas, horários, intervalos e saldo de horas</li>
-              <li>Gráficos visuais são incluídos automaticamente se habilitados nas suas Configurações</li>
-              <li>Saldo de horas é calculado considerando 8h/dia trabalhado</li>
-              <li>Os arquivos serão baixados automaticamente</li>
-            </ul>
+          {/* Informações - Breadcrumb Expansível */}
+          <div className="mt-6 border border-blue-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setInfoExpanded(!infoExpanded)}
+              className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left"
+              type="button"
+            >
+              <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                <FiInfo className="flex-shrink-0" />
+                {t('export.informationTitle')}
+              </span>
+              <div className={`text-blue-600 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                <FiChevronDown />
+              </div>
+            </button>
+            <div
+              className={`transition-all duration-300 ease-in-out ${
+                infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
+                <ul className="text-sm text-blue-700 space-y-1 ml-4 list-disc">
+                  {isAdmin ? (
+                    <>
+                      <li>{t('export.infoPdfPerEmployee')}</li>
+                      <li>{t('export.infoAdminExport')}</li>
+                    </>
+                  ) : (
+                    <li>{t('export.infoPdfMyRecords')}</li>
+                  )}
+                  <li>{t('export.infoReportIncludes')}</li>
+                  <li>{t('export.infoGraphics')}</li>
+                  <li>{t('export.infoHoursBalance')}</li>
+                  <li>{t('export.infoAutoDownload')}</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -607,12 +669,12 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
             {gerando ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Gerando PDFs...
+                {t('export.generating')}...
               </>
             ) : (
               <>
                 <FiDownload className="w-4 h-4" />
-                Gerar {funcionariosSelecionados.length > 0 ? `${funcionariosSelecionados.length} ` : ''}Relatório{funcionariosSelecionados.length > 1 ? 's' : ''}
+                {t('export.generateReport')}
               </>
             )}
           </button>

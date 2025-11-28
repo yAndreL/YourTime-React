@@ -10,7 +10,17 @@
 export const formatDate = (date, format = 'DD/MM/YYYY') => {
   if (!date) return ''
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date
+  let dateObj
+  if (typeof date === 'string') {
+    // Se a string está no formato YYYY-MM-DD, adicionar T00:00:00 para forçar timezone local
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      dateObj = new Date(date + 'T00:00:00')
+    } else {
+      dateObj = new Date(date)
+    }
+  } else {
+    dateObj = date
+  }
   
   if (!(dateObj instanceof Date) || isNaN(dateObj)) {
     return ''
@@ -87,11 +97,23 @@ export const formatDuration = (minutes) => {
 }
 
 /**
- * Obtém data atual no formato YYYY-MM-DD
- * @returns {string} - Data atual
+ * Obtém data atual no formato YYYY-MM-DD (usando timezone local)
+ * @returns {string} - Data atual no formato YYYY-MM-DD
  */
 export const getCurrentDate = () => {
-  return formatDate(new Date(), 'YYYY-MM-DD')
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Obtém data local no formato YYYY-MM-DD (mesmo que getCurrentDate)
+ * @returns {string} - Data local no formato YYYY-MM-DD
+ */
+export const getLocalDateString = () => {
+  return getCurrentDate()
 }
 
 /**
@@ -238,6 +260,7 @@ export default {
   minutesToTime,
   formatDuration,
   getCurrentDate,
+  getLocalDateString,
   getCurrentTime,
   addDays,
   subtractDays,
