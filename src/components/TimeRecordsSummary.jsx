@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../hooks/useLanguage'
 import { FiRefreshCw, FiClock, FiEye, FiEyeOff } from 'react-icons/fi'
+import { formatDate } from '../utils/dateUtils'
 
 function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
   const { t, currentLanguage } = useLanguage()
@@ -160,12 +161,7 @@ function TimeRecordsSummary({ timeRecords, onRefresh, loading, error }) {
               <div key={record.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">
-                    {new Date(record.data).toLocaleDateString(currentLanguage === 'en-US' ? 'en-US' : 'pt-BR', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: currentLanguage === 'en-US' ? 'short' : 'short',
-                      day: 'numeric'
-                    })}
+                    {formatDate(record.data, 'DD/MM/YYYY')}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {record.entrada1 && `${t('history.entry1')}: ${record.entrada1}`}

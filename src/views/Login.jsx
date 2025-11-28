@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Modal from '../components/ui/Modal'
-import { useModal } from '../hooks/useModal'
 import { useLanguage } from '../hooks/useLanguage'
+import { useToast } from '../hooks/useToast'
 import { supabase } from '../config/supabase'
 import { FiMail, FiLock, FiLoader } from 'react-icons/fi'
 import logoYourTime from '../assets/yourtimelogo.png'
 
 function Login() {
   const { t } = useLanguage()
-  const { modalState, showError, closeModal: closeNotificationModal } = useModal()
+  const { showError } = useToast()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,10 +26,7 @@ function Login() {
       })
 
       if (error) {
-        showError(
-          'Email ou senha inválidos!\n\nVerifique suas credenciais e tente novamente.',
-          'Erro de Autenticação'
-        )
+        showError(t('login.invalidCredentials'))
         setLoading(false)
         return
       }
@@ -45,10 +41,7 @@ function Login() {
           .single()
         
         if (profileError) {
-          showError(
-            'Erro ao carregar informações do usuário.',
-            'Erro'
-          )
+          showError(t('login.errorLoadingProfile'))
           await supabase.auth.signOut()
           setLoading(false)
           return
@@ -56,10 +49,7 @@ function Login() {
 
         // Verificar se o usuário está ativo
         if (profile && profile.is_active === false) {
-          showError(
-            'Sua conta foi desativada.\n\nEntre em contato com o administrador do sistema para mais informações.',
-            'Acesso Negado'
-          )
+          showError(t('login.accountDeactivated'))
           // Fazer logout e redirecionar para acesso negado
           await supabase.auth.signOut()
           setLoading(false)
@@ -75,10 +65,7 @@ function Login() {
         navigate('/')
       }
     } catch (error) {
-      showError(
-        'Ocorreu um erro ao tentar fazer login. Tente novamente.',
-        'Erro'
-      )
+      showError(t('login.loginError'))
       setLoading(false)
     }
   }

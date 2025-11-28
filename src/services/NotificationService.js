@@ -3,6 +3,7 @@
 
 import { supabase } from '../config/supabase'
 import { translations } from '../i18n/translations'
+import { formatDate } from '../utils/dateUtils'
 
 // Função auxiliar para obter tradução
 const t = (language, key) => {
@@ -249,11 +250,7 @@ class NotificationService {
       }
 
       // Formatar data
-      const dataFormatada = new Date(dataPonto + 'T00:00:00').toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })
+      const dataFormatada = formatDate(dataPonto, 'DD/MM/YYYY')
 
       // Criar notificação para cada admin (exceto o próprio usuário)
       const promises = adminsParaNotificar.map(async (admin) => {

@@ -24,7 +24,8 @@ export const translations = {
       ok: 'Ok',
       adminPanelTitle: 'Painel Administrativo',
       systemManagement: 'Gerenciamento do Sistema',
-      break: 'intervalo'
+      break: 'intervalo',
+      refresh: 'Atualizar'
     },
 
     // Menu/Sidebar
@@ -116,7 +117,8 @@ export const translations = {
       noActivitiesRegistered: 'Nenhuma atividade registrada',
       noTimeRecordsFound: 'Nenhum registro de ponto encontrado',
       noHoursData: 'Nenhum dado de horas disponível',
-      registerFirstEntry: 'Registre seu primeiro ponto para ver o gráfico'
+      registerFirstEntry: 'Registre seu primeiro ponto para ver o gráfico',
+      noTimeRecords: 'Nenhum registro de ponto encontrado para esta semana'
     },
 
     // Configurações
@@ -297,8 +299,12 @@ export const translations = {
       loginButton: 'Entrar',
       noAccount: 'Não tem uma conta?',
       register: 'Cadastre-se',
-      invalidCredentials: 'Email ou senha inválidos',
-      errorLoading: 'Erro ao fazer login'
+      invalidCredentials: 'Email ou senha incorretos',
+      errorLoading: 'Erro ao fazer login',
+      errorLoadingProfile: 'Erro ao carregar informações do usuário',
+      accountDeactivated: 'Sua conta foi desativada. Entre em contato com o administrador do sistema para mais informações.',
+      accessDenied: 'Acesso Negado',
+      loginError: 'Ocorreu um erro ao tentar fazer login. Tente novamente.'
     },
 
     // Validação e Erros
@@ -700,7 +706,8 @@ export const translations = {
       ok: 'Ok',
       adminPanelTitle: 'Administrative Panel',
       systemManagement: 'System Management',
-      break: 'break'
+      break: 'break',
+      refresh: 'Refresh'
     },
 
     // Menu/Sidebar
@@ -793,7 +800,8 @@ export const translations = {
       noActivitiesRegistered: 'No activities registered',
       noTimeRecordsFound: 'No time records found',
       noHoursData: 'No hours data available',
-      registerFirstEntry: 'Register your first time entry to see the chart'
+      registerFirstEntry: 'Register your first time entry to see the chart',
+      noTimeRecords: 'No time records found for this week'
     },
 
     // Settings
@@ -974,8 +982,12 @@ export const translations = {
       loginButton: 'Login',
       noAccount: "Don't have an account?",
       register: 'Sign up',
-      invalidCredentials: 'Invalid email or password',
-      errorLoading: 'Error logging in'
+      invalidCredentials: 'Incorrect email or password',
+      errorLoading: 'Error logging in',
+      errorLoadingProfile: 'Error loading user information',
+      accountDeactivated: 'Your account has been deactivated. Please contact the system administrator for more information.',
+      accessDenied: 'Access Denied',
+      loginError: 'An error occurred while trying to log in. Please try again.'
     },
 
     // Validation and Errors
@@ -1377,7 +1389,8 @@ export const translations = {
       ok: 'Ok',
       adminPanelTitle: 'Panel Administrativo',
       systemManagement: 'Gestión del Sistema',
-      break: 'descanso'
+      break: 'descanso',
+      refresh: 'Actualizar'
     },
 
     // Menú/Sidebar
@@ -1466,7 +1479,8 @@ export const translations = {
       noActivitiesRegistered: 'Ninguna actividad registrada',
       noTimeRecordsFound: 'No se encontraron registros',
       noHoursData: 'No hay datos de horas disponibles',
-      registerFirstEntry: 'Registre su primera entrada para ver el gráfico'
+      registerFirstEntry: 'Registre su primera entrada para ver el gráfico',
+      noTimeRecords: 'No se encontraron registros para esta semana'
     },
 
     // Configuración
@@ -1647,8 +1661,12 @@ export const translations = {
       loginButton: 'Entrar',
       noAccount: '¿No tiene una cuenta?',
       register: 'Regístrese',
-      invalidCredentials: 'Email o contraseña inválidos',
-      errorLoading: 'Error al iniciar sesión'
+      invalidCredentials: 'Email o contraseña incorrectos',
+      errorLoading: 'Error al iniciar sesión',
+      errorLoadingProfile: 'Error al cargar información del usuario',
+      accountDeactivated: 'Su cuenta ha sido desactivada. Contacte al administrador del sistema para más información.',
+      accessDenied: 'Acceso Denegado',
+      loginError: 'Ocurrió un error al intentar iniciar sesión. Inténtelo nuevamente.'
     },
 
     // Validación y Errores
@@ -2041,7 +2059,8 @@ export const translations = {
       ok: 'Ok',
       adminPanelTitle: 'Panneau Administratif',
       systemManagement: 'Gestion du Système',
-      break: 'pause'
+      break: 'pause',
+      refresh: 'Actualiser'
     },
 
     // Menu/Sidebar
@@ -2130,7 +2149,8 @@ export const translations = {
       noActivitiesRegistered: 'Aucune activité enregistrée',
       noTimeRecordsFound: 'Aucun enregistrement trouvé',
       noHoursData: 'Aucune donnée d\'heures disponible',
-      registerFirstEntry: 'Enregistrez votre première entrée pour voir le graphique'
+      registerFirstEntry: 'Enregistrez votre première entrée pour voir le graphique',
+      noTimeRecords: 'Aucun enregistrement trouvé pour cette semaine'
     },
 
     // Paramètres
@@ -2311,8 +2331,12 @@ export const translations = {
       loginButton: 'Se connecter',
       noAccount: 'Vous n\'avez pas de compte ?',
       register: 'S\'inscrire',
-      invalidCredentials: 'Email ou mot de passe invalide',
-      errorLoading: 'Erreur lors de la connexion'
+      invalidCredentials: 'Email ou mot de passe incorrect',
+      errorLoading: 'Erreur lors de la connexion',
+      errorLoadingProfile: 'Erreur lors du chargement des informations utilisateur',
+      accountDeactivated: 'Votre compte a été désactivé. Veuillez contacter l\'administrateur du système pour plus d\'informations.',
+      accessDenied: 'Accès Refusé',
+      loginError: 'Une erreur s\'est produite lors de la tentative de connexion. Veuillez réessayer.'
     },
 
     // Validation et Erreurs

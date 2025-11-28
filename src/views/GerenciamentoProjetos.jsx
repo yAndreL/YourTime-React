@@ -6,6 +6,7 @@ import GerenciamentoProjetosSkeleton from '../components/ui/GerenciamentoProjeto
 import { useModal } from '../hooks/useModal'
 import { useLanguage } from '../hooks/useLanguage'
 import CacheService from '../services/CacheService'
+import { formatDate as formatDateUtil } from '../utils/dateUtils'
 import { 
   FiTarget, 
   FiPlus, 
@@ -803,7 +804,7 @@ function GerenciamentoProjetos() {
 
   const formatDate = (dateString) => {
     if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('pt-BR')
+    return formatDateUtil(dateString, 'DD/MM/YYYY')
   }
 
   const projetosFiltrados = projetos.filter(projeto => {

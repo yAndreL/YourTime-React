@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import NotificationService from '../services/NotificationService';
 import { supabase } from '../config/supabase';
+import { formatDate } from '../utils/dateUtils';
 
 const NotificationContext = createContext({});
 
@@ -111,7 +112,7 @@ export const NotificationProvider = ({ children }) => {
 
             const chave = `${ponto.id}-${admin.id}`;
             if (!existentes.has(chave)) {
-              const dataFormatada = new Date(ponto.data).toLocaleDateString('pt-BR');
+              const dataFormatada = formatDate(ponto.data, 'DD/MM/YYYY');
               notificacoesParaCriar.push({
                 user_id: admin.id,
                 tipo: 'aprovacao_pendente',

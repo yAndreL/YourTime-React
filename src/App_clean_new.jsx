@@ -11,6 +11,7 @@ import jsPDF from 'jspdf'
 import { useTimeTracking } from './hooks/useTimeTracking'
 import { useLanguage } from './hooks/useLanguage.jsx'
 import { supabase } from './config/supabase'
+import { formatDate } from './utils/dateUtils'
 import { 
   FiTarget, 
   FiBarChart2, 
@@ -962,7 +963,7 @@ function App() {
                       </span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {new Date(record.data).toLocaleDateString('pt-BR')}
+                      {formatDate(record.data, 'DD/MM/YYYY')}
                     </span>
                   </div>
                 ))}
@@ -978,16 +979,6 @@ function App() {
                 {loading ? t('dashboard.loadingActivities') : t('dashboard.noActivitiesRegistered')}
               </div>
             )}
-          </div>
-
-          {/* Botão adicional para projetos */}
-          <div className="mb-6">
-            <Link 
-              to="/projeto" 
-              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg text-center transition-colors flex items-center justify-center gap-2"
-            >
-              <FiTarget className="w-5 h-5" /> {t('dashboard.manageProjects')}
-            </Link>
           </div>
 
           {/* Footer com resumo */}

@@ -7,7 +7,7 @@ import { useToast } from '../hooks/useToast'
 import { useLanguage } from '../hooks/useLanguage'
 import { supabase } from '../config/supabase.js'
 import NotificationService from '../services/NotificationService'
-import { getLocalDateString } from '../utils/dateUtils'
+import { getLocalDateString, formatDate } from '../utils/dateUtils'
 import { 
   FiUsers,
   FiCheckCircle, 
@@ -256,7 +256,7 @@ function PainelAdministrativo() {
 
   const formatarData = (dataString) => {
     if (!dataString) return '-'
-    return new Date(dataString).toLocaleDateString('pt-BR')
+    return formatDate(dataString, 'DD/MM/YYYY')
   }
 
   const funcionariosFiltrados = funcionarios.filter(funcionario => {
