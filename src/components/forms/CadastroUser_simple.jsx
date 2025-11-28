@@ -45,7 +45,6 @@ function CadastroUser() {
         const empresaIdFiltro = profile?.superior_empresa_id
 
         if (!empresaIdFiltro) {
-          console.warn('Usuário sem superior_empresa_id configurado')
           return
         }
 
@@ -63,7 +62,7 @@ function CadastroUser() {
           setEmpresas(data)
         }
       } catch (error) {
-        console.error('Erro ao carregar empresas:', error)
+        // Erro silencioso
       }
     }
 

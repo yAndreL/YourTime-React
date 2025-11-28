@@ -38,40 +38,35 @@ export const NotificationProvider = ({ children }) => {
     const buscarPontosPendentes = async (superiorEmpresaId) => {
       try {
         // Buscar pontos pendentes apenas da mesma empresa
-        const { data, error } = await supabase
+        const { data: pontos, error } = await supabase
           .from('agendamento')
-          .select(`
-            id,
-            data,
-            hora_entrada,
-            user_id,
-            superior_empresa_id,
-            profiles!agendamento_user_id_fkey (
-              id,
-              nome,
-              superior_empresa_id
-            )
-          `)
+          .select('id, data, entrada1, saida1, entrada2, saida2, user_id, superior_empresa_id, status')
           .eq('status', 'P')
+          .eq('superior_empresa_id', superiorEmpresaId)
           .order('data', { ascending: false });
 
         if (error) throw error;
 
-        // Filtrar apenas pontos de usuários da mesma empresa (usando o profiles.superior_empresa_id)
-        const pontosFiltrados = (data || []).filter(ponto => 
-          ponto.profiles?.superior_empresa_id === superiorEmpresaId
-        );
+        if (!pontos || pontos.length === 0) return [];
 
-        return pontosFiltrados.map(ponto => ({
+        // Buscar nomes dos funcionários
+        const userIds = [...new Set(pontos.map(p => p.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nome')
+          .in('id', userIds);
+
+        const profilesMap = new Map(profiles?.map(p => [p.id, p.nome]) || []);
+
+        return pontos.map(ponto => ({
           id: ponto.id,
           data: ponto.data,
-          hora_entrada: ponto.hora_entrada,
+          entrada1: ponto.entrada1,
           user_id: ponto.user_id,
-          funcionario_nome: ponto.profiles?.nome || 'Funcionário',
-          superior_empresa_id: ponto.profiles?.superior_empresa_id
+          funcionario_nome: profilesMap.get(ponto.user_id) || 'Funcionário',
+          superior_empresa_id: ponto.superior_empresa_id
         }));
       } catch (error) {
-
         return [];
       }
     };

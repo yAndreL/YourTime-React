@@ -281,7 +281,7 @@ function FormularioPonto() {
         .single()
 
       if (profileError) {
-        console.warn('Erro ao buscar superior_empresa_id do usuário:', profileError)
+        // Erro silencioso
       }
 
       // ✅ TERCEIRO: Buscar empresa_id do projeto (se houver)

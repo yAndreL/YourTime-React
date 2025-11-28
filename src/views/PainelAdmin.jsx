@@ -104,7 +104,6 @@ function PainelAdministrativo() {
   const carregarDiasComPontosPendentes = async () => {
     try {
       if (!superiorEmpresaId) {
-        console.warn('⚠️ superiorEmpresaId não definido no PainelAdmin')
         return
       }
 
@@ -127,7 +126,6 @@ function PainelAdministrativo() {
         setTotalPontosPendentes(0)
       }
     } catch (error) {
-      console.error('Erro ao carregar dias com pontos pendentes:', error)
       setDiasComPontosPendentes([])
       setTotalPontosPendentes(0)
     }

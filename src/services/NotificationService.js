@@ -255,13 +255,13 @@ class NotificationService {
       // Criar notificação para cada admin (exceto o próprio usuário)
       const promises = adminsParaNotificar.map(async (admin) => {
         // Buscar idioma do admin
-        const { data: adminProfile } = await supabase
-          .from('profiles')
+        const { data: adminConfig } = await supabase
+          .from('configuracoes')
           .select('language')
-          .eq('id', admin.id)
+          .eq('user_id', admin.id)
           .single()
         
-        const language = adminProfile?.language || 'pt-BR'
+        const language = adminConfig?.language || 'pt-BR'
 
         const result = await this.criarNotificacao({
           userId: admin.id,
@@ -292,13 +292,13 @@ class NotificationService {
    */
   static async notificarPontoAprovado(userId, agendamentoId, data) {
     // Buscar idioma do usuário
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: config } = await supabase
+      .from('configuracoes')
       .select('language')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
     
-    const language = profile?.language || 'pt-BR'
+    const language = config?.language || 'pt-BR'
     
     return await this.criarNotificacao({
       userId,
@@ -315,13 +315,13 @@ class NotificationService {
    */
   static async notificarPontoRejeitado(userId, agendamentoId, data, motivo) {
     // Buscar idioma do usuário
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: config } = await supabase
+      .from('configuracoes')
       .select('language')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
     
-    const language = profile?.language || 'pt-BR'
+    const language = config?.language || 'pt-BR'
     
     return await this.criarNotificacao({
       userId,
@@ -338,13 +338,13 @@ class NotificationService {
    */
   static async enviarLembretePonto(userId, momento) {
     // Buscar idioma do usuário
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: config } = await supabase
+      .from('configuracoes')
       .select('language')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
     
-    const language = profile?.language || 'pt-BR'
+    const language = config?.language || 'pt-BR'
     
     const mensagens = {
       inicio: t(language, 'notifications.reminderStart'),

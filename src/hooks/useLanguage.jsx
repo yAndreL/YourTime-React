@@ -29,7 +29,7 @@ export function LanguageProvider({ children }) {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar idioma:', error)
+      // Erro silencioso
     } finally {
       setIsLoading(false)
     }
@@ -48,7 +48,7 @@ export function LanguageProvider({ children }) {
           .eq('user_id', user.id)
       }
     } catch (error) {
-      console.error('Erro ao salvar idioma:', error)
+      // Erro silencioso
     }
   }
 
