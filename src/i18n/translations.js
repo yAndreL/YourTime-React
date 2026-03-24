@@ -1,7 +1,5 @@
-// Sistema de tradução para múltiplos idiomas
 export const translations = {
   'pt-BR': {
-    // Comum
     common: {
       save: 'Salvar',
       cancel: 'Cancelar',
@@ -27,8 +25,6 @@ export const translations = {
       break: 'intervalo',
       refresh: 'Atualizar'
     },
-
-    // Menu/Sidebar
     menu: {
       dashboard: 'Dashboard',
       timeRecord: 'Registrar Ponto',
@@ -40,8 +36,6 @@ export const translations = {
       adminPanel: 'Painel Admin',
       logout: 'Sair'
     },
-
-    // Dashboard
     dashboard: {
       title: 'Dashboard',
       subtitle: 'Gerenciamento do Sistema',
@@ -120,8 +114,6 @@ export const translations = {
       registerFirstEntry: 'Registre seu primeiro ponto para ver o gráfico',
       noTimeRecords: 'Nenhum registro de ponto encontrado para esta semana'
     },
-
-    // Configurações
     settings: {
       title: 'Configurações',
       subtitle: 'Personalize suas preferências',
@@ -150,8 +142,6 @@ export const translations = {
       errorSaving: 'Erro ao salvar configurações',
       errorRestoring: '❌ Erro ao restaurar configurações'
     },
-
-    // Notificações
     notifications: {
       title: 'Notificações',
       markAllRead: 'Marcar todas como lidas',
@@ -177,7 +167,7 @@ export const translations = {
       date: 'Data:',
       viewTimeEntry: 'Ver ponto',
       markRead: 'Marcar lida',
-      delete: 'Deletar',
+      delete: 'Excluir',
       now: 'Agora',
       minuteAgo: 'Há 1 minuto',
       minutesAgo: 'Há {minutes} minutos',
@@ -206,8 +196,6 @@ export const translations = {
       exportToPDF: 'Exportar para PDF',
       exportToExcel: 'Exportar para Excel'
     },
-
-    // Projetos
     projects: {
       title: 'Gerenciamento de Projetos',
       subtitle: 'Gerencie seus projetos',
@@ -285,8 +273,6 @@ export const translations = {
       deleteConfirmMessage: 'Tem certeza que deseja excluir este projeto? Todos os agendamentos vinculados a ele também serão excluídos. Esta ação não pode ser desfeita.',
       projectDeleted: 'Projeto e agendamentos vinculados excluídos com sucesso!'
     },
-
-    // Login
     login: {
       title: 'Bem-vindo de volta',
       subtitle: 'Faça login para continuar',
@@ -306,10 +292,7 @@ export const translations = {
       accessDenied: 'Acesso Negado',
       loginError: 'Ocorreu um erro ao tentar fazer login. Tente novamente.'
     },
-
-    // Validação e Erros
     validation: {
-      // Erros de formulário
       requiredField: 'Campo obrigatório',
       nameRequired: 'Nome é obrigatório',
       emailRequired: 'Email é obrigatório',
@@ -318,8 +301,6 @@ export const translations = {
       passwordMinLength: 'Senha deve ter pelo menos 6 caracteres',
       passwordsNotMatch: 'Senhas não conferem',
       phoneInvalid: 'Telefone inválido',
-      
-      // Erros de registro de ponto
       entry1Required: 'Entrada 1 é obrigatória',
       exit1Required: 'Saída 1 é obrigatória',
       entry2Required: 'Entrada 2 é obrigatória',
@@ -329,8 +310,6 @@ export const translations = {
       exit2AfterEntry2: 'Saída 2 deve ser depois da Entrada 2',
       futureDate: 'Não é permitido registrar ponto para datas futuras.',
       duplicateRecord: 'Já existe um registro para {date} ({times}) com status: {status}. Vá ao Histórico para editar ou deletar este registro.',
-      
-      // Erros gerais
       userNotAuthenticated: 'Usuário não autenticado',
       userNotIdentified: 'Usuário não identificado. Faça login novamente.',
       errorLoadingUser: 'Erro ao carregar dados do usuário',
@@ -340,8 +319,6 @@ export const translations = {
       errorRestoringSettings: 'Erro ao restaurar configurações',
       userNotFound: 'Usuário não encontrado',
       errorConnection: 'Erro ao carregar dados. Verifique sua conexão e tente novamente.',
-      
-      // Erros de login/autenticação
       invalidCredentials: 'Email ou senha inválidos',
       errorLoggingIn: 'Erro ao fazer login',
       errorSendingEmail: 'Erro ao enviar email. Tente novamente mais tarde.',
@@ -352,8 +329,6 @@ export const translations = {
       passwordsNotMatchReset: 'As senhas não coincidem.',
       errorUpdatingPassword: 'Erro ao atualizar senha. Tente novamente.',
       pendingDatabaseConfig: 'Configuração pendente no banco de dados.',
-      
-      // Validação de dados
       invalidDateFormat: 'Formato de data inválido (usar YYYY-MM-DD)',
       invalidTimeFormat: 'Formato de horário inválido (usar HH:MM)',
       invalidTimeForField: 'Formato de horário inválido para {field} (usar HH:MM)',
@@ -365,8 +340,6 @@ export const translations = {
       tryAgain: 'Erro ao formatar. Por favor, tente novamente.',
       databaseError: 'Erro de conexão com o banco de dados'
     },
-
-    // Histórico
     history: {
       title: 'Histórico de Apontamentos',
       subtitle: 'Visualize e gerencie seus registros',
@@ -404,8 +377,6 @@ export const translations = {
       loadingRecords: 'Carregando apontamentos...',
       noRecordsForFilters: 'Nenhum apontamento encontrado para os filtros selecionados.'
     },
-
-    // Painel Admin
     admin: {
       employees: 'Funcionários',
       removed: 'Removidos',
@@ -463,8 +434,6 @@ export const translations = {
       filterByDate: 'Filtrar pontos do dia',
       pendingInOtherDates: 'Há pontos pendentes em outras datas'
     },
-
-    // Empresas
     companies: {
       companyUpdated: 'Empresa atualizada com sucesso!',
       companyRegistered: 'Empresa cadastrada com sucesso!',
@@ -493,8 +462,6 @@ export const translations = {
       firstCompanyPrompt: 'Comece cadastrando sua primeira empresa',
       registerFirstCompany: 'Cadastrar Primeira Empresa'
     },
-
-    // Cadastro de Funcionário
     employeeForm: {
       title: 'Cadastro de Funcionário',
       personalInfo: 'Informações Pessoais',
@@ -521,8 +488,6 @@ export const translations = {
       registerEmployee: 'Cadastrar Funcionário',
       noCompaniesMessage: 'Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.'
     },
-
-    // Formulário de Ponto
     timeRecordForm: {
       title: 'Registro de Ponto',
       hello: 'Olá',
@@ -543,8 +508,6 @@ export const translations = {
       register: 'Salvar registro',
       saved: 'Ponto registrado com sucesso!'
     },
-
-    // Perfil
     profile: {
       title: 'Perfil',
       subtitle: 'Informações do usuário',
@@ -584,8 +547,6 @@ export const translations = {
       myData: 'Meus dados',
       perWeek: 'h/semana'
     },
-
-    // Exportação
     export: {
       title: 'Exportar Relatório de Ponto',
       reportTitle: 'RELATÓRIO DE PONTO',
@@ -681,9 +642,7 @@ export const translations = {
       excelButtonLabel: 'XLSX (Relatório Visual)'
     }
   },
-
   'en-US': {
-    // Common
     common: {
       save: 'Save',
       cancel: 'Cancel',
@@ -709,8 +668,6 @@ export const translations = {
       break: 'break',
       refresh: 'Refresh'
     },
-
-    // Menu/Sidebar
     menu: {
       dashboard: 'Dashboard',
       timeRecord: 'Clock in',
@@ -723,8 +680,6 @@ export const translations = {
       adminPanel: 'Admin Panel',
       logout: 'Logout'
     },
-
-    // Dashboard
     dashboard: {
       title: 'Dashboard',
       subtitle: 'System Management',
@@ -803,8 +758,6 @@ export const translations = {
       registerFirstEntry: 'Register your first time entry to see the chart',
       noTimeRecords: 'No time records found for this week'
     },
-
-    // Settings
     settings: {
       title: 'Settings',
       subtitle: 'Customize your preferences',
@@ -833,8 +786,6 @@ export const translations = {
       errorSaving: 'Error saving settings',
       errorRestoring: '❌ Error restoring settings'
     },
-
-    // Notifications
     notifications: {
       title: 'Notifications',
       markAllRead: 'Mark all as read',
@@ -889,8 +840,6 @@ export const translations = {
       exportToPDF: 'Export to PDF',
       exportToExcel: 'Export to Excel'
     },
-
-    // Projetos
     projects: {
       title: 'Project Management',
       subtitle: 'Manage your projects',
@@ -968,8 +917,6 @@ export const translations = {
       deleteConfirmMessage: 'Are you sure you want to delete this project? All time entries linked to it will also be deleted. This action cannot be undone.',
       projectDeleted: 'Project and linked time entries deleted successfully!'
     },
-
-    // Login
     login: {
       title: 'Welcome back',
       subtitle: 'Login to continue',
@@ -989,10 +936,7 @@ export const translations = {
       accessDenied: 'Access Denied',
       loginError: 'An error occurred while trying to log in. Please try again.'
     },
-
-    // Validation and Errors
     validation: {
-      // Form errors
       requiredField: 'Required field',
       nameRequired: 'Name is required',
       emailRequired: 'Email is required',
@@ -1001,8 +945,6 @@ export const translations = {
       passwordMinLength: 'Password must be at least 6 characters',
       passwordsNotMatch: 'Passwords do not match',
       phoneInvalid: 'Invalid phone',
-      
-      // Time entry errors
       entry1Required: 'Entry 1 is required',
       exit1Required: 'Exit 1 is required',
       entry2Required: 'Entry 2 is required',
@@ -1012,8 +954,6 @@ export const translations = {
       exit2AfterEntry2: 'Exit 2 must be after Entry 2',
       futureDate: 'Cannot register time entry for future dates.',
       duplicateRecord: 'A record already exists for {date} ({times}) with status: {status}. Go to History to edit or delete this record.',
-      
-      // General errors
       userNotAuthenticated: 'User not authenticated',
       userNotIdentified: 'User not identified. Please log in again.',
       errorLoadingUser: 'Error loading user data',
@@ -1023,8 +963,6 @@ export const translations = {
       errorRestoringSettings: 'Error restoring settings',
       userNotFound: 'User not found',
       errorConnection: 'Error loading data. Check your connection and try again.',
-      
-      // Login/authentication errors
       invalidCredentials: 'Invalid email or password',
       errorLoggingIn: 'Error logging in',
       errorSendingEmail: 'Error sending email. Please try again later.',
@@ -1035,8 +973,6 @@ export const translations = {
       passwordsNotMatchReset: 'Passwords do not match.',
       errorUpdatingPassword: 'Error updating password. Please try again.',
       pendingDatabaseConfig: 'Pending database configuration.',
-      
-      // Data validation
       invalidDateFormat: 'Invalid date format (use YYYY-MM-DD)',
       invalidTimeFormat: 'Invalid time format (use HH:MM)',
       invalidTimeForField: 'Invalid time format for {field} (use HH:MM)',
@@ -1048,8 +984,6 @@ export const translations = {
       tryAgain: 'Formatting error. Please try again.',
       databaseError: 'Database connection error'
     },
-
-    // Histórico
     history: {
       title: 'Time Records History',
       subtitle: 'View and manage your records',
@@ -1087,8 +1021,6 @@ export const translations = {
       loadingRecords: 'Loading records...',
       noRecordsForFilters: 'No records found for the selected filters.'
     },
-
-    // Painel Admin
     admin: {
       employees: 'Employees',
       removed: 'Removed',
@@ -1146,8 +1078,6 @@ export const translations = {
       filterByDate: 'Filter entries for',
       pendingInOtherDates: 'There are pending entries on other dates'
     },
-
-    // Companies
     companies: {
       companyUpdated: 'Company updated successfully!',
       companyRegistered: 'Company registered successfully!',
@@ -1176,8 +1106,6 @@ export const translations = {
       firstCompanyPrompt: 'Start by registering your first company',
       registerFirstCompany: 'Register First Company'
     },
-
-    // Cadastro de Funcionário
     employeeForm: {
       title: 'Employee Registration',
       personalInfo: 'Personal Information',
@@ -1204,8 +1132,6 @@ export const translations = {
       registerEmployee: 'Register Employee',
       noCompaniesMessage: 'No companies registered. Register companies first in the "Companies" tab of the Admin Panel.'
     },
-
-    // Formulário de Ponto
     timeRecordForm: {
       title: 'Time entry',
       hello: 'Hello',
@@ -1226,8 +1152,6 @@ export const translations = {
       register: 'Save time entry',
       saved: 'Time entry saved successfully!'
     },
-
-    // Perfil
     profile: {
       title: 'Profile',
       subtitle: 'User information',
@@ -1267,8 +1191,6 @@ export const translations = {
       myData: 'My data',
       perWeek: 'h/week'
     },
-
-    // Export
     export: {
       title: 'Export Time Record Report',
       reportTitle: 'TIME RECORD REPORT',
@@ -1364,9 +1286,7 @@ export const translations = {
       excelButtonLabel: 'XLSX (Visual Report)'
     }
   },
-
   'es-ES': {
-    // Común
     common: {
       save: 'Guardar',
       cancel: 'Cancelar',
@@ -1392,8 +1312,6 @@ export const translations = {
       break: 'descanso',
       refresh: 'Actualizar'
     },
-
-    // Menú/Sidebar
     menu: {
       dashboard: 'Panel',
       timeRecord: 'Registrar Hora',
@@ -1405,8 +1323,6 @@ export const translations = {
       adminPanel: 'Panel Admin',
       logout: 'Salir'
     },
-
-    // Dashboard
     dashboard: {
       title: 'Panel',
       subtitle: 'Gestión del Sistema',
@@ -1482,8 +1398,6 @@ export const translations = {
       registerFirstEntry: 'Registre su primera entrada para ver el gráfico',
       noTimeRecords: 'No se encontraron registros para esta semana'
     },
-
-    // Configuración
     settings: {
       title: 'Configuración',
       subtitle: 'Personalice sus preferencias',
@@ -1512,8 +1426,6 @@ export const translations = {
       errorSaving: 'Error al guardar configuración',
       errorRestoring: '❌ Error al restaurar configuración'
     },
-
-    // Notificaciones
     notifications: {
       title: 'Notificaciones',
       markAllRead: 'Marcar todas como leídas',
@@ -1568,8 +1480,6 @@ export const translations = {
       exportToPDF: 'Exportar a PDF',
       exportToExcel: 'Exportar a Excel'
     },
-
-    // Proyectos
     projects: {
       title: 'Gestión de Proyectos',
       subtitle: 'Gestione sus proyectos',
@@ -1647,8 +1557,6 @@ export const translations = {
       deleteConfirmMessage: '¿Está seguro de que desea eliminar este proyecto? Todos los registros vinculados a él también serán eliminados. Esta acción no se puede deshacer.',
       projectDeleted: '¡Proyecto y registros vinculados eliminados con éxito!'
     },
-
-    // Login
     login: {
       title: 'Bienvenido de nuevo',
       subtitle: 'Inicie sesión para continuar',
@@ -1668,8 +1576,6 @@ export const translations = {
       accessDenied: 'Acceso Denegado',
       loginError: 'Ocurrió un error al intentar iniciar sesión. Inténtelo nuevamente.'
     },
-
-    // Validación y Errores
     validation: {
       requiredField: 'Campo obligatorio',
       nameRequired: 'El nombre es obligatorio',
@@ -1718,8 +1624,6 @@ export const translations = {
       tryAgain: 'Error al formatear. Por favor, intente nuevamente.',
       databaseError: 'Error de conexión con la base de datos'
     },
-
-    // Historial
     history: {
       title: 'Historial de Registros',
       subtitle: 'Visualice y gestione sus registros',
@@ -1757,8 +1661,6 @@ export const translations = {
       loadingRecords: 'Cargando registros...',
       noRecordsForFilters: 'No se encontraron registros para los filtros seleccionados.'
     },
-
-    // Panel Admin
     admin: {
       employees: 'Empleados',
       removed: 'Eliminados',
@@ -1816,8 +1718,6 @@ export const translations = {
       filterByDate: 'Filtrar registros del día',
       pendingInOtherDates: 'Hay registros pendientes en otras fechas'
     },
-
-    // Empresas
     companies: {
       companyUpdated: '¡Empresa actualizada con éxito!',
       companyRegistered: '¡Empresa registrada con éxito!',
@@ -1846,8 +1746,6 @@ export const translations = {
       firstCompanyPrompt: 'Comience registrando su primera empresa',
       registerFirstCompany: 'Registrar Primera Empresa'
     },
-
-    // Registro de Empleado
     employeeForm: {
       title: 'Registro de Empleado',
       personalInfo: 'Información Personal',
@@ -1874,8 +1772,6 @@ export const translations = {
       registerEmployee: 'Registrar Empleado',
       noCompaniesMessage: 'Ninguna empresa registrada. Registre empresas primero en la pestaña "Empresas" del Panel Admin.'
     },
-
-    // Formulario de Registro
     timeRecordForm: {
       title: 'Registro de Hora',
       hello: 'Hola',
@@ -1896,8 +1792,6 @@ export const translations = {
       register: 'Guardar registro',
       saved: '¡Registro guardado con éxito!'
     },
-
-    // Perfil
     profile: {
       title: 'Perfil',
       subtitle: 'Información del usuario',
@@ -1937,8 +1831,6 @@ export const translations = {
       myData: 'Mis datos',
       perWeek: 'h/semana'
     },
-
-    // Exportación
     export: {
       title: 'Exportar Informe de Registro',
       reportTitle: 'INFORME DE REGISTRO',
@@ -2034,9 +1926,7 @@ export const translations = {
       excelButtonLabel: 'XLSX (Informe Visual)'
     }
   },
-
   'fr-FR': {
-    // Commun
     common: {
       save: 'Enregistrer',
       cancel: 'Annuler',
@@ -2062,8 +1952,6 @@ export const translations = {
       break: 'pause',
       refresh: 'Actualiser'
     },
-
-    // Menu/Sidebar
     menu: {
       dashboard: 'Tableau de bord',
       timeRecord: 'Pointer',
@@ -2075,8 +1963,6 @@ export const translations = {
       adminPanel: 'Panneau Admin',
       logout: 'Déconnexion'
     },
-
-    // Dashboard
     dashboard: {
       title: 'Tableau de bord',
       subtitle: 'Gestion du Système',
@@ -2152,8 +2038,6 @@ export const translations = {
       registerFirstEntry: 'Enregistrez votre première entrée pour voir le graphique',
       noTimeRecords: 'Aucun enregistrement trouvé pour cette semaine'
     },
-
-    // Paramètres
     settings: {
       title: 'Paramètres',
       subtitle: 'Personnalisez vos préférences',
@@ -2182,8 +2066,6 @@ export const translations = {
       errorSaving: 'Erreur lors de l\'enregistrement des paramètres',
       errorRestoring: '❌ Erreur lors de la restauration des paramètres'
     },
-
-    // Notifications
     notifications: {
       title: 'Notifications',
       markAllRead: 'Marquer toutes comme lues',
@@ -2238,8 +2120,6 @@ export const translations = {
       exportToPDF: 'Exporter en PDF',
       exportToExcel: 'Exporter en Excel'
     },
-
-    // Projets
     projects: {
       title: 'Gestion des Projets',
       subtitle: 'Gérez vos projets',
@@ -2317,8 +2197,6 @@ export const translations = {
       deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer ce projet ? Tous les enregistrements liés seront également supprimés. Cette action ne peut pas être annulée.',
       projectDeleted: 'Projet et enregistrements liés supprimés avec succès !'
     },
-
-    // Connexion
     login: {
       title: 'Bienvenue',
       subtitle: 'Connectez-vous pour continuer',
@@ -2338,8 +2216,6 @@ export const translations = {
       accessDenied: 'Accès Refusé',
       loginError: 'Une erreur s\'est produite lors de la tentative de connexion. Veuillez réessayer.'
     },
-
-    // Validation et Erreurs
     validation: {
       requiredField: 'Champ obligatoire',
       nameRequired: 'Le nom est obligatoire',
@@ -2388,8 +2264,6 @@ export const translations = {
       tryAgain: 'Erreur de formatage. Veuillez réessayer.',
       databaseError: 'Erreur de connexion à la base de données'
     },
-
-    // Historique
     history: {
       title: 'Historique des Enregistrements',
       subtitle: 'Visualisez et gérez vos enregistrements',
@@ -2427,8 +2301,6 @@ export const translations = {
       loadingRecords: 'Chargement des enregistrements...',
       noRecordsForFilters: 'Aucun enregistrement trouvé pour les filtres sélectionnés.'
     },
-
-    // Panneau Admin
     admin: {
       employees: 'Employés',
       removed: 'Supprimés',
@@ -2486,8 +2358,6 @@ export const translations = {
       filterByDate: 'Filtrer les enregistrements du jour',
       pendingInOtherDates: 'Il y a des enregistrements en attente à d\'autres dates'
     },
-
-    // Entreprises
     companies: {
       companyUpdated: 'Entreprise mise à jour avec succès !',
       companyRegistered: 'Entreprise enregistrée avec succès !',
@@ -2516,8 +2386,6 @@ export const translations = {
       firstCompanyPrompt: 'Commencez par enregistrer votre première entreprise',
       registerFirstCompany: 'Enregistrer la Première Entreprise'
     },
-
-    // Formulaire Employé
     employeeForm: {
       title: 'Enregistrement d\'Employé',
       personalInfo: 'Informations Personnelles',
@@ -2544,8 +2412,6 @@ export const translations = {
       registerEmployee: 'Enregistrer l\'Employé',
       noCompaniesMessage: 'Aucune entreprise enregistrée. Enregistrez d\'abord des entreprises dans l\'onglet "Entreprises" du Panneau Admin.'
     },
-
-    // Formulaire d'Enregistrement
     timeRecordForm: {
       title: 'Enregistrement d\'Heure',
       hello: 'Bonjour',
@@ -2566,8 +2432,6 @@ export const translations = {
       register: 'Enregistrer',
       saved: 'Enregistrement sauvegardé avec succès !'
     },
-
-    // Profil
     profile: {
       title: 'Profil',
       subtitle: 'Informations de l\'utilisateur',
@@ -2607,8 +2471,6 @@ export const translations = {
       myData: 'Mes données',
       perWeek: 'h/semaine'
     },
-
-    // Exportation
     export: {
       title: 'Exporter le Rapport d\'Enregistrement',
       reportTitle: 'RAPPORT D\'ENREGISTREMENT',
@@ -2704,27 +2566,24 @@ export const translations = {
       excelButtonLabel: 'XLSX (Rapport Visuel)'
     }
   }
-}
-
+};
 export const getTranslation = (language, key) => {
-  const keys = key.split('.')
-  let value = translations[language]
-  
+  const keys = key.split('.');
+  let value = translations[language];
   for (const k of keys) {
     if (value && value[k]) {
-      value = value[k]
+      value = value[k];
     } else {
-      value = translations['pt-BR']
+      value = translations['pt-BR'];
       for (const fallbackKey of keys) {
         if (value && value[fallbackKey]) {
-          value = value[fallbackKey]
+          value = value[fallbackKey];
         } else {
-          return key 
+          return key;
         }
       }
-      break
+      break;
     }
   }
-  
-  return value
-}
+  return value;
+};

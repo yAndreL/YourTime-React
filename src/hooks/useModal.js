@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react'
-
+import { useState, useCallback } from 'react';
 export const useModal = () => {
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -10,8 +9,7 @@ export const useModal = () => {
     cancelText: 'Cancelar',
     showCancel: false,
     onConfirm: null
-  })
-
+  });
   const showModal = useCallback(({
     title,
     message,
@@ -30,40 +28,52 @@ export const useModal = () => {
       cancelText,
       showCancel,
       onConfirm
-    })
-  }, [])
-
+    });
+  }, []);
   const showSuccess = useCallback((message, title = 'Sucesso') => {
-    showModal({ title, message, type: 'success' })
-  }, [showModal])
-
+    showModal({
+      title,
+      message,
+      type: 'success'
+    });
+  }, [showModal]);
   const showError = useCallback((message, title = 'Erro') => {
-    showModal({ title, message, type: 'error' })
-  }, [showModal])
-
+    showModal({
+      title,
+      message,
+      type: 'error'
+    });
+  }, [showModal]);
   const showWarning = useCallback((message, title = 'Atenção') => {
-    showModal({ title, message, type: 'warning' })
-  }, [showModal])
-
+    showModal({
+      title,
+      message,
+      type: 'warning'
+    });
+  }, [showModal]);
   const showInfo = useCallback((message, title = 'Informação') => {
-    showModal({ title, message, type: 'info' })
-  }, [showModal])
-
+    showModal({
+      title,
+      message,
+      type: 'info'
+    });
+  }, [showModal]);
   const showConfirm = useCallback((message, onConfirm, title = 'Confirmação') => {
-    showModal({ 
-      title, 
-      message, 
-      type: 'warning', 
+    showModal({
+      title,
+      message,
+      type: 'warning',
       showCancel: true,
       confirmText: 'Confirmar',
-      onConfirm 
-    })
-  }, [showModal])
-
+      onConfirm
+    });
+  }, [showModal]);
   const closeModal = useCallback(() => {
-    setModalState(prev => ({ ...prev, isOpen: false }))
-  }, [])
-
+    setModalState(prev => ({
+      ...prev,
+      isOpen: false
+    }));
+  }, []);
   return {
     modalState,
     showModal,
@@ -73,5 +83,5 @@ export const useModal = () => {
     showInfo,
     showConfirm,
     closeModal
-  }
-}
+  };
+};

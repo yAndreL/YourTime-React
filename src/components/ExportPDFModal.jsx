@@ -1,263 +1,215 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../config/supabase'
+import { useState, useEffect } from 'react';
+import { supabase } from '../config/supabase';
 import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle, FiInfo, FiChevronDown } from 'react-icons/fi';
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import ConfigService from '../services/ConfigService'
-import { useLanguage } from '../hooks/useLanguage'
-import { getLocalDateString } from '../utils/dateUtils'
-
-function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
-  const { t, currentLanguage } = useLanguage()
-  const [funcionarios, setFuncionarios] = useState([])
-  const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([])
-  const [dataInicio, setDataInicio] = useState('')
-  const [dataFim, setDataFim] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [gerando, setGerando] = useState(false)
-  const [modalError, setModalError] = useState({ isOpen: false, message: '', code: '' })
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
-  const [searchTerm, setSearchTerm] = useState('') // Estado para pesquisa
-  const [infoExpanded, setInfoExpanded] = useState(false) // Estado para expansão da seção de informações
-
-  // Bloquear scroll do body quando modal aberto
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import ConfigService from '../services/ConfigService';
+import { useLanguage } from '../hooks/useLanguage';
+import { getLocalDateString } from '../utils/dateUtils';
+function ExportPDFModal({
+  isOpen,
+  onClose,
+  isAdmin = false
+}) {
+  const {
+    t,
+    currentLanguage
+  } = useLanguage();
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([]);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [gerando, setGerando] = useState(false);
+  const [modalError, setModalError] = useState({
+    isOpen: false,
+    message: '',
+    code: ''
+  });
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [infoExpanded, setInfoExpanded] = useState(false);
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = 'unset';
     }
     return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
-
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
   useEffect(() => {
     if (isOpen) {
-      carregarFuncionarios()
-      // Definir período padrão (mês atual) usando timezone local
-      const hoje = new Date()
-      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
-      
-      // Formatar datas no timezone local
-      const formatarData = (d) => {
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-      }
-      
-      setDataInicio(formatarData(primeiroDia))
-      setDataFim(formatarData(ultimoDia))
+      carregarFuncionarios();
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      const formatarData = d => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      setDataInicio(formatarData(primeiroDia));
+      setDataFim(formatarData(ultimoDia));
     }
-  }, [isOpen])
-
+  }, [isOpen]);
   const carregarFuncionarios = async () => {
     try {
-      setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      setLoading(true);
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
-        setFuncionarios([])
-        return
+        setFuncionarios([]);
+        return;
       }
-
-      // Buscar o superior_empresa_id do usuário logado
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('superior_empresa_id')
-        .eq('id', user.id)
-        .single()
-
-      let query = supabase
-        .from('profiles')
-        .select('id, nome, email, cargo, departamento, superior_empresa_id')
-        .eq('is_active', true)
-
-      // ✅ FILTRO MULTITENANCY: Mostrar apenas usuários da mesma empresa
+      const {
+        data: userProfile
+      } = await supabase.from('profiles').select('superior_empresa_id').eq('id', user.id).single();
+      let query = supabase.from('profiles').select('id, nome, email, cargo, departamento, superior_empresa_id').eq('is_active', true);
       if (userProfile?.superior_empresa_id) {
-        query = query.eq('superior_empresa_id', userProfile.superior_empresa_id)
+        query = query.eq('superior_empresa_id', userProfile.superior_empresa_id);
       }
-
-      // Se não for admin, filtrar apenas o próprio usuário
       if (!isAdmin) {
-        query = query.eq('id', user.id)
+        query = query.eq('id', user.id);
       }
-
-      query = query.order('nome')
-
-      const { data, error } = await query
-
-      if (error) throw error
-      
-      const funcionariosData = data || []
-      setFuncionarios(funcionariosData)
-      
-      // Se não for admin, selecionar automaticamente o próprio usuário
+      query = query.order('nome');
+      const {
+        data,
+        error
+      } = await query;
+      if (error) throw error;
+      const funcionariosData = data || [];
+      setFuncionarios(funcionariosData);
       if (!isAdmin && funcionariosData.length > 0) {
-        setFuncionariosSelecionados([funcionariosData[0].id])
+        setFuncionariosSelecionados([funcionariosData[0].id]);
       }
     } catch (error) {
-      console.error('Erro ao carregar funcionários:', error)
+      console.error('Erro ao carregar funcionários:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const toggleFuncionario = (funcionarioId) => {
+  };
+  const toggleFuncionario = funcionarioId => {
     setFuncionariosSelecionados(prev => {
       if (prev.includes(funcionarioId)) {
-        return prev.filter(id => id !== funcionarioId)
+        return prev.filter(id => id !== funcionarioId);
       }
-      return [...prev, funcionarioId]
-    })
-  }
-
+      return [...prev, funcionarioId];
+    });
+  };
   const selecionarTodos = () => {
     if (funcionariosSelecionados.length === funcionarios.length) {
-      setFuncionariosSelecionados([])
+      setFuncionariosSelecionados([]);
     } else {
-      setFuncionariosSelecionados(funcionarios.map(f => f.id))
+      setFuncionariosSelecionados(funcionarios.map(f => f.id));
     }
-  }
-
+  };
   const calcularHoras = (entrada, saida) => {
-    if (!entrada || !saida) return 0
-    const [h1, m1] = entrada.split(':').map(Number)
-    const [h2, m2] = saida.split(':').map(Number)
-    return ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60
-  }
-
-  const formatarHoras = (horas) => {
-    const h = Math.floor(Math.abs(horas))
-    const m = Math.round((Math.abs(horas) - h) * 60)
-    return `${horas < 0 ? '-' : ''}${h}h ${m}m`
-  }
-
+    if (!entrada || !saida) return 0;
+    const [h1, m1] = entrada.split(':').map(Number);
+    const [h2, m2] = saida.split(':').map(Number);
+    return (h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+  };
+  const formatarHoras = horas => {
+    const h = Math.floor(Math.abs(horas));
+    const m = Math.round((Math.abs(horas) - h) * 60);
+    return `${horas < 0 ? '-' : ''}${h}h ${m}m`;
+  };
   const gerarPDF = async () => {
     if (funcionariosSelecionados.length === 0) {
       setModalError({
         isOpen: true,
         message: t('export.noEmployees'),
         code: 'EXP-001'
-      })
-      return
+      });
+      return;
     }
-
     if (!dataInicio || !dataFim) {
       setModalError({
         isOpen: true,
         message: t('validation.periodRequired'),
         code: 'EXP-002'
-      })
-      return
+      });
+      return;
     }
-
     if (new Date(dataInicio) > new Date(dataFim)) {
       setModalError({
         isOpen: true,
         message: 'A data de início não pode ser posterior à data fim.',
         code: 'EXP-003'
-      })
-      return
+      });
+      return;
     }
-
     try {
-      setGerando(true)
-
-      // Buscar configurações do usuário atual
-      const { data: { user } } = await supabase.auth.getUser()
-      const configResult = await ConfigService.buscarConfiguracoes(user.id)
-      const incluirGraficos = configResult?.data?.incluir_graficos_pdf ?? false
-
+      setGerando(true);
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      const configResult = await ConfigService.buscarConfiguracoes(user.id);
+      const incluirGraficos = configResult?.data?.incluir_graficos_pdf ?? false;
       for (const funcionarioId of funcionariosSelecionados) {
-        const funcionario = funcionarios.find(f => f.id === funcionarioId)
-        
-        // Buscar registros de ponto do funcionário no período
-        const { data: registros, error } = await supabase
-          .from('agendamento')
-          .select('*')
-          .eq('user_id', funcionarioId)
-          .gte('data', dataInicio)
-          .lte('data', dataFim)
-          .order('data', { ascending: true })
-
-        if (error) throw error
-
-        // Gerar PDF para este funcionário
-        const doc = new jsPDF()
-        
-        // Header
-        doc.setFontSize(18)
-        doc.setFont(undefined, 'bold')
-        doc.text(t('export.reportTitle'), 105, 20, { align: 'center' })
-        
-        doc.setFontSize(12)
-        doc.setFont(undefined, 'normal')
-        doc.text(`${t('export.employee')} ${funcionario.nome}`, 20, 35)
-        doc.text(`${t('export.position')} ${funcionario.cargo || t('export.notDefined')}`, 20, 42)
-        doc.text(`${t('export.department')} ${funcionario.departamento || t('export.notDefined')}`, 20, 49)
-        doc.text(`${t('export.period')} ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56)
-
-        // Calcular totais
-        let totalHorasTrabalhadas = 0
-        let totalHorasExtras = 0
-        let diasUteis = 0
-
+        const funcionario = funcionarios.find(f => f.id === funcionarioId);
+        const {
+          data: registros,
+          error
+        } = await supabase.from('agendamento').select('*').eq('user_id', funcionarioId).gte('data', dataInicio).lte('data', dataFim).order('data', {
+          ascending: true
+        });
+        if (error) throw error;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text(t('export.reportTitle'), 105, 20, {
+          align: 'center'
+        });
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${t('export.employee')} ${funcionario.nome}`, 20, 35);
+        doc.text(`${t('export.position')} ${funcionario.cargo || t('export.notDefined')}`, 20, 42);
+        doc.text(`${t('export.department')} ${funcionario.departamento || t('export.notDefined')}`, 20, 49);
+        doc.text(`${t('export.period')} ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56);
+        let totalHorasTrabalhadas = 0;
+        let totalHorasExtras = 0;
+        let diasUteis = 0;
         const tableData = registros.map(reg => {
-          const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1)
-          const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2)
-          const totalDia = horasJornada1 + horasJornada2
-          
-          totalHorasTrabalhadas += totalDia
-          
-          // Calcular horas extras (acima de 8 horas/dia)
+          const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1);
+          const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2);
+          const totalDia = horasJornada1 + horasJornada2;
+          totalHorasTrabalhadas += totalDia;
           if (totalDia > 8) {
-            totalHorasExtras += (totalDia - 8)
+            totalHorasExtras += totalDia - 8;
           }
-          
-          diasUteis++
-
-          // Calcular intervalo
-          let intervaloInicio = '--:--'
-          let intervaloFim = '--:--'
-          let duracaoIntervalo = '--'
-
+          diasUteis++;
+          let intervaloInicio = '--:--';
+          let intervaloFim = '--:--';
+          let duracaoIntervalo = '--';
           if (reg.saida1 && reg.entrada2) {
-            intervaloInicio = reg.saida1
-            intervaloFim = reg.entrada2
-            const duracaoMin = calcularHoras(reg.saida1, reg.entrada2) * 60
-            duracaoIntervalo = `${Math.floor(duracaoMin)}min`
+            intervaloInicio = reg.saida1;
+            intervaloFim = reg.entrada2;
+            const duracaoMin = calcularHoras(reg.saida1, reg.entrada2) * 60;
+            duracaoIntervalo = `${Math.floor(duracaoMin)}min`;
           }
-
-          return [
-            formatarData(reg.data),
-            reg.entrada1 || '--:--',
-            reg.saida1 || '--:--',
-            intervaloInicio,
-            intervaloFim,
-            duracaoIntervalo,
-            reg.entrada2 || '--:--',
-            reg.saida2 || '--:--',
-            formatarHoras(totalDia),
-            getStatusTexto(reg.status)
-          ]
-        })
-
-        // Tabela de registros
+          return [formatarData(reg.data), reg.entrada1 || '--:--', reg.saida1 || '--:--', intervaloInicio, intervaloFim, duracaoIntervalo, reg.entrada2 || '--:--', reg.saida2 || '--:--', formatarHoras(totalDia), getStatusTexto(reg.status)];
+        });
         autoTable(doc, {
           startY: 65,
           head: [[t('export.date'), t('export.entry1'), t('export.exit1'), t('export.breakStart'), t('export.breakEnd'), t('export.duration'), t('export.entry2'), t('export.exit2'), t('export.total'), t('export.status')]],
           body: tableData,
           theme: 'grid',
-          headStyles: { 
+          headStyles: {
             fillColor: [37, 99, 235],
             fontSize: 8,
             fontStyle: 'bold'
           },
-          bodyStyles: { 
+          bodyStyles: {
             fontSize: 7
           },
           styles: {
@@ -266,251 +218,221 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
             fontSize: 7
           },
           columnStyles: {
-            0: { cellWidth: 'auto' },  // Data
-            1: { cellWidth: 'auto' },  // Entrada 1
-            2: { cellWidth: 'auto' },  // Saída 1
-            3: { cellWidth: 'auto' },  // Intervalo Início
-            4: { cellWidth: 'auto' },  // Intervalo Fim
-            5: { cellWidth: 'auto' },  // Duração
-            6: { cellWidth: 'auto' },  // Entrada 2
-            7: { cellWidth: 'auto' },  // Saída 2
-            8: { cellWidth: 'auto' },  // Total
-            9: { cellWidth: 'auto' }   // Status
+            0: {
+              cellWidth: 'auto'
+            },
+            1: {
+              cellWidth: 'auto'
+            },
+            2: {
+              cellWidth: 'auto'
+            },
+            3: {
+              cellWidth: 'auto'
+            },
+            4: {
+              cellWidth: 'auto'
+            },
+            5: {
+              cellWidth: 'auto'
+            },
+            6: {
+              cellWidth: 'auto'
+            },
+            7: {
+              cellWidth: 'auto'
+            },
+            8: {
+              cellWidth: 'auto'
+            },
+            9: {
+              cellWidth: 'auto'
+            }
           },
           tableWidth: 'auto',
-          margin: { left: 10, right: 10 }
-        })
-
-        // Resumo - obter posição Y final da tabela
-        let finalY = (doc.lastAutoTable?.finalY || 65) + 10
-        
-        // Se habilitado, adicionar gráfico
-        if (incluirGraficos && registros.length > 0) {
-          doc.setFontSize(12)
-          doc.setFont(undefined, 'bold')
-          doc.text(t('export.workedHoursChart'), 20, finalY)
-          
-          // Calcular máximo de horas trabalhadas no período
-          let maxHorasTrabalhadas = 0
-          registros.forEach((reg) => {
-            const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1)
-            const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2)
-            const totalDia = horasJornada1 + horasJornada2
-            if (totalDia > maxHorasTrabalhadas) {
-              maxHorasTrabalhadas = totalDia
-            }
-          })
-          
-          // Arredondar para cima: (max + 1) arredondado para o próximo inteiro
-          const maxHoras = Math.ceil(maxHorasTrabalhadas + 1)
-          
-          // Desenhar gráfico de barras
-          const graficoX = 25
-          const graficoY = finalY + 10
-          const graficoLargura = 165
-          const graficoAltura = 60
-          
-          // Fundo do gráfico
-          doc.setFillColor(245, 245, 245)
-          doc.rect(graficoX, graficoY, graficoLargura, graficoAltura, 'F')
-          
-          // Calcular número de linhas de grade (mínimo 4, máximo 6)
-          const numLinhas = Math.min(Math.max(4, maxHoras), 6)
-          const intervaloHoras = maxHoras / numLinhas
-          
-          // Linhas de grade
-          doc.setDrawColor(200, 200, 200)
-          doc.setLineWidth(0.1)
-          for (let i = 0; i <= numLinhas; i++) {
-            const y = graficoY + (graficoAltura * i / numLinhas)
-            doc.line(graficoX, y, graficoX + graficoLargura, y)
-            
-            // Labels do eixo Y
-            doc.setFontSize(7)
-            doc.setTextColor(100, 100, 100)
-            const horaLabel = Math.round((maxHoras - (i * intervaloHoras)) * 10) / 10
-            doc.text(`${horaLabel}h`, graficoX - 5, y + 2, { align: 'right' })
+          margin: {
+            left: 10,
+            right: 10
           }
-          
-          // Desenhar barras
-          const barWidth = Math.min(graficoLargura / registros.length - 2, 10)
-          const barSpacing = graficoLargura / registros.length
-          
+        });
+        let finalY = (doc.lastAutoTable?.finalY || 65) + 10;
+        if (incluirGraficos && registros.length > 0) {
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text(t('export.workedHoursChart'), 20, finalY);
+          let maxHorasTrabalhadas = 0;
+          registros.forEach(reg => {
+            const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1);
+            const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2);
+            const totalDia = horasJornada1 + horasJornada2;
+            if (totalDia > maxHorasTrabalhadas) {
+              maxHorasTrabalhadas = totalDia;
+            }
+          });
+          const maxHoras = Math.ceil(maxHorasTrabalhadas + 1);
+          const graficoX = 25;
+          const graficoY = finalY + 10;
+          const graficoLargura = 165;
+          const graficoAltura = 60;
+          doc.setFillColor(245, 245, 245);
+          doc.rect(graficoX, graficoY, graficoLargura, graficoAltura, 'F');
+          const numLinhas = Math.min(Math.max(4, maxHoras), 6);
+          const intervaloHoras = maxHoras / numLinhas;
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.1);
+          for (let i = 0; i <= numLinhas; i++) {
+            const y = graficoY + graficoAltura * i / numLinhas;
+            doc.line(graficoX, y, graficoX + graficoLargura, y);
+            doc.setFontSize(7);
+            doc.setTextColor(100, 100, 100);
+            const horaLabel = Math.round((maxHoras - i * intervaloHoras) * 10) / 10;
+            doc.text(`${horaLabel}h`, graficoX - 5, y + 2, {
+              align: 'right'
+            });
+          }
+          const barWidth = Math.min(graficoLargura / registros.length - 2, 10);
+          const barSpacing = graficoLargura / registros.length;
           registros.forEach((reg, index) => {
-            const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1)
-            const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2)
-            const totalDia = horasJornada1 + horasJornada2
-            
-            const barHeight = (totalDia / maxHoras) * graficoAltura
-            const barX = graficoX + (index * barSpacing) + (barSpacing - barWidth) / 2
-            const barY = graficoY + graficoAltura - barHeight
-            
-            // Cor da barra baseada nas horas
+            const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1);
+            const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2);
+            const totalDia = horasJornada1 + horasJornada2;
+            const barHeight = totalDia / maxHoras * graficoAltura;
+            const barX = graficoX + index * barSpacing + (barSpacing - barWidth) / 2;
+            const barY = graficoY + graficoAltura - barHeight;
             if (totalDia >= 8) {
-              doc.setFillColor(34, 197, 94) // Verde - >= 8h
+              doc.setFillColor(34, 197, 94);
             } else if (totalDia >= 6) {
-              doc.setFillColor(251, 191, 36) // Amarelo - 6-8h
+              doc.setFillColor(251, 191, 36);
             } else {
-              doc.setFillColor(239, 68, 68) // Vermelho - < 6h
+              doc.setFillColor(239, 68, 68);
             }
-            
-            doc.rect(barX, barY, barWidth, barHeight, 'F')
-            
-            // Label da data
+            doc.rect(barX, barY, barWidth, barHeight, 'F');
             if (registros.length <= 15) {
-              doc.setFontSize(6)
-              doc.setTextColor(80, 80, 80)
-              const dataLabel = formatarData(reg.data).substring(0, 5) // DD/MM
-              const labelY = graficoY + graficoAltura + 4
-              doc.text(dataLabel, barX + barWidth / 2, labelY, { align: 'center' })
+              doc.setFontSize(6);
+              doc.setTextColor(80, 80, 80);
+              const dataLabel = formatarData(reg.data).substring(0, 5);
+              const labelY = graficoY + graficoAltura + 4;
+              doc.text(dataLabel, barX + barWidth / 2, labelY, {
+                align: 'center'
+              });
             }
-          })
-          
-          // Borda do gráfico
-          doc.setDrawColor(150, 150, 150)
-          doc.setLineWidth(0.5)
-          doc.rect(graficoX, graficoY, graficoLargura, graficoAltura)
-          
-          // Legenda com quadrados maiores
-          doc.setFontSize(8)
-          doc.setTextColor(60, 60, 60)
-          const legendaY = graficoY + graficoAltura + 12
-          const legendaX = graficoX + 10
-          
-          // Verde - >= 8h
-          doc.setFillColor(34, 197, 94)
-          doc.rect(legendaX, legendaY, 4, 4, 'F')
-          doc.setTextColor(60, 60, 60)
-          doc.text('>= 8h', legendaX + 6, legendaY + 3)
-          
-          // Amarelo - 6-8h
-          doc.setFillColor(251, 191, 36)
-          doc.rect(legendaX + 30, legendaY, 4, 4, 'F')
-          doc.setTextColor(60, 60, 60)
-          doc.text('6-8h', legendaX + 36, legendaY + 3)
-          
-          // Vermelho - < 6h
-          doc.setFillColor(239, 68, 68)
-          doc.rect(legendaX + 55, legendaY, 4, 4, 'F')
-          doc.setTextColor(60, 60, 60)
-          doc.text('< 6h', legendaX + 61, legendaY + 3)
-          
-          finalY = legendaY + 12
+          });
+          doc.setDrawColor(150, 150, 150);
+          doc.setLineWidth(0.5);
+          doc.rect(graficoX, graficoY, graficoLargura, graficoAltura);
+          doc.setFontSize(8);
+          doc.setTextColor(60, 60, 60);
+          const legendaY = graficoY + graficoAltura + 12;
+          const legendaX = graficoX + 10;
+          doc.setFillColor(34, 197, 94);
+          doc.rect(legendaX, legendaY, 4, 4, 'F');
+          doc.setTextColor(60, 60, 60);
+          doc.text('>= 8h', legendaX + 6, legendaY + 3);
+          doc.setFillColor(251, 191, 36);
+          doc.rect(legendaX + 30, legendaY, 4, 4, 'F');
+          doc.setTextColor(60, 60, 60);
+          doc.text('6-8h', legendaX + 36, legendaY + 3);
+          doc.setFillColor(239, 68, 68);
+          doc.rect(legendaX + 55, legendaY, 4, 4, 'F');
+          doc.setTextColor(60, 60, 60);
+          doc.text('< 6h', legendaX + 61, legendaY + 3);
+          finalY = legendaY + 12;
         }
-        
-        // Calcular saldo de horas (assumindo 8h/dia)
-        const horasEsperadas = diasUteis * 8
-        const saldoHoras = totalHorasTrabalhadas - horasEsperadas
-
-        doc.setFontSize(12)
-        doc.setFont(undefined, 'bold')
-        doc.text(t('export.summary').toUpperCase(), 20, finalY)
-        
-        doc.setFont(undefined, 'normal')
-        doc.setFontSize(10)
-        doc.text(`${t('export.workedDays')}: ${diasUteis}`, 20, finalY + 10)
-        doc.text(`${t('export.totalHours')}: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17)
-        doc.text(`${t('export.averagePerDay')}: ${formatarHoras(horasEsperadas)}`, 20, finalY + 24)
-        
-        // Horas extras com cor laranja
-        doc.setTextColor(255, 140, 0) // Laranja
-        doc.text(`${t('export.overtimeHours')}: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31)
-        
-        // Saldo com cor
-        doc.setFont(undefined, 'bold')
+        const horasEsperadas = diasUteis * 8;
+        const saldoHoras = totalHorasTrabalhadas - horasEsperadas;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(t('export.summary').toUpperCase(), 20, finalY);
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.text(`${t('export.workedDays')}: ${diasUteis}`, 20, finalY + 10);
+        doc.text(`${t('export.totalHours')}: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17);
+        doc.text(`${t('export.averagePerDay')}: ${formatarHoras(horasEsperadas)}`, 20, finalY + 24);
+        doc.setTextColor(255, 140, 0);
+        doc.text(`${t('export.overtimeHours')}: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31);
+        doc.setFont(undefined, 'bold');
         if (saldoHoras >= 0) {
-          doc.setTextColor(0, 128, 0) // Verde
-          doc.text(`Saldo de horas: +${formatarHoras(saldoHoras)}`, 20, finalY + 38)
+          doc.setTextColor(0, 128, 0);
+          doc.text(`Saldo de horas: +${formatarHoras(saldoHoras)}`, 20, finalY + 38);
         } else {
-          doc.setTextColor(255, 0, 0) // Vermelho
-          doc.text(`Saldo de horas: ${formatarHoras(saldoHoras)}`, 20, finalY + 38)
+          doc.setTextColor(255, 0, 0);
+          doc.text(`Saldo de horas: ${formatarHoras(saldoHoras)}`, 20, finalY + 38);
         }
-
-        // Footer
-        doc.setTextColor(128, 128, 128)
-        doc.setFontSize(8)
-        doc.setFont(undefined, 'italic')
-        const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US'
-        doc.text(`${t('export.generatedAt')}: ${new Date().toLocaleString(locale)}`, 105, 285, { align: 'center' })
-
-        // Salvar PDF
-        const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`
-        doc.save(nomeArquivo)
-
-        // Pequeno delay entre PDFs para não travar o navegador
-        await new Promise(resolve => setTimeout(resolve, 500))
+        doc.setTextColor(128, 128, 128);
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'italic');
+        const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US';
+        doc.text(`${t('export.generatedAt')}: ${new Date().toLocaleString(locale)}`, 105, 285, {
+          align: 'center'
+        });
+        const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`;
+        doc.save(nomeArquivo);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-
-      // Sucesso - Mostrar toast
-      setToastMessage('Relatório em PDF gerado!')
-      setShowToast(true)
-      
+      setToastMessage('Relatório em PDF gerado!');
+      setShowToast(true);
       setTimeout(() => {
-        setShowToast(false)
-        onClose()
-      }, 2000)
+        setShowToast(false);
+        onClose();
+      }, 2000);
     } catch (error) {
-
-      let errorCode = 'EXP-004'
-      let errorMessage = t('export.errorGenerating')
-      
+      let errorCode = 'EXP-004';
+      let errorMessage = t('export.errorGenerating');
       if (error.message.includes('registros')) {
-        errorCode = 'EXP-005'
-        errorMessage = t('export.noRecords')
+        errorCode = 'EXP-005';
+        errorMessage = t('export.noRecords');
       } else if (error.message.includes('autoTable') || error.message.includes('jspdf')) {
-        errorCode = 'EXP-006'
-        errorMessage = t('validation.tryAgain')
+        errorCode = 'EXP-006';
+        errorMessage = t('validation.tryAgain');
       } else if (error.code) {
-        errorCode = 'DB-001'
-        errorMessage = `${t('validation.databaseError')}: ${error.message}`
+        errorCode = 'DB-001';
+        errorMessage = `${t('validation.databaseError')}: ${error.message}`;
       }
-      
       setModalError({
         isOpen: true,
         message: errorMessage,
         code: errorCode
-      })
+      });
     } finally {
-      setGerando(false)
+      setGerando(false);
     }
-  }
-
-  const formatarData = (dataString) => {
-    const data = new Date(dataString + 'T00:00:00')
-    return data.toLocaleDateString('pt-BR')
-  }
-
-  const getStatusTexto = (status) => {
+  };
+  const formatarData = dataString => {
+    const data = new Date(dataString + 'T00:00:00');
+    return data.toLocaleDateString('pt-BR');
+  };
+  const getStatusTexto = status => {
     switch (status) {
-      case 'A': return t('export.approved')
-      case 'P': return t('export.pending')
-      case 'R': return t('export.rejected')
-      default: return '-'
+      case 'A':
+        return t('export.approved');
+      case 'P':
+        return t('export.pending');
+      case 'R':
+        return t('export.rejected');
+      default:
+        return '-';
     }
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style={{ margin: 0, padding: '1rem' }}>
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ marginTop: 0, marginBottom: 0 }}>
-        {/* Header */}
+  };
+  if (!isOpen) return null;
+  return <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style={{
+    margin: 0,
+    padding: '1rem'
+  }}>
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{
+      marginTop: 0,
+      marginBottom: 0
+    }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <FiDownload className="w-6 h-6 text-blue-600" />
             <h2 className="text-2xl font-bold text-gray-900">{t('common.exportTitle')}</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
-          {/* Seleção de Período */}
           <div className="mb-6">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
               <FiCalendar className="w-4 h-4" />
@@ -519,106 +441,48 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">{t('export.startDate')}</label>
-                <input
-                  type="date"
-                  value={dataInicio}
-                  onChange={(e) => setDataInicio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">{t('export.endDate')}</label>
-                <input
-                  type="date"
-                  value={dataFim}
-                  onChange={(e) => setDataFim(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               </div>
             </div>
           </div>
 
-          {/* Seleção de Funcionários */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <FiUsers className="w-4 h-4" />
-                {isAdmin 
-                  ? `${t('export.selectEmployees')} (${funcionariosSelecionados.length})`
-                  : t('profile.myData')
-                }
+                {isAdmin ? `${t('export.selectEmployees')} (${funcionariosSelecionados.length})` : t('profile.myData')}
               </label>
-              {isAdmin && funcionarios.length > 1 && (
-                <button
-                  onClick={selecionarTodos}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
+              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                   {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAll') : t('export.selectAll')}
-                </button>
-              )}
+                </button>}
             </div>
 
-            {/* Campo de Pesquisa */}
-            {isAdmin && funcionarios.length > 0 && (
-              <div className="mb-3">
-                <input
-                  type="text"
-                  placeholder={t('admin.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            )}
+            {isAdmin && funcionarios.length > 0 && <div className="mb-3">
+                <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>}
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-              {loading ? (
-                <div className="text-center py-8 text-gray-500">{t('common.loading')}...</div>
-              ) : funcionarios.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">{t('export.noEmployees')}</div>
-              ) : (
-                <div className="space-y-2">
-                  {funcionarios
-                    .filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .map((func) => (
-                    <label
-                      key={func.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${
-                        !isAdmin 
-                          ? 'bg-blue-50 border-blue-200 cursor-default' 
-                          : 'hover:bg-white cursor-pointer border-transparent hover:border-blue-200'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={funcionariosSelecionados.includes(func.id)}
-                        onChange={() => isAdmin && toggleFuncionario(func.id)}
-                        disabled={!isAdmin}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-                      />
+              {loading ? <div className="text-center py-8 text-gray-500">{t('common.loading')}...</div> : funcionarios.length === 0 ? <div className="text-center py-8 text-gray-500">{t('export.noEmployees')}</div> : <div className="space-y-2">
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${!isAdmin ? 'bg-blue-50 border-blue-200 cursor-default' : 'hover:bg-white cursor-pointer border-transparent hover:border-blue-200'}`}>
+                      <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => isAdmin && toggleFuncionario(func.id)} disabled={!isAdmin} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{func.nome}</p>
                         <p className="text-xs text-gray-500">
                           {func.cargo || t('export.noPosition')} • {func.departamento || t('export.noDepartment')}
                         </p>
                       </div>
-                    </label>
-                  ))}
-                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
-                    <div className="text-center py-4 text-gray-500">{t('export.noEmployeesFound')}</div>
-                  )}
-                </div>
-              )}
+                    </label>)}
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="text-center py-4 text-gray-500">{t('export.noEmployeesFound')}</div>}
+                </div>}
             </div>
           </div>
 
-          {/* Informações - Breadcrumb Expansível */}
           <div className="mt-6 border border-blue-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setInfoExpanded(!infoExpanded)}
-              className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left"
-              type="button"
-            >
+            <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left" type="button">
               <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
                 <FiInfo className="flex-shrink-0" />
                 {t('export.informationTitle')}
@@ -627,21 +491,13 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
                 <FiChevronDown />
               </div>
             </button>
-            <div
-              className={`transition-all duration-300 ease-in-out ${
-                infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
+            <div className={`transition-all duration-300 ease-in-out ${infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
               <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
                 <ul className="text-sm text-blue-700 space-y-1 ml-4 list-disc">
-                  {isAdmin ? (
-                    <>
+                  {isAdmin ? <>
                       <li>{t('export.infoPdfPerEmployee')}</li>
                       <li>{t('export.infoAdminExport')}</li>
-                    </>
-                  ) : (
-                    <li>{t('export.infoPdfMyRecords')}</li>
-                  )}
+                    </> : <li>{t('export.infoPdfMyRecords')}</li>}
                   <li>{t('export.infoReportIncludes')}</li>
                   <li>{t('export.infoGraphics')}</li>
                   <li>{t('export.infoHoursBalance')}</li>
@@ -652,38 +508,23 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={onClose}
-            disabled={gerando}
-            className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
+          <button onClick={onClose} disabled={gerando} className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
             Cancelar
           </button>
-          <button
-            onClick={gerarPDF}
-            disabled={gerando || funcionariosSelecionados.length === 0}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {gerando ? (
-              <>
+          <button onClick={gerarPDF} disabled={gerando || funcionariosSelecionados.length === 0} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            {gerando ? <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 {t('export.generating')}...
-              </>
-            ) : (
-              <>
+              </> : <>
                 <FiDownload className="w-4 h-4" />
                 {t('export.generateReport')}
-              </>
-            )}
+              </>}
           </button>
         </div>
       </div>
 
-      {/* Modal de Erro */}
-      {modalError.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+      {modalError.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
             <div className="p-6 border-b border-red-200">
               <div className="flex items-center gap-3">
@@ -710,28 +551,23 @@ function ExportPDFModal({ isOpen, onClose, isAdmin = false }) {
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={() => setModalError({ isOpen: false, message: '', code: '' })}
-                className="px-6 py-2 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700"
-              >
+              <button onClick={() => setModalError({
+            isOpen: false,
+            message: '',
+            code: ''
+          })} className="px-6 py-2 rounded-lg font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700">
                 Entendi
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
-      {/* Toast de Sucesso */}
-      {showToast && (
-        <div className="fixed bottom-4 right-4 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg z-[70] animate-slide-up">
+      {showToast && <div className="fixed bottom-4 right-4 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg z-[70] animate-slide-up">
           <div className="flex items-center gap-2">
             <FiDownload className="w-5 h-5" />
             <span className="font-medium">{toastMessage}</span>
           </div>
-        </div>
-      )}
-    </div>
-  )
+        </div>}
+    </div>;
 }
-
-export default ExportPDFModal
+export default ExportPDFModal;

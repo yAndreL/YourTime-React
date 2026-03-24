@@ -1,194 +1,134 @@
-// useTimeTracking.js
-// Hook personalizado para gerenciar dados de ponto do usuário
-
-import { useState, useEffect } from 'react'
-import { supabase } from '../config/supabase.js'
-import { useLanguage } from './useLanguage.jsx'
-import { getLocalDateString } from '../utils/dateUtils'
-
+import { useState, useEffect } from 'react';
+import { supabase } from '../config/supabase.js';
+import { useLanguage } from './useLanguage.jsx';
+import { getLocalDateString } from '../utils/dateUtils';
 export function useTimeTracking() {
-  const { t } = useLanguage()
-  const [userData, setUserData] = useState(null)
-  const [timeRecords, setTimeRecords] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Carregar dados do cache imediatamente
+  const {
+    t
+  } = useLanguage();
+  const [userData, setUserData] = useState(null);
+  const [timeRecords, setTimeRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   useEffect(() => {
-    const cachedTimeRecords = sessionStorage.getItem('cachedTimeRecords')
+    const cachedTimeRecords = sessionStorage.getItem('cachedTimeRecords');
     if (cachedTimeRecords) {
       try {
-        const parsed = JSON.parse(cachedTimeRecords)
-        setTimeRecords(parsed)
-        setLoading(false) // Marca como não carregando se temos cache
-      } catch (e) {
-        // Ignore parse errors
-      }
+        const parsed = JSON.parse(cachedTimeRecords);
+        setTimeRecords(parsed);
+        setLoading(false);
+      } catch (e) {}
     }
-  }, [])
-
-  // Buscar dados do usuário atual
+  }, []);
   const fetchUserData = async () => {
     try {
-      // Não mostrar loading se já temos dados em cache
-      const hasCache = sessionStorage.getItem('cachedTimeRecords')
+      const hasCache = sessionStorage.getItem('cachedTimeRecords');
       if (!hasCache) {
-        setLoading(true)
+        setLoading(true);
       }
-      setError(null)
-
-      // Buscar usuário autenticado
-      const { data: { user } } = await supabase.auth.getUser()
-
+      setError(null);
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('Usuário não autenticado')
+        throw new Error('Usuário não autenticado');
       }
-
-      // Buscar perfil do usuário autenticado
-      const { data: profile, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
+      const {
+        data: profile,
+        error: userError
+      } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (userError) {
-        throw userError
+        throw userError;
       }
-
       if (profile) {
-        setUserData(profile)
+        setUserData(profile);
       } else {
-        setUserData(null)
+        setUserData(null);
       }
     } catch (err) {
-      setError(`Erro ao buscar dados do usuário: ${err.message}`)
-      setUserData(null)
+      setError(`Erro ao buscar dados do usuário: ${err.message}`);
+      setUserData(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  // Função auxiliar para formatar data para banco de dados (YYYY-MM-DD) usando timezone local
-  const formatDateForDB = (date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  // Buscar registros de ponto (últimos 90 dias para capturar todos os pendentes)
+  };
+  const formatDateForDB = date => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const fetchTimeRecords = async () => {
     try {
       if (!userData?.id) {
-        return
+        return;
       }
-
-      const today = new Date()
-      
-      // Buscar registros dos últimos 90 dias para capturar todos os pendentes
-      const startDate = new Date(today)
-      startDate.setDate(today.getDate() - 90)
-      startDate.setHours(0, 0, 0, 0)
-
-
-
-      const { data: records, error: recordsError } = await supabase
-        .from('agendamento')
-        .select('*')
-        .eq('user_id', userData.id)
-        .gte('data', formatDateForDB(startDate))
-        .order('data', { ascending: true })
-
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 90);
+      startDate.setHours(0, 0, 0, 0);
+      const {
+        data: records,
+        error: recordsError
+      } = await supabase.from('agendamento').select('*').eq('user_id', userData.id).gte('data', formatDateForDB(startDate)).order('data', {
+        ascending: true
+      });
       if (recordsError) {
-
-        throw recordsError
+        throw recordsError;
       }
-
-      setTimeRecords(records || [])
-      // Salvar no cache para próximas navegações
-      sessionStorage.setItem('cachedTimeRecords', JSON.stringify(records || []))
-      setError(null) // Limpar erros anteriores se sucesso
-
+      setTimeRecords(records || []);
+      sessionStorage.setItem('cachedTimeRecords', JSON.stringify(records || []));
+      setError(null);
     } catch (err) {
-
-      setError(`Erro ao buscar registros: ${err.message}`)
-      setTimeRecords([]) // Definir array vazio em caso de erro
+      setError(`Erro ao buscar registros: ${err.message}`);
+      setTimeRecords([]);
     }
-  }
-
-  // Calcular saldo de horas baseado nos registros
+  };
   const calculateTimeBalance = () => {
-    if (!timeRecords.length) return '+00:00'
-
-    let totalMinutes = 0
-
+    if (!timeRecords.length) return '+00:00';
+    let totalMinutes = 0;
     timeRecords.forEach(record => {
-      // Calcular horas trabalhadas por dia
-      const workedMinutes = calculateDailyWorkedMinutes(record)
-      totalMinutes += workedMinutes
-    })
-
-    const hours = Math.floor(Math.abs(totalMinutes) / 60)
-    const minutes = Math.abs(totalMinutes) % 60
-
-    const sign = totalMinutes >= 0 ? '+' : '-'
-    return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-  }
-
-  // Calcular horas trabalhadas em um dia específico
-  const calculateDailyWorkedMinutes = (record) => {
-    let totalMinutes = 0
-
-    // Primeira jornada (ex: 08:00 - 12:00 = 4h)
+      const workedMinutes = calculateDailyWorkedMinutes(record);
+      totalMinutes += workedMinutes;
+    });
+    const hours = Math.floor(Math.abs(totalMinutes) / 60);
+    const minutes = Math.abs(totalMinutes) % 60;
+    const sign = totalMinutes >= 0 ? '+' : '-';
+    return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+  const calculateDailyWorkedMinutes = record => {
+    let totalMinutes = 0;
     if (record.entrada1 && record.saida1) {
-      const entrada1 = new Date(`2000-01-01T${record.entrada1}`)
-      const saida1 = new Date(`2000-01-01T${record.saida1}`)
-      totalMinutes += (saida1 - entrada1) / (1000 * 60)
+      const entrada1 = new Date(`2000-01-01T${record.entrada1}`);
+      const saida1 = new Date(`2000-01-01T${record.saida1}`);
+      totalMinutes += (saida1 - entrada1) / (1000 * 60);
     }
-
-    // Segunda jornada (ex: 13:00 - 18:00 = 5h)
     if (record.entrada2 && record.saida2) {
-      const entrada2 = new Date(`2000-01-01T${record.entrada2}`)
-      const saida2 = new Date(`2000-01-01T${record.saida2}`)
-      totalMinutes += (saida2 - entrada2) / (1000 * 60)
+      const entrada2 = new Date(`2000-01-01T${record.entrada2}`);
+      const saida2 = new Date(`2000-01-01T${record.saida2}`);
+      totalMinutes += (saida2 - entrada2) / (1000 * 60);
     }
-
-    // NÃO subtrair pausas - o intervalo de almoço JÁ está fora do cálculo
-    // O tempo entre saida1 (12:00) e entrada2 (13:00) não é contabilizado
-    // Exemplo: 08-12 (4h) + 13-18 (5h) = 9h trabalhadas (o almoço 12-13 já está excluído)
-
-    return totalMinutes
-  }
-
-  // Calcular horas aprovadas de hoje (status 'A')
+    return totalMinutes;
+  };
   const calculateTodayApprovedHours = () => {
-    const today = getLocalDateString()
-    const todayRecords = timeRecords.filter(record => record.data === today && record.status === 'A')
-
-    if (!todayRecords.length) return '00:00'
-
-    const totalMinutes = todayRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0)
-    const hours = Math.floor(totalMinutes / 60)
-    const mins = totalMinutes % 60
-
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
-  }
-
-  // Calcular TOTAL de horas pendentes (status 'P') - não apenas hoje
+    const today = getLocalDateString();
+    const todayRecords = timeRecords.filter(record => record.data === today && record.status === 'A');
+    if (!todayRecords.length) return '00:00';
+    const totalMinutes = todayRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
   const calculateTodayPendingHours = () => {
-    // Filtra TODOS os registros pendentes, não apenas de hoje
-    const pendingRecords = timeRecords.filter(record => record.status === 'P')
-
-    if (!pendingRecords.length) return '00:00'
-
-    const totalMinutes = pendingRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0)
-    const hours = Math.floor(totalMinutes / 60)
-    const mins = totalMinutes % 60
-
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
-  }
-
-  // Dados formatados para o dashboard
+    const pendingRecords = timeRecords.filter(record => record.status === 'P');
+    if (!pendingRecords.length) return '00:00';
+    const totalMinutes = pendingRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
   const getDashboardData = () => {
     return {
       saldoHoras: calculateTimeBalance(),
@@ -198,118 +138,84 @@ export function useTimeTracking() {
       status: t('dashboard.working'),
       isWorking: true,
       timeRecords: timeRecords
-    }
-  }
-
-  // Dados semanais formatados para gráficos (apenas semana atual e registros aprovados)
+    };
+  };
   const getWeeklyChartData = () => {
-    const weekDays = [
-      t('dashboard.monday'),
-      t('dashboard.tuesday'),
-      t('dashboard.wednesday'),
-      t('dashboard.thursday'),
-      t('dashboard.friday'),
-      t('dashboard.saturday'),
-      t('dashboard.sunday')
-    ]
-    
-    // ✅ CORREÇÃO: Usar horário LOCAL da máquina do usuário
-    const today = new Date()
-    const dayOfWeek = today.getDay()
-    
-    // Calcular início da semana (segunda-feira) no fuso local
-    const startOfWeek = new Date(today)
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-    startOfWeek.setDate(today.getDate() + diffToMonday)
-    startOfWeek.setHours(0, 0, 0, 0)
-
-    // Calcular fim da semana (domingo) no fuso local
-    const endOfWeek = new Date(startOfWeek)
-    endOfWeek.setDate(startOfWeek.getDate() + 6)
-    endOfWeek.setHours(23, 59, 59, 999)
-
-    // Filtrar registros da semana atual com status APROVADO ('A') ou PENDENTE ('P')
+    const weekDays = [t('dashboard.monday'), t('dashboard.tuesday'), t('dashboard.wednesday'), t('dashboard.thursday'), t('dashboard.friday'), t('dashboard.saturday'), t('dashboard.sunday')];
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    startOfWeek.setDate(today.getDate() + diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
     const weekRecords = timeRecords.filter(r => {
-      const recordDate = new Date(r.data + 'T00:00:00')
-      const isInWeek = recordDate >= startOfWeek && recordDate <= endOfWeek
-      const isApprovedOrPending = r.status === 'A' || r.status === 'P'
-      
-      return isInWeek && isApprovedOrPending
-    })
-
-    // ✅ CORREÇÃO: Obter data de hoje em formato YYYY-MM-DD no horário LOCAL da máquina
-    const todayYear = today.getFullYear()
-    const todayMonth = String(today.getMonth() + 1).padStart(2, '0')
-    const todayDay = String(today.getDate()).padStart(2, '0')
-    const todayStr = `${todayYear}-${todayMonth}-${todayDay}`
-
+      const recordDate = new Date(r.data + 'T00:00:00');
+      const isInWeek = recordDate >= startOfWeek && recordDate <= endOfWeek;
+      const isApprovedOrPending = r.status === 'A' || r.status === 'P';
+      return isInWeek && isApprovedOrPending;
+    });
+    const todayYear = today.getFullYear();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
     return weekDays.map((day, index) => {
-      const targetDate = new Date(startOfWeek)
-      targetDate.setDate(startOfWeek.getDate() + index)
-
-      // Usar timezone local para construir dateStr
-      const year = targetDate.getFullYear()
-      const month = String(targetDate.getMonth() + 1).padStart(2, '0')
-      const dayNum = String(targetDate.getDate()).padStart(2, '0')
-      const dateStr = `${year}-${month}-${dayNum}`
-      
-      const record = weekRecords.find(r => r.data === dateStr)
-
-      const minutes = record ? calculateDailyWorkedMinutes(record) : 0
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-
-      // ✅ Comparar com a data de hoje calculada corretamente
-      const isToday = dateStr === todayStr
-
+      const targetDate = new Date(startOfWeek);
+      targetDate.setDate(startOfWeek.getDate() + index);
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(targetDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${dayNum}`;
+      const record = weekRecords.find(r => r.data === dateStr);
+      const minutes = record ? calculateDailyWorkedMinutes(record) : 0;
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const isToday = dateStr === todayStr;
       return {
         dia: day,
         horas: minutes > 0 ? `${hours}:${mins.toString().padStart(2, '0')}` : '0:00',
         entrada: record?.entrada1 || '--:--',
         saida: record?.saida2 || record?.saida1 || '--:--',
         isToday: isToday,
-        status: record?.status || null // Adicionar status para usar no gráfico
-      }
-    })
-  }
-
-  // Registrar novo ponto
-  const registerTimeRecord = async (timeData) => {
+        status: record?.status || null
+      };
+    });
+  };
+  const registerTimeRecord = async timeData => {
     try {
       if (!userData?.id) {
-        throw new Error('Usuário não identificado')
+        throw new Error('Usuário não identificado');
       }
-
-      const { data, error } = await supabase
-        .from('agendamento')
-        .insert([{
-          user_id: userData.id,
-          ...timeData
-        }])
-        .select()
-
-      if (error) throw error
-
-      // Recarregar dados após registro
-      await fetchTimeRecords()
-      return { success: true, data }
+      const {
+        data,
+        error
+      } = await supabase.from('agendamento').insert([{
+        user_id: userData.id,
+        ...timeData
+      }]).select();
+      if (error) throw error;
+      await fetchTimeRecords();
+      return {
+        success: true,
+        data
+      };
     } catch (err) {
-
-      return { success: false, error: err.message }
+      return {
+        success: false,
+        error: err.message
+      };
     }
-  }
-
-  // Carregar dados iniciais
+  };
   useEffect(() => {
-    fetchUserData()
-  }, [])
-
+    fetchUserData();
+  }, []);
   useEffect(() => {
     if (userData?.id) {
-      fetchTimeRecords()
+      fetchTimeRecords();
     }
-  }, [userData])
-
+  }, [userData]);
   return {
     userData,
     timeRecords,
@@ -319,7 +225,6 @@ export function useTimeTracking() {
     weeklyData: getWeeklyChartData(),
     registerTimeRecord,
     refetch: fetchTimeRecords
-  }
+  };
 }
-
-export default useTimeTracking
+export default useTimeTracking;

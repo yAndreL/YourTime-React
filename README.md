@@ -1,223 +1,68 @@
-# YourTime ⏰
+# YourTime (React)
 
-Sistema completo de gestão de tempo e registro de ponto para empresas, desenvolvido com React e Supabase.
+Aplicação web de **gestão de ponto e projetos**, com autenticação e dados no **Supabase** (PostgreSQL, Auth e Storage).
 
-> **Controle total sobre as horas trabalhadas da sua equipe com inteligência, automação e relatórios visuais.**
+## Requisitos
 
----
+- Node.js 18+ (recomendado 20 LTS)
+- Conta e projeto no [Supabase](https://supabase.com)
 
-## 🎯 Para que serve?
+## Configuração
 
-O **YourTime** é uma solução moderna e completa para empresas que precisam:
+1. Clone o repositório e instale dependências:
 
-- ✅ Registrar e controlar horas trabalhadas dos funcionários
-- ✅ Gerenciar múltiplos projetos e empresas
-- ✅ Aprovar/rejeitar apontamentos de horas
-- ✅ Receber lembretes automáticos de registro de ponto
-- ✅ Exportar relatórios profissionais (PDF, Excel, CSV)
-- ✅ Visualizar estatísticas e gráficos em tempo real
-- ✅ Configurar preferências personalizadas por usuário
+```bash
+npm install
+```
 
----
+2. Crie o arquivo `.env` na raiz (use o exemplo abaixo):
 
-## ⚡ Funcionalidades Principais
+```env
+VITE_SUPABASE_URL=https://SEU_REFERENCIA.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
 
-### 🔐 Autenticação e Permissões
-- Sistema de login seguro com Supabase Auth
-- **Recuperação de senha** por email com código de verificação
-- Dois níveis de acesso: **Admin** e **Usuário**
-- Proteção de rotas por autenticação e role
-- Sistema de cargos dinâmico
-- Row Level Security (RLS) no banco de dados
+Opcional (somente se precisar de operações administrativas pelo cliente — evite em produção):
 
-### 👤 Perfil de Usuário
-- Visualização e edição de dados pessoais
-- Upload de foto de perfil (avatar)
-- Estatísticas pessoais (horas trabalhadas, projetos, média diária)
-- Histórico completo de atividades
+```env
+VITE_SUPABASE_SECRET_KEY=
+```
 
-### ⏱️ Registro de Ponto
-- Formulário intuitivo para registro de horas
-- Seleção de projeto vinculado
-- Campos de entrada/saída com 2 turnos (manhã/tarde)
-- **Cálculo automático de horas trabalhadas**
-- Status de aprovação: Pendente, Aprovado, Rejeitado
-- Edição e exclusão de registros
+3. No **SQL Editor** do Supabase, execute o script `database/schema_supabase.sql` para criar tabelas, RLS, trigger de `profiles`, função `reset_user_password`, bucket `avatars` e políticas de storage.
 
-### 🔔 Sistema de Notificações em Tempo Real
-- **Notificações In-App** com Supabase Realtime
-- Sino no header com badge de contagem
-- Tipos de notificações:
-  - ✅ Pontos registrados
-  - 👍 Pontos aprovados/rejeitados
-  - ⏰ Lembretes automáticos de registro
-  - ⏳ Aprovações pendentes (para admins)
-- **Lembretes Automáticos Inteligentes**:
-  - Horário de entrada
-  - Horário de intervalo (saída e retorno)
-  - 15 minutos antes da saída
-  - Horário de saída
-- Marcar como lidas individualmente ou em massa
-- Deletar notificações
+4. Em **Authentication**, cadastre usuários; o trigger cria o registro em `public.profiles`. Perfis com `role = 'admin'` acessam rotas administrativas.
 
-### ⚙️ Configurações Personalizadas
-- **Configurações salvas no banco** por usuário
-- **Notificações**:
-  - Habilitar/desabilitar email de relatórios semanais
-  - Habilitar/desabilitar lembretes de ponto
-- **Jornada de Trabalho**:
-  - Horário de entrada padrão
-  - Horário de saída padrão
-  - Horas semanais esperadas
-  - Fuso horário personalizado
-- **Relatórios**:
-  - Formato de exportação padrão (PDF, Excel, CSV)
-  - Incluir/excluir gráficos em PDFs
-- 🔄 Restaurar configurações padrão com um clique
+## Scripts npm
 
-### 📤 Exportação de Dados Profissional
+| Comando        | Descrição                          |
+|----------------|-------------------------------------|
+| `npm run dev`  | Servidor de desenvolvimento (Vite) |
+| `npm run build`| Build de produção em `dist/`        |
+| `npm run preview` | Pré-visualiza o build            |
+| `npm run lint` | ESLint                              |
 
-#### 📄 CSV - Dados Brutos
-- Exportação simples e rápida
-- Arquivo leve para integração com outros sistemas
-- Formato universal (Excel, Google Sheets, etc.)
+Outros scripts em `package.json` (`server`, `setup`, `keep-alive`, etc.) podem depender de arquivos extras que não vêm no núcleo do front-end; use apenas se existirem no seu ambiente.
 
-#### 📊 XLSX - Relatório Visual com Gráficos
-- **Relatório formatado automaticamente:**
-  - 🎨 Tabelas com cores e bordas profissionais
-  - 📈 Gráfico de Pizza (distribuição por status)
-  - 📊 Gráfico de Barras Empilhadas (horas por dia)
-  - 🎯 Formatação condicional por status:
-    - 🟢 Verde = Aprovado
-    - 🟡 Amarelo = Pendente
-    - 🔴 Vermelho = Rejeitado
-  
-- **Estrutura completa:**
-  1. Dados do Funcionário
-  2. Estatísticas do Período
-  3. Gráfico de Distribuição por Status
-  4. Gráfico de Horas por Dia
-  5. Tabela Detalhada de Registros
+## Estrutura principal
 
-#### 📄 PDF - Relatórios Personalizados
-- Dados detalhados de entrada/saída
-- Cálculo de horas trabalhadas
-- Saldo de horas (extras/devidas)
-- Gráficos visuais opcionais
+- `src/main.jsx` — rotas e providers
+- `src/App_clean_new.jsx` — dashboard após login
+- `src/views/` — telas (login, ponto, histórico, projetos, perfil, admin, etc.)
+- `src/components/` — UI reutilizável
+- `src/config/supabase.js` — cliente Supabase
+- `src/i18n/translations.js` — textos (pt-BR, en-US, es, fr)
+- `database/schema_supabase.sql` — esquema oficial do banco
 
-### 📊 Dashboard Interativo
-- Cards com estatísticas principais
-- Gráficos de horas por projeto
-- Lista de projetos com progresso visual
-- Navegação rápida para funcionalidades
+## Tecnologias
 
-### 📁 Gerenciamento de Projetos
-- Listagem completa de projetos
-- Criação, edição e exclusão
-- Vinculação de projetos a empresas
-- Status (ativo/inativo)
-- Carga horária e datas de início/fim
+React 19, React Router 7, Vite 7, Tailwind CSS, Supabase JS v2, Chart.js, jsPDF, ExcelJS.
 
-### 🏢 Gerenciamento de Empresas (Admin)
-- **CRUD completo de empresas**
-- Dados: nome, CNPJ, endereço, telefone, email
-- Vinculação com projetos
-- Ativação/desativação
-- **Exclusão em cascata** (remove projetos vinculados)
-- Modal de confirmação para exclusões
-- Toasts coloridos para feedback
+## Segurança
 
-### 👥 Painel Administrativo
-- **Gerenciamento de funcionários:**
-  - Cadastro de novos usuários
-  - Atribuição de cargos
-  - Filtros por status (ativo/inativo)
-  - Busca por nome, email, cargo, departamento
-- **Aprovação/rejeição de pontos:**
-  - Visualização de pontos do dia
-  - Aprovação/rejeição em lote
-- **Estatísticas gerenciais:**
-  - Total de funcionários
-  - Pontos aprovados/pendentes
-  - Funcionários sem registro
+- Não commite `.env` com chaves reais.
+- A função `reset_user_password` no SQL está exposta a `anon` por conveniência de desenvolvimento; em produção restrinja (por exemplo Edge Function + validação do código).
+- RLS atual é permissiva para `authenticated`; refine políticas por empresa/usuário antes de ambiente público.
 
-### 📜 Histórico de Apontamentos
-- Visualização completa de registros
-- Filtros por data e projeto
-- Edição e exclusão de registros
-- Exportação em múltiplos formatos
+## Licença
 
----
-
-## 🚀 Tecnologias
-
-- **Frontend**: React 18 + Vite
-- **Backend**: Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **Estilização**: Tailwind CSS
-- **Ícones**: React Icons (Feather Icons)
-- **Roteamento**: React Router DOM
-- **Relatórios**: jsPDF, autoTable
-- **Email**: Resend API (via Supabase Edge Functions)
-
----
-
-## 🎨 Interface e Experiência
-
-- 📱 **Design Mobile-First** totalmente responsivo
-- 🎨 **Design System** consistente
-- 🧩 **Componentes reutilizáveis**
-- 📐 **Layout adaptável** com Sidebar colapsável
-- 🔔 **Sistema de Toasts** não-intrusivos
-- 🪟 **Modais informativos** com tipos (success, error, warning, info)
-- ⚡ **Animações suaves** e transições
-
----
-
-## 🔒 Segurança
-
-- ✅ Autenticação via Supabase Auth
-- ✅ Row Level Security (RLS) em todas as tabelas
-- ✅ Validação de permissões no frontend e backend
-- ✅ Proteção de rotas sensíveis
-- ✅ Foreign Keys com restrições adequadas
-- ✅ Hashing de senhas automático
-- ✅ HTTPS obrigatório em produção
-
----
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
-
----
-
-## 👨‍💻 Autor
-
-**André Luiz**  
-GitHub: [@yAndreL](https://github.com/yAndreL)
-
----
-
-## ⭐ Gostou do projeto?
-
-Se este projeto foi útil para você, considere dar uma ⭐ no repositório!
-
-## 🤝 Como Contribuir
-
-Contribuições são muito bem-vindas! Para contribuir:
-
-1. 🍴 **Faça um fork** do projeto
-2. 🌿 **Crie uma branch** para sua feature (`git checkout -b feature/MinhaFeature`)
-3. 💾 **Commit suas mudanças** (`git commit -m 'Adiciona MinhaFeature'`)
-4. 📤 **Push para a branch** (`git push origin feature/MinhaFeature`)
-5. 🔃 **Abra um Pull Request**
-
----
-
-## 📞 Suporte
-
-Para suporte, abra uma **issue** no GitHub ou entre em contato através do perfil.
-
----
-
-**Desenvolvido com ❤️ por André Luiz**
+Projeto privado (`"private": true` no `package.json`). Ajuste conforme a licença do seu produto.
