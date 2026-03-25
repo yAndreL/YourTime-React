@@ -155,15 +155,15 @@ function Notificacoes() {
   };
   const getCorNotificacao = tipo => {
     const cores = {
-      ponto_registrado: 'border-green-300 bg-green-50',
-      ponto_aprovado: 'border-green-300 bg-green-50',
-      ponto_rejeitado: 'border-red-300 bg-red-50',
-      aprovacao_pendente: 'border-yellow-300 bg-yellow-50',
-      lembrete_ponto: 'border-blue-300 bg-blue-50',
-      relatorio: 'border-purple-300 bg-purple-50',
-      sistema: 'border-gray-300 bg-gray-50'
+      ponto_registrado: 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30',
+      ponto_aprovado: 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30',
+      ponto_rejeitado: 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30',
+      aprovacao_pendente: 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-950/30',
+      lembrete_ponto: 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30',
+      relatorio: 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30',
+      sistema: 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/80'
     };
-    return cores[tipo] || 'border-gray-300 bg-gray-50';
+    return cores[tipo] || 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/80';
   };
   const formatarTempo = timestamp => {
     if (!timestamp) return t('notifications.recent');
@@ -197,81 +197,81 @@ function Notificacoes() {
   const unreadCount = notifications.filter(n => !n.lida).length;
   return <MainLayout title={t('notifications.title')}>
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <div className="yt-card p-4 mb-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <FiBell className="w-6 h-6 text-blue-600" />
+              <FiBell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{t('notifications.allNotifications')}</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('notifications.allNotifications')}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {unreadCount > 0 ? `${unreadCount} ${unreadCount !== 1 ? t('notifications.unreadCountPlural') : t('notifications.unreadCount')}` : t('notifications.noUnreadNotifications')}
                 </p>
               </div>
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <button type="button" onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
                 {t('notifications.all')}
               </button>
-              <button onClick={() => setFilter('unread')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'unread' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <button type="button" onClick={() => setFilter('unread')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'unread' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
                 {t('notifications.unread')}
               </button>
-              <button onClick={() => setFilter('read')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'read' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <button type="button" onClick={() => setFilter('read')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'read' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
                 {t('notifications.read')}
               </button>
             </div>
           </div>
 
-          {unreadCount > 0 && <div className="mt-4 pt-4 border-t border-gray-200">
-              <button onClick={handleMarcarTodasComoLidas} className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2">
+          {unreadCount > 0 && <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button type="button" onClick={handleMarcarTodasComoLidas} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-2">
                 <FiCheck className="w-4 h-4" />
                 {t('notifications.markAllRead')}
               </button>
             </div>}
         </div>
 
-        {isLoading ? <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-500">{t('notifications.loadingNotifications')}</p>
-          </div> : filteredNotifications.length === 0 ? <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <FiBell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        {isLoading ? <div className="yt-card p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-500 dark:text-gray-400">{t('notifications.loadingNotifications')}</p>
+          </div> : filteredNotifications.length === 0 ? <div className="yt-card p-12 text-center">
+            <FiBell className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               {filter === 'unread' ? t('notifications.noUnreadFound') : filter === 'read' ? t('notifications.noReadFound') : t('notifications.noNotifications')}
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {filter === 'all' ? t('notifications.noNotificationsYet') : filter === 'unread' ? t('notifications.allRead') : t('notifications.noReadNotifications')}
             </p>
           </div> : <div className="space-y-3">
             {filteredNotifications.map(notificacao => {
           const IconComponent = getIconeNotificacao(notificacao.tipo);
-          return <div key={notificacao.id} className={`bg-white rounded-lg shadow-sm border-l-4 overflow-hidden transition-all hover:shadow-md ${getCorNotificacao(notificacao.tipo)} ${!notificacao.lida ? 'ring-2 ring-blue-100' : ''}`}>
+          return <div key={notificacao.id} className={`yt-card border-l-4 overflow-hidden transition-all hover:shadow-md ${getCorNotificacao(notificacao.tipo)} ${!notificacao.lida ? 'ring-2 ring-blue-100 dark:ring-blue-900/50' : ''}`}>
                   <div className="p-4">
                     <div className="flex items-start gap-4">
-                      <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${notificacao.tipo === 'aprovacao_pendente' ? 'bg-yellow-100 text-yellow-600' : notificacao.tipo === 'ponto_aprovado' ? 'bg-green-100 text-green-600' : notificacao.tipo === 'ponto_rejeitado' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                      <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${notificacao.tipo === 'aprovacao_pendente' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-600 dark:text-yellow-400' : notificacao.tipo === 'ponto_aprovado' ? 'bg-green-100 dark:bg-green-950/50 text-green-600 dark:text-green-400' : notificacao.tipo === 'ponto_rejeitado' ? 'bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'}`}>
                         <IconComponent className="w-6 h-6" />
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <h3 className={`text-base font-semibold text-gray-900 ${!notificacao.lida ? 'font-bold' : ''}`}>
+                          <h3 className={`text-base font-semibold text-gray-900 dark:text-gray-100 ${!notificacao.lida ? 'font-bold' : ''}`}>
                             {notificacao.titulo}
                           </h3>
                           {!notificacao.lida && <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></span>}
                         </div>
                         
-                        <p className="text-sm text-gray-700 mb-2">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                           {notificacao.tipo === 'aprovacao_pendente' && notificacao.metadata?.funcionario ? <>
-                              <span className="font-semibold text-gray-900">{notificacao.metadata.funcionario}</span> {notificacao.mensagem}
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">{notificacao.metadata.funcionario}</span> {notificacao.mensagem}
                             </> : notificacao.mensagem}
                         </p>
 
-                        {notificacao.metadata?.data_formatada && <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                        {notificacao.metadata?.data_formatada && <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                             <FiCalendar className="w-3 h-3" />
                             {t('notifications.timeEntryDate')} {notificacao.metadata.data_formatada}
                           </p>}
 
                         <div className="flex items-center justify-between mt-3">
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                             <FiClock className="w-3 h-3" />
                             {formatarTempo(notificacao.created_at)}
                           </p>

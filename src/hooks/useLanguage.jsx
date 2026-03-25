@@ -13,19 +13,16 @@ export function LanguageProvider({
   const loadUserLanguage = async () => {
     try {
       const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (user) {
-        const {
-          data
-        } = await supabase.from('configuracoes').select('language').eq('user_id', user.id).single();
-        if (data && data.language) {
-          setCurrentLanguage(data.language);
-        }
+        data: { session }
+      } = await supabase.auth.getSession();
+      setIsLoading(false);
+      const user = session?.user;
+      if (!user) return;
+      const { data } = await supabase.from('configuracoes').select('language').eq('user_id', user.id).single();
+      if (data?.language) {
+        setCurrentLanguage(data.language);
       }
-    } catch (error) {} finally {
+    } catch (error) {
       setIsLoading(false);
     }
   };
@@ -34,9 +31,10 @@ export function LanguageProvider({
     try {
       const {
         data: {
-          user
+          session
         }
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (user) {
         await supabase.from('configuracoes').update({
           language: newLanguage

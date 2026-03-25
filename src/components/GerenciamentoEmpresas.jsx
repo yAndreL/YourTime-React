@@ -21,6 +21,7 @@ function GerenciamentoEmpresas() {
   const [editando, setEditando] = useState(false);
   const [empresaSelecionada, setEmpresaSelecionada] = useState(null);
   const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null);
+  const [contextoEmpresaCarregado, setContextoEmpresaCarregado] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     cnpj: '',
@@ -32,18 +33,21 @@ function GerenciamentoEmpresas() {
     carregarSuperiorEmpresaId();
   }, []);
   useEffect(() => {
-    if (superiorEmpresaId !== null) {
-      carregarEmpresas();
-    }
-  }, [superiorEmpresaId]);
+    if (!contextoEmpresaCarregado) return;
+    carregarEmpresas();
+  }, [superiorEmpresaId, contextoEmpresaCarregado]);
   const carregarSuperiorEmpresaId = async () => {
     try {
       const {
         data: {
-          user
+          session
         }
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        setSuperiorEmpresaId(null);
+        return;
+      }
       const {
         data: profile,
         error
@@ -52,6 +56,8 @@ function GerenciamentoEmpresas() {
       setSuperiorEmpresaId(profile?.superior_empresa_id || null);
     } catch (error) {
       setSuperiorEmpresaId(null);
+    } finally {
+      setContextoEmpresaCarregado(true);
     }
   };
   const carregarEmpresas = async () => {
@@ -203,7 +209,7 @@ function GerenciamentoEmpresas() {
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <FiBriefcase className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-600" />
             {t('admin.companyManagement')}
           </h2>
@@ -223,14 +229,14 @@ function GerenciamentoEmpresas() {
             {t('companies.registerFirstCompany')}
           </button>
         </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {empresas.map(empresa => <div key={empresa.id} className={`bg-white rounded-lg shadow-md p-6 border-2 transition-all ${empresa.is_active ? 'border-green-200 hover:border-green-400' : 'border-gray-200 opacity-60'}`}>
+          {empresas.map(empresa => <div key={empresa.id} className={`yt-card shadow-md p-6 border-2 transition-all ${empresa.is_active ? 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600' : 'border-gray-200 dark:border-gray-700 opacity-60'}`}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${empresa.is_active ? 'bg-blue-100' : 'bg-gray-100'}`}>
                     <FiBriefcase className={`w-6 h-6 ${empresa.is_active ? 'text-blue-600' : 'text-gray-400'}`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{empresa.nome}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{empresa.nome}</h3>
                     {empresa.cnpj && <p className="text-sm text-gray-500">CNPJ: {empresa.cnpj}</p>}
                   </div>
                 </div>

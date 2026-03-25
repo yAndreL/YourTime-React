@@ -34,20 +34,20 @@ function EsqueciSenha() {
       setLoading(false);
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
+        <div className="yt-modal-surface rounded-xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Recuperar Senha</h1>
-            <p className="text-gray-600 text-sm">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Recuperar Senha</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Informe seu email para enviarmos um código de verificação
             </p>
-            <div className="text-sm   font-bold text-yellow-500 mb-2">Estamos enfrentando alguns problemas. Funcionlidade incompleta</div>
+            <div className="text-sm font-bold text-yellow-600 dark:text-yellow-500 mb-2">Estamos enfrentando alguns problemas. Funcionlidade incompleta</div>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold yt-label mb-2">
                 Email
               </label>
               <div className="relative">
@@ -57,7 +57,7 @@ function EsqueciSenha() {
                 <input type="email" id="email" name="email" value={email} onChange={e => {
                 setEmail(e.target.value);
                 setErro('');
-              }} disabled={loading} className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed ${erro ? 'border-red-500' : 'border-gray-300'}`} placeholder="seu@email.com" required />
+              }} disabled={loading} className={`w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${erro ? '!border-red-500' : ''}`} placeholder="seu@email.com" required />
               </div>
               {erro && <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                   {erro}
@@ -73,7 +73,7 @@ function EsqueciSenha() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium inline-flex items-center gap-2">
+            <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium inline-flex items-center gap-2">
               <FiArrowLeft className="w-4 h-4" />
               Voltar para o Login
             </Link>

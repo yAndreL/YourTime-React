@@ -35,39 +35,39 @@ const Modal = ({
   const typeConfig = {
     success: {
       icon: FiCheckCircle,
-      iconColor: 'text-green-500',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
+      iconColor: 'text-green-500 dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-950/40',
+      borderColor: 'border-green-200 dark:border-green-800',
       buttonColor: 'bg-green-600 hover:bg-green-700'
     },
     error: {
       icon: FiAlertCircle,
-      iconColor: 'text-red-500',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
+      iconColor: 'text-red-500 dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-950/40',
+      borderColor: 'border-red-200 dark:border-red-800',
       buttonColor: 'bg-red-600 hover:bg-red-700'
     },
     warning: {
       icon: FiAlertTriangle,
-      iconColor: 'text-yellow-500',
-      bgColor: 'bg-yellow-50',
-      borderColor: 'border-yellow-200',
+      iconColor: 'text-yellow-500 dark:text-yellow-400',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-950/40',
+      borderColor: 'border-yellow-200 dark:border-yellow-800',
       buttonColor: 'bg-yellow-600 hover:bg-yellow-700'
     },
     info: {
       icon: FiInfo,
-      iconColor: 'text-blue-500',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
+      iconColor: 'text-blue-500 dark:text-blue-400',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/40',
+      borderColor: 'border-blue-200 dark:border-blue-800',
       buttonColor: 'bg-blue-600 hover:bg-blue-700'
     },
     delete: {
       icon: FiAlertTriangle,
-      iconColor: 'text-red-600',
-      bgColor: 'bg-red-100',
-      borderColor: 'border-red-300',
+      iconColor: 'text-red-600 dark:text-red-400',
+      bgColor: 'bg-red-100 dark:bg-red-950/50',
+      borderColor: 'border-red-300 dark:border-red-800',
       buttonColor: 'bg-red-600 hover:bg-red-700',
-      titleColor: 'text-red-900'
+      titleColor: 'text-red-900 dark:text-red-200'
     }
   };
   const config = typeConfig[type];
@@ -79,28 +79,28 @@ const Modal = ({
     onClose();
   };
   return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-100" onClick={e => e.stopPropagation()}>
+      <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-100" onClick={e => e.stopPropagation()}>
         <div className={`${config.bgColor} ${config.borderColor} border-b px-6 py-4 rounded-t-lg`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Icon className={`${config.iconColor} w-6 h-6`} />
-              <h3 className={`text-lg font-semibold ${config.titleColor || 'text-gray-900'}`}>{title}</h3>
+              <h3 className={`text-lg font-semibold ${config.titleColor || 'text-gray-900 dark:text-gray-100'}`}>{title}</h3>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button type="button" onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               <FiX className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         <div className="px-6 py-4">
-          {children || <p className="text-gray-700 whitespace-pre-line">{message}</p>}
+          {children || <p className="text-gray-700 dark:text-gray-200 whitespace-pre-line">{message}</p>}
         </div>
 
-        {(!children || showCancel) && <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
-            {showCancel && <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+        {(!children || showCancel) && <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/90 rounded-b-lg flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700">
+            {showCancel && <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
                 {cancelText}
               </button>}
-            <button onClick={handleConfirm} className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}>
+            <button type="button" onClick={handleConfirm} className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}>
               {confirmText}
             </button>
           </div>}

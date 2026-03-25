@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../config/supabase';
 import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle, FiInfo, FiChevronDown } from 'react-icons/fi';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import ConfigService from '../services/ConfigService';
 import { useLanguage } from '../hooks/useLanguage';
 import { getLocalDateString } from '../utils/dateUtils';
@@ -148,6 +146,10 @@ function ExportPDFModal({
     }
     try {
       setGerando(true);
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
       const {
         data: {
           user
@@ -367,7 +369,6 @@ function ExportPDFModal({
         });
         const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`;
         doc.save(nomeArquivo);
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
       setToastMessage('Relatório em PDF gerado!');
       setShowToast(true);
@@ -418,82 +419,82 @@ function ExportPDFModal({
     margin: 0,
     padding: '1rem'
   }}>
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{
+      <div className="yt-modal-surface rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{
       marginTop: 0,
       marginBottom: 0
     }}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <FiDownload className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">{t('common.exportTitle')}</h2>
+            <FiDownload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('common.exportTitle')}</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             <FiX className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
           <div className="mb-6">
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <label className="flex items-center gap-2 text-sm font-semibold yt-label mb-3">
               <FiCalendar className="w-4 h-4" />
               {t('export.period')}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">{t('export.startDate')}</label>
-                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <label className="block text-xs yt-label mb-1">{t('export.startDate')}</label>
+                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">{t('export.endDate')}</label>
-                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <label className="block text-xs yt-label mb-1">{t('export.endDate')}</label>
+                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <label className="flex items-center gap-2 text-sm font-semibold yt-label">
                 <FiUsers className="w-4 h-4" />
                 {isAdmin ? `${t('export.selectEmployees')} (${funcionariosSelecionados.length})` : t('profile.myData')}
               </label>
-              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                   {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAll') : t('export.selectAll')}
                 </button>}
             </div>
 
             {isAdmin && funcionarios.length > 0 && <div className="mb-3">
-                <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-              {loading ? <div className="text-center py-8 text-gray-500">{t('common.loading')}...</div> : funcionarios.length === 0 ? <div className="text-center py-8 text-gray-500">{t('export.noEmployees')}</div> : <div className="space-y-2">
-                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${!isAdmin ? 'bg-blue-50 border-blue-200 cursor-default' : 'hover:bg-white cursor-pointer border-transparent hover:border-blue-200'}`}>
-                      <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => isAdmin && toggleFuncionario(func.id)} disabled={!isAdmin} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50" />
+            <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-64 overflow-y-auto">
+              {loading ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('common.loading')}...</div> : funcionarios.length === 0 ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('export.noEmployees')}</div> : <div className="space-y-2">
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${!isAdmin ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 cursor-default' : 'hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer border-transparent hover:border-blue-200 dark:hover:border-blue-700'}`}>
+                      <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => isAdmin && toggleFuncionario(func.id)} disabled={!isAdmin} className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 disabled:opacity-50 bg-white dark:bg-gray-800" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{func.nome}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{func.nome}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {func.cargo || t('export.noPosition')} • {func.departamento || t('export.noDepartment')}
                         </p>
                       </div>
                     </label>)}
-                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="text-center py-4 text-gray-500">{t('export.noEmployeesFound')}</div>}
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="text-center py-4 text-gray-500 dark:text-gray-400">{t('export.noEmployeesFound')}</div>}
                 </div>}
             </div>
           </div>
 
-          <div className="mt-6 border border-blue-200 rounded-lg overflow-hidden">
-            <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left" type="button">
-              <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+          <div className="mt-6 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+            <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                 <FiInfo className="flex-shrink-0" />
                 {t('export.informationTitle')}
               </span>
-              <div className={`text-blue-600 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+              <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
                 <FiChevronDown />
               </div>
             </button>
             <div className={`transition-all duration-300 ease-in-out ${infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
-                <ul className="text-sm text-blue-700 space-y-1 ml-4 list-disc">
+              <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/40 border-t border-blue-200 dark:border-blue-800">
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
                   {isAdmin ? <>
                       <li>{t('export.infoPdfPerEmployee')}</li>
                       <li>{t('export.infoAdminExport')}</li>
@@ -508,8 +509,8 @@ function ExportPDFModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-          <button onClick={onClose} disabled={gerando} className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80">
+          <button onClick={onClose} disabled={gerando} className="px-6 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
             Cancelar
           </button>
           <button onClick={gerarPDF} disabled={gerando || funcionariosSelecionados.length === 0} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
@@ -525,32 +526,32 @@ function ExportPDFModal({
       </div>
 
       {modalError.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-red-200">
+          <div className="yt-modal-surface rounded-lg shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-red-200 dark:border-red-900/50">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-red-100">
-                  <FiAlertCircle className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-red-100 dark:bg-red-950/50">
+                  <FiAlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-red-900">
+                  <h3 className="text-lg font-bold text-red-900 dark:text-red-200">
                     Erro ao Exportar
                   </h3>
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 dark:text-red-400">
                     Código: {modalError.code}
                   </p>
                 </div>
               </div>
             </div>
             <div className="p-6">
-              <p className="text-gray-700 mb-4">{modalError.message}</p>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <p className="text-xs text-gray-600">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{modalError.message}</p>
+              <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   <strong>💡 Dica:</strong> Se o erro persistir, verifique sua conexão com a internet e tente novamente. 
                   Para mais informações, consulte o código de erro na documentação.
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80">
               <button onClick={() => setModalError({
             isOpen: false,
             message: '',

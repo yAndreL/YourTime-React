@@ -34,7 +34,20 @@ export const translations = {
       settings: 'Configurações',
       notifications: 'Notificações',
       adminPanel: 'Painel Admin',
-      logout: 'Sair'
+      logout: 'Sair',
+      personal: 'Pessoal'
+    },
+    header: {
+      expandQuickActions: 'Mostrar notificações, idioma e tema',
+      collapseQuickActions: 'Ocultar atalhos',
+      languageLabel: 'Idioma / Language',
+      languageShort: 'Idioma'
+    },
+    theme: {
+      title: 'Tema',
+      light: 'Claro',
+      dark: 'Escuro',
+      system: 'Sistema'
     },
     dashboard: {
       title: 'Dashboard',
@@ -103,6 +116,7 @@ export const translations = {
       page: 'Página',
       of: 'de',
       noActiveProjects: 'Nenhum projeto ativo encontrado',
+      noProjectSelected: 'Nenhum projeto selecionado',
       createNewProject: 'Criar novo projeto',
       next: 'Próximo',
       previous: 'Anterior',
@@ -130,6 +144,10 @@ export const translations = {
       reports: 'Relatórios',
       includeCharts: 'Incluir gráficos nos relatórios PDF',
       includeChartsDesc: 'Adiciona gráficos visuais ao exportar relatórios em PDF',
+      appearance: 'Aparência',
+      themePreference: 'Tema da interface',
+      themePreferenceDesc:
+        'Salvo na sua conta (e no menu do cabeçalho). Use Claro, Escuro ou seguir o sistema.',
       language: 'Preferências de Idioma',
       interfaceLanguage: 'Idioma da Interface',
       languageDesc: 'Escolha o idioma para a interface do sistema',
@@ -680,6 +698,18 @@ export const translations = {
       adminPanel: 'Admin Panel',
       logout: 'Logout'
     },
+    header: {
+      expandQuickActions: 'Show notifications, language and theme',
+      collapseQuickActions: 'Hide shortcuts',
+      languageLabel: 'Language',
+      languageShort: 'Language'
+    },
+    theme: {
+      title: 'Theme',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System'
+    },
     dashboard: {
       title: 'Dashboard',
       subtitle: 'System Management',
@@ -747,6 +777,7 @@ export const translations = {
       page: 'Page',
       of: 'of',
       noActiveProjects: 'No active projects found',
+      noProjectSelected: 'No project selected',
       createNewProject: 'Create new project',
       next: 'Next',
       previous: 'Previous',
@@ -774,6 +805,9 @@ export const translations = {
       reports: 'Reports',
       includeCharts: 'Include charts in PDF reports',
       includeChartsDesc: 'Adds visual charts when exporting PDF reports',
+      appearance: 'Appearance',
+      themePreference: 'Interface theme',
+      themePreferenceDesc: 'Saved to your account (and from the header menu). Light, dark, or match the system.',
       language: 'Language Preferences',
       interfaceLanguage: 'Interface Language',
       languageDesc: 'Choose the language for the system interface',
@@ -1321,7 +1355,20 @@ export const translations = {
       settings: 'Configuración',
       notifications: 'Notificaciones',
       adminPanel: 'Panel Admin',
-      logout: 'Salir'
+      logout: 'Salir',
+      personal: 'Personal'
+    },
+    header: {
+      expandQuickActions: 'Mostrar notificaciones, idioma y tema',
+      collapseQuickActions: 'Ocultar atajos',
+      languageLabel: 'Idioma / Language',
+      languageShort: 'Idioma'
+    },
+    theme: {
+      title: 'Tema',
+      light: 'Claro',
+      dark: 'Oscuro',
+      system: 'Sistema'
     },
     dashboard: {
       title: 'Panel',
@@ -1387,6 +1434,7 @@ export const translations = {
       page: 'Página',
       of: 'de',
       noActiveProjects: 'No se encontraron proyectos activos',
+      noProjectSelected: 'Ningún proyecto seleccionado',
       createNewProject: 'Crear nuevo proyecto',
       next: 'Siguiente',
       previous: 'Anterior',
@@ -1414,6 +1462,9 @@ export const translations = {
       reports: 'Informes',
       includeCharts: 'Incluir gráficos en informes PDF',
       includeChartsDesc: 'Agrega gráficos visuales al exportar informes en PDF',
+      appearance: 'Apariencia',
+      themePreference: 'Tema de la interfaz',
+      themePreferenceDesc: 'Guardado en su cuenta (y desde el menú del encabezado). Claro, oscuro o según el sistema.',
       language: 'Preferencias de Idioma',
       interfaceLanguage: 'Idioma de la Interfaz',
       languageDesc: 'Elija el idioma para la interfaz del sistema',
@@ -1961,7 +2012,20 @@ export const translations = {
       settings: 'Paramètres',
       notifications: 'Notifications',
       adminPanel: 'Panneau Admin',
-      logout: 'Déconnexion'
+      logout: 'Déconnexion',
+      personal: 'Personnel'
+    },
+    header: {
+      expandQuickActions: 'Afficher notifications, langue et thème',
+      collapseQuickActions: 'Masquer les raccourcis',
+      languageLabel: 'Langue / Language',
+      languageShort: 'Langue'
+    },
+    theme: {
+      title: 'Thème',
+      light: 'Clair',
+      dark: 'Sombre',
+      system: 'Système'
     },
     dashboard: {
       title: 'Tableau de bord',
@@ -2027,6 +2091,7 @@ export const translations = {
       page: 'Page',
       of: 'de',
       noActiveProjects: 'Aucun projet actif trouvé',
+      noProjectSelected: 'Aucun projet sélectionné',
       createNewProject: 'Créer un nouveau projet',
       next: 'Suivant',
       previous: 'Précédent',
@@ -2054,6 +2119,9 @@ export const translations = {
       reports: 'Rapports',
       includeCharts: 'Inclure des graphiques dans les rapports PDF',
       includeChartsDesc: 'Ajoute des graphiques visuels lors de l\'exportation de rapports PDF',
+      appearance: 'Apparence',
+      themePreference: 'Thème de l\'interface',
+      themePreferenceDesc: 'Enregistré sur votre compte (et depuis le menu d\'en-tête). Clair, sombre ou selon le système.',
       language: 'Préférences de Langue',
       interfaceLanguage: 'Langue de l\'Interface',
       languageDesc: 'Choisissez la langue pour l\'interface du système',

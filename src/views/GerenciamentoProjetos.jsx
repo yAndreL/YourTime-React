@@ -144,7 +144,6 @@ function GerenciamentoProjetos() {
     } catch (error) {}
   };
   const carregarDados = async () => {
-    let skeletonTimeout = null;
     try {
       const {
         data: {
@@ -159,15 +158,12 @@ function GerenciamentoProjetos() {
         return;
       }
       setLoading(true);
-      skeletonTimeout = setTimeout(() => {
-        setShowSkeleton(true);
-      }, 300);
+      setShowSkeleton(true);
       setError(null);
       await Promise.all([carregarProjetos(user.id, false), carregarUsuarios(user.id, false), carregarEmpresas(user.id, false)]);
     } catch (error) {
       setError('Erro ao carregar dados. Verifique sua conexão e tente novamente.');
     } finally {
-      if (skeletonTimeout) clearTimeout(skeletonTimeout);
       setLoading(false);
       setShowSkeleton(false);
     }
@@ -537,15 +533,15 @@ function GerenciamentoProjetos() {
   const getStatusColor = status => {
     switch (status) {
       case 'ativo':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800';
       case 'pausado':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800';
       case 'concluido':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800';
       case 'cancelado':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
     }
   };
   const getStatusText = status => {
@@ -565,15 +561,15 @@ function GerenciamentoProjetos() {
   const getPrioridadeColor = prioridade => {
     switch (prioridade) {
       case 'baixa':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200';
       case 'media':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300';
       case 'alta':
-        return 'bg-orange-100 text-orange-700';
+        return 'bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300';
       case 'urgente':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200';
     }
   };
   const getPrioridadeText = prioridade => {
@@ -627,7 +623,7 @@ function GerenciamentoProjetos() {
   return <MainLayout title={t('projects.title')} subtitle={t('projects.subtitle')}>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <FiTarget className="w-7 h-7" />
             {t('projects.projects')}
           </h2>
@@ -638,58 +634,55 @@ function GerenciamentoProjetos() {
           </button>}
       </div>
 
-      {error && <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+      {error && <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-600 rounded-lg">
           <div className="flex items-center">
-            <FiAlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+            <FiAlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
             <div>
-              <div className="font-medium text-red-800">Erro ao carregar projetos</div>
-              <div className="text-sm text-red-700 mt-1">{error}</div>
-              <button onClick={carregarDados} className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors">
-                Tentar novamente
-              </button>
+              <div className="font-medium text-red-800 dark:text-red-200">Erro ao carregar projetos</div>
+              <div className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</div>
             </div>
           </div>
         </div>}
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="yt-card p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.total}</div>
-              <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{estatisticas.total}</div>
+              <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-200 flex items-center justify-center gap-1">
                 <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.total')}
               </div>
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{estatisticas.ativos}</div>
-              <div className="text-xs sm:text-sm text-green-700 flex items-center justify-center gap-1">
+            <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{estatisticas.ativos}</div>
+              <div className="text-xs sm:text-sm text-green-700 dark:text-green-200 flex items-center justify-center gap-1">
                 <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.actives')}
               </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{estatisticas.concluidos}</div>
-              <div className="text-xs sm:text-sm text-blue-700 flex items-center justify-center gap-1">
+            <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{estatisticas.concluidos}</div>
+              <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-200 flex items-center justify-center gap-1">
                 <FiCheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.concluded')}
               </div>
             </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{estatisticas.pausados}</div>
-              <div className="text-xs sm:text-sm text-yellow-700 flex items-center justify-center gap-1">
+            <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{estatisticas.pausados}</div>
+              <div className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-200 flex items-center justify-center gap-1">
                 <FiCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.paused')}
               </div>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 text-center col-span-2 sm:col-span-1">
-              <div className="text-xl sm:text-2xl font-bold text-red-600">{estatisticas.cancelados}</div>
-              <div className="text-xs sm:text-sm text-red-700 flex items-center justify-center gap-1">
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4 text-center col-span-2 sm:col-span-1">
+              <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">{estatisticas.cancelados}</div>
+              <div className="text-xs sm:text-sm text-red-700 dark:text-red-200 flex items-center justify-center gap-1">
                 <FiXCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('projects.cancelled')}
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="yt-card p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.statusLabel')}</label>
-                <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label className="block text-sm font-medium yt-label mb-2">{t('projects.statusLabel')}</label>
+                <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full px-4 py-2.5 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="todos">{t('projects.allStatus')}</option>
                   <option value="ativo">{t('projects.statusActive')}</option>
                   <option value="pausado">{t('projects.statusPaused')}</option>
@@ -699,8 +692,8 @@ function GerenciamentoProjetos() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.priority')}</label>
-                <select name="prioridade" value={filters.prioridade} onChange={handleFilterChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label className="block text-sm font-medium yt-label mb-2">{t('projects.priority')}</label>
+                <select name="prioridade" value={filters.prioridade} onChange={handleFilterChange} className="w-full px-4 py-2.5 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="todas">{t('projects.allPriorities')}</option>
                   <option value="baixa">🔹 {t('projects.priorityLow')}</option>
                   <option value="media">🔸 {t('projects.priorityMedium')}</option>
@@ -710,16 +703,16 @@ function GerenciamentoProjetos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.companyLabel')}</label>
-                <select name="empresa" value={filters.empresa} onChange={handleFilterChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label className="block text-sm font-medium yt-label mb-2">{t('projects.companyLabel')}</label>
+                <select name="empresa" value={filters.empresa} onChange={handleFilterChange} className="w-full px-4 py-2.5 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="">{t('projects.allCompanies')}</option>
                   {empresas.map(empresa => <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('projects.responsible')}</label>
-                <select name="responsavel" value={filters.responsavel} onChange={handleFilterChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label className="block text-sm font-medium yt-label mb-2">{t('projects.responsible')}</label>
+                <select name="responsavel" value={filters.responsavel} onChange={handleFilterChange} className="w-full px-4 py-2.5 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="">{t('projects.allResponsibles')}</option>
                   {usuarios.map(usuario => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
                 </select>
@@ -727,7 +720,7 @@ function GerenciamentoProjetos() {
             </div>
 
             {(filters.status !== 'todos' || filters.prioridade !== 'todas' || filters.empresa || filters.responsavel) && <div className="mt-4 flex justify-end">
-                <button onClick={clearFilters} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
+                <button type="button" onClick={clearFilters} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
                   <FiRotateCcw className="w-4 h-4" />
                   {t('history.clear')}
                 </button>
@@ -735,56 +728,56 @@ function GerenciamentoProjetos() {
           </div>
 
         {showSkeleton ? <GerenciamentoProjetosSkeleton /> : <div className="space-y-4">
-          {projetosFiltrados.length === 0 ? <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8 text-center">
-              <FiFolder className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 text-lg font-medium">{t('projects.noProjectsFound')}</p>
-              <p className="text-gray-400 text-sm mt-2">{t('projects.createNewOrAdjustFilters')}</p>
-            </div> : projetosFiltrados.map(projeto => <div key={projeto.id} className="bg-white rounded-lg shadow-md border border-gray-300 p-4 sm:p-6">
+          {projetosFiltrados.length === 0 ? <div className="yt-card border-gray-300 dark:border-gray-700 p-8 text-center">
+              <FiFolder className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">{t('projects.noProjectsFound')}</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">{t('projects.createNewOrAdjustFilters')}</p>
+            </div> : projetosFiltrados.map(projeto => <div key={projeto.id} className="yt-card border-gray-300 dark:border-gray-700 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-3">
                   <div className="flex-1 w-full">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                       <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0" style={{
                   backgroundColor: projeto.cor_identificacao
                 }}></div>
-                      <h3 className="text-base sm:text-xl font-bold text-gray-800 break-words">{projeto.nome}</h3>
+                      <h3 className="text-base sm:text-xl font-bold text-gray-800 dark:text-gray-100 break-words">{projeto.nome}</h3>
                       <span className={`px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getStatusColor(projeto.status)}`}>
                         {getStatusText(projeto.status)}
                       </span>
                       <span className={`px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getPrioridadeColor(projeto.prioridade)}`}>
                         {getPrioridadeText(projeto.prioridade)}
                       </span>
-                      {isProjetoAtrasado(projeto) && isAdmin && <span className="px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                      {isProjetoAtrasado(projeto) && isAdmin && <span className="px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800 flex items-center gap-1">
                           <FiAlertCircle className="w-3 h-3" />
                           {t('projects.delayed')}
                         </span>}
                     </div>
                     
-                    {projeto.descricao && <p className="text-sm sm:text-base text-gray-600 mb-3 line-clamp-2">{projeto.descricao}</p>}
+                    {projeto.descricao && <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{projeto.descricao}</p>}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                       <div>
-                        <span className="font-medium text-gray-700">{t('projects.companyField')}</span>
-                        <p className="text-gray-600 truncate">{projeto.empresas?.nome || '-'}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('projects.companyField')}</span>
+                        <p className="text-gray-600 dark:text-gray-400 truncate">{projeto.empresas?.nome || '-'}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">{t('projects.responsibleField')}</span>
-                        <p className="text-gray-600 truncate">{projeto.profiles?.nome || '-'}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('projects.responsibleField')}</span>
+                        <p className="text-gray-600 dark:text-gray-400 truncate">{projeto.profiles?.nome || '-'}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">{t('projects.periodField')}</span>
-                        <p className="text-gray-600 text-xs sm:text-sm">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('projects.periodField')}</span>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
                           {formatDate(projeto.data_inicio)} - {formatDate(projeto.data_fim)}
                         </p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">{t('projects.budgetField')}</span>
-                        <p className="text-gray-600">{formatCurrency(projeto.orcamento)}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{t('projects.budgetField')}</span>
+                        <p className="text-gray-600 dark:text-gray-400">{formatCurrency(projeto.orcamento)}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex gap-2 w-full sm:w-auto sm:ml-4 items-start justify-end">
-                    {isProjetoAtrasado(projeto) && !isAdmin && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1">
+                    {isProjetoAtrasado(projeto) && !isAdmin && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800 flex items-center gap-1">
                         <FiAlertCircle className="w-3 h-3" />
                         {t('projects.delayed')}
                       </span>}
@@ -801,14 +794,14 @@ function GerenciamentoProjetos() {
                   </div>
                 </div>
 
-                {projeto.horas_estimadas && <div className="mt-4 pt-4 border-t border-gray-200">
+                {projeto.horas_estimadas && <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between text-xs sm:text-sm mb-2">
-                      <span className="font-medium text-gray-700">{t('projects.hoursProgress')}</span>
-                      <span className="text-gray-600">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{t('projects.hoursProgress')}</span>
+                      <span className="text-gray-600 dark:text-gray-400">
                         {projeto.horasTrabalhadas || 0} / {projeto.horas_estimadas}h
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-blue-500 h-2 rounded-full transition-all" style={{
                 width: `${Math.min((projeto.horasTrabalhadas || 0) / projeto.horas_estimadas * 100, 100)}%`
               }}></div>
@@ -818,17 +811,17 @@ function GerenciamentoProjetos() {
         </div>}
 
         {isModalOpen && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="yt-modal-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                     {editingProject ? <>
                         <FiEdit2 className="w-6 h-6" /> Editar Projeto
                       </> : <>
                         <FiPlus className="w-6 h-6" /> Novo Projeto
                       </>}
                   </h2>
-                  <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+                  <button type="button" onClick={closeModal} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                     <FiX className="w-6 h-6" />
                   </button>
                 </div>
@@ -836,17 +829,17 @@ function GerenciamentoProjetos() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalProjectName')}
                       </label>
-                      <input type="text" name="nome" value={formData.nome} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="text" name="nome" value={formData.nome} onChange={handleInputChange} required className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalCompany')}
                       </label>
-                      <select name="empresa_id" value={formData.empresa_id} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <select name="empresa_id" value={formData.empresa_id} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">{t('projects.modalSelectCompany')}</option>
                         {empresas.map(empresa => <option key={empresa.id} value={empresa.id}>
                             {empresa.nome}
@@ -856,34 +849,34 @@ function GerenciamentoProjetos() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium yt-label mb-1">
                       {t('projects.modalDescription')}
                     </label>
-                    <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} rows={3} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalStartDate')}
                       </label>
-                      <input type="date" name="data_inicio" value={formData.data_inicio} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="date" name="data_inicio" value={formData.data_inicio} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalEndDate')}
                       </label>
-                      <input type="date" name="data_fim" value={formData.data_fim} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="date" name="data_fim" value={formData.data_fim} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalStatus')}
                       </label>
-                      <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="ativo">{t('projects.statusActive')}</option>
                         <option value="pausado">{t('projects.statusPaused')}</option>
                         <option value="concluido">{t('projects.statusCompleted')}</option>
@@ -892,10 +885,10 @@ function GerenciamentoProjetos() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalPriority')}
                       </label>
-                      <select name="prioridade" value={formData.prioridade} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <select name="prioridade" value={formData.prioridade} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="baixa">🔹 {t('projects.priorityLow')}</option>
                         <option value="media">🔸 {t('projects.priorityMedium')}</option>
                         <option value="alta">🔶 {t('projects.priorityHigh')}</option>
@@ -906,24 +899,24 @@ function GerenciamentoProjetos() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalBudget')}
                       </label>
-                      <input type="number" name="orcamento" value={formData.orcamento} onChange={handleInputChange} step="0.01" min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="number" name="orcamento" value={formData.orcamento} onChange={handleInputChange} step="0.01" min="0" className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalEstimatedHours')}
                       </label>
-                      <input type="number" name="horas_estimadas" value={formData.horas_estimadas} onChange={handleInputChange} min="0" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="number" name="horas_estimadas" value={formData.horas_estimadas} onChange={handleInputChange} min="0" className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium yt-label mb-1">
                         {t('projects.modalResponsible')}
                       </label>
-                      <select name="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <select name="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md yt-field focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">{t('projects.modalSelectResponsible')}</option>
                         {usuarios.map(usuario => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
                       </select>

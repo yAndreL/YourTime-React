@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 function AcessoNegado() {
   const navigate = useNavigate();
-  return <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 text-center">
+        <div className="yt-card rounded-2xl shadow-xl p-8 md:p-12 text-center">
           <div className="mb-8 flex justify-center">
             <svg className="w-64 h-64" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="150" y="180" width="200" height="140" rx="8" fill="#3B82F6" />
@@ -32,11 +32,11 @@ function AcessoNegado() {
             </svg>
           </div>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Acesso Negado
           </h1>
 
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
             Você não tem permissão para acessar esta área.
           </p>
 
@@ -47,10 +47,10 @@ function AcessoNegado() {
             </button>
           </div>
 
-          <div className="pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Precisa de ajuda? Entre em contato com{' '}
-              <a href="mailto:admin@yourtime.com" className="text-blue-600 hover:text-blue-700 font-medium">
+              <a href="mailto:admin@yourtime.com" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                 admin@yourtime.com
               </a>
             </p>

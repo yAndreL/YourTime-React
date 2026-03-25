@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiDownload, FiFileText, FiFile, FiCheckCircle, FiAlertTriangle, FiXCircle } from 'react-icons/fi';
 import { supabase } from '../config/supabase';
-import ExcelJS from 'exceljs';
 import { useLanguage } from '../hooks/useLanguage';
 const gerarGraficoQuickChart = async config => {
   const url = 'https://quickchart.io/chart';
@@ -234,6 +233,7 @@ function ExportDataModal({
     }
     try {
       setGerando(true);
+      const { default: ExcelJS } = await import('exceljs');
       const workbook = new ExcelJS.Workbook();
       for (const funcionarioId of funcionariosSelecionados) {
         const funcionario = funcionarios.find(f => f.id === funcionarioId);
@@ -1028,12 +1028,12 @@ function ExportDataModal({
       bottom: 0
     }} onClick={onClose}>
         <div className="p-4 w-full h-full flex items-center justify-center pointer-events-none">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto pointer-events-auto" style={{
+          <div className="yt-modal-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto pointer-events-auto" style={{
           marginTop: 0
         }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800">{t('common.exportTitle')}</h2>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" disabled={gerando}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('common.exportTitle')}</h2>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" disabled={gerando}>
                 <FiX className="w-6 h-6" />
               </button>
             </div>
@@ -1041,50 +1041,50 @@ function ExportDataModal({
             <div className="p-6 space-y-6">
               {loading ? <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">{t('common.loading')}</p>
+                  <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
                 </div> : <>
                   {isAdmin && <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium yt-label mb-2">
                         {t('admin.employees')}
                       </label>
                       
                       <div className="mb-3">
-                        <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                        <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
                       </div>
                       
-                      <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3 space-y-2">
-                        <label className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                          <input type="checkbox" checked={funcionariosSelecionados.length === funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length && funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length > 0} onChange={toggleTodos} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                          <span className="font-medium text-gray-700">{t('export.selectAll')}</span>
+                      <div className="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 space-y-2 yt-inset">
+                        <label className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/80 p-2 rounded">
+                          <input type="checkbox" checked={funcionariosSelecionados.length === funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length && funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length > 0} onChange={toggleTodos} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600" />
+                          <span className="font-medium yt-label">{t('export.selectAll')}</span>
                         </label>
-                        <div className="border-t border-gray-200 my-2"></div>
-                        {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                            <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => toggleFuncionario(func.id)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                            <span className="text-gray-700">{func.nome}</span>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                        {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/80 p-2 rounded">
+                            <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => toggleFuncionario(func.id)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600" />
+                            <span className="yt-label">{func.nome}</span>
                           </label>)}
-                        {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <p className="text-center text-gray-500 py-4">{t('export.noEmployeesFound')}</p>}
+                        {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <p className="text-center text-gray-500 dark:text-gray-400 py-4">{t('export.noEmployeesFound')}</p>}
                       </div>
                     </div>}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium yt-label mb-2">
                         {t('export.startDate')}
                       </label>
-                      <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" disabled={gerando} />
+                      <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 yt-field" disabled={gerando} />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium yt-label mb-2">
                         {t('export.endDate')}
                       </label>
-                      <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" disabled={gerando} />
+                      <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 yt-field" disabled={gerando} />
                     </div>
                   </div>
                 </>}
             </div>
 
-            <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button onClick={gerarCSVSimples} disabled={gerando || loading} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium">
+            <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80">
+              <button onClick={gerarCSVSimples} disabled={gerando || loading} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium">
                 {gerando ? <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                     <span>{t('export.generating')}...</span>
@@ -1094,7 +1094,7 @@ function ExportDataModal({
                   </>}
               </button>
 
-              <button onClick={gerarXLSX} disabled={gerando || loading} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium">
+              <button onClick={gerarXLSX} disabled={gerando || loading} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium">
                 {gerando ? <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                     <span>{t('export.generating')}...</span>

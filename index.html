@@ -5,6 +5,33 @@
     <link rel="icon" type="image/png" href="/src/assets/yourtimeicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Your Time</title>
+    <style id="yourtime-boot-theme">
+      html {
+        background-color: #f9fafb;
+      }
+      html.dark {
+        background-color: #030712;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: inherit;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('yourtime-theme') || 'light';
+          var dark =
+            t === 'dark' ||
+            (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

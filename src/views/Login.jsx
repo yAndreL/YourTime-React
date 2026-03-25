@@ -62,9 +62,9 @@ function Login() {
       setLoading(false);
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <img src={logoYourTime} alt="YourTime Logo" className="h-60 w-auto" />
@@ -73,26 +73,26 @@ function Login() {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                 {t('login.email')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiMail className="h-5 w-5 text-gray-400" />
                 </div>
-                <input type="email" id="email" name="email" value={email} onChange={e => setEmail(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed" placeholder={t('login.emailPlaceholder')} required />
+                <input type="email" id="email" name="email" value={email} onChange={e => setEmail(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('login.emailPlaceholder')} required />
               </div>
             </div>
 
             <div>
-              <label htmlFor="senha" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="senha" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                 {t('login.password')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiLock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input type="password" id="senha" name="senha" value={senha} onChange={e => setSenha(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed" placeholder={t('login.passwordPlaceholder')} required />
+                <input type="password" id="senha" name="senha" value={senha} onChange={e => setSenha(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('login.passwordPlaceholder')} required />
               </div>
             </div>
 
@@ -105,7 +105,7 @@ function Login() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link to="/esqueci-senha" className="block text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium">
+            <Link to="/esqueci-senha" className="block text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium">
               {t('login.forgotPassword')}
             </Link>
           </div>

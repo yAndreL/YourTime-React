@@ -14,9 +14,10 @@ export const NotificationProvider = ({
       try {
         const {
           data: {
-            user
+            session
           }
-        } = await supabase.auth.getUser();
+        } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user) return {
           isAdmin: false,
           superiorEmpresaId: null

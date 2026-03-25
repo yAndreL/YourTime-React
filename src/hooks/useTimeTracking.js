@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../config/supabase.js';
 import { useLanguage } from './useLanguage.jsx';
 import { getLocalDateString } from '../utils/dateUtils';
@@ -29,9 +29,10 @@ export function useTimeTracking() {
       setError(null);
       const {
         data: {
-          user
+          session
         }
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
@@ -134,7 +135,6 @@ export function useTimeTracking() {
       saldoHoras: calculateTimeBalance(),
       horasHoje: calculateTodayApprovedHours(),
       horasPendentes: calculateTodayPendingHours(),
-      projetoAtual: userData?.cargo || 'Desenvolvimento',
       status: t('dashboard.working'),
       isWorking: true,
       timeRecords: timeRecords
@@ -216,13 +216,15 @@ export function useTimeTracking() {
       fetchTimeRecords();
     }
   }, [userData]);
+  const dashboardData = useMemo(() => getDashboardData(), [timeRecords, t]);
+  const weeklyData = useMemo(() => getWeeklyChartData(), [timeRecords, t]);
   return {
     userData,
     timeRecords,
     loading,
     error,
-    dashboardData: getDashboardData(),
-    weeklyData: getWeeklyChartData(),
+    dashboardData,
+    weeklyData,
     registerTimeRecord,
     refetch: fetchTimeRecords
   };

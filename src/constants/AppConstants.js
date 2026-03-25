@@ -18,8 +18,7 @@ export const ROUTES = {
   SETTINGS: '/configuracoes',
   HISTORY: '/historico',
   FORM: '/formulario-ponto',
-  NOT_FINISHED: '/nao-finalizada',
-  DATABASE_SETUP: '/database-setup'
+  NOT_FINISHED: '/nao-finalizada'
 };
 export const USER_ROLES = {
   ADMIN: 'admin',

@@ -104,15 +104,15 @@ function VerificarCodigo() {
   if (!email || !codigoEnviado) {
     return null;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-8">
+        <div className="yt-modal-surface rounded-xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Verificar Código</h1>
-            <p className="text-gray-600 text-sm">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Verificar Código</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Digite o código de 6 dígitos enviado para
             </p>
-            <p className="text-blue-600 font-semibold text-sm mt-1">{email}</p>
+            <p className="text-blue-600 dark:text-blue-400 font-semibold text-sm mt-1">{email}</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -133,16 +133,16 @@ function VerificarCodigo() {
             <button type="submit" disabled={loading || codigo.some(d => !d)} className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2">
               {loading ? <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  Verificando...
+                  {t('common.loading')}
                 </> : 'Verificar Código'}
             </button>
           </form>
 
           {mostrarReenvio && <div className="mt-6 text-center">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                <p className="text-sm text-gray-700">
+              <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Não recebeu o código? Confira sua caixa de spam ou{' '}
-                  <button onClick={handleReenviarCodigo} disabled={reenviando} className="text-blue-600 hover:text-blue-700 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1">
+                  <button onClick={handleReenviarCodigo} disabled={reenviando} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1">
                     {reenviando ? <>
                         <FiLoader className="w-3 h-3 animate-spin" />
                         reenviando...
@@ -153,7 +153,7 @@ function VerificarCodigo() {
             </div>}
 
           <div className="mt-4 text-center">
-            <Link to="/login" className="text-gray-600 hover:text-gray-700 transition-colors text-sm font-medium inline-flex items-center gap-2">
+            <Link to="/login" className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors text-sm font-medium inline-flex items-center gap-2">
               <FiArrowLeft className="w-4 h-4" />
               Voltar para o Login
             </Link>

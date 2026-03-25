@@ -311,42 +311,42 @@ function ExportCSVModal({
         <div className="p-4 w-full h-full flex items-center justify-center" style={{
         padding: '1rem'
       }}>
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000]" style={{
+          <div className="yt-modal-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000]" style={{
           marginTop: 0,
           marginBottom: 0
         }}>
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">{t('common.exportToCSV')}</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('common.exportToCSV')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {t('export.selectEmployees')}
               </p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" disabled={gerando}>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" disabled={gerando}>
               <FiX size={24} />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium yt-label mb-2">
                 {isAdmin ? t('export.selectEmployees') : t('common.employee')}
               </label>
               
-              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="mb-2 text-sm text-blue-600 hover:text-blue-800 font-medium" disabled={loading || gerando}>
+              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="mb-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium" disabled={loading || gerando}>
                   {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAllEmployees') : t('export.selectAllEmployees')}
                 </button>}
 
-              <div className="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
-                {loading ? <div className="p-4 text-center text-gray-500">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg max-h-60 overflow-y-auto yt-inset">
+                {loading ? <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                     {t('export.loadingEmployees')}
-                  </div> : funcionarios.length === 0 ? <div className="p-4 text-center text-gray-500">
+                  </div> : funcionarios.length === 0 ? <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                     {t('export.noEmployeesFound')}
-                  </div> : funcionarios.map(funcionario => <label key={funcionario.id} className={`flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${!isAdmin ? 'cursor-default' : ''}`}>
-                      <input type="checkbox" checked={funcionariosSelecionados.includes(funcionario.id)} onChange={() => isAdmin && toggleFuncionario(funcionario.id)} disabled={!isAdmin} className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                  </div> : funcionarios.map(funcionario => <label key={funcionario.id} className={`flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${!isAdmin ? 'cursor-default' : ''}`}>
+                      <input type="checkbox" checked={funcionariosSelecionados.includes(funcionario.id)} onChange={() => isAdmin && toggleFuncionario(funcionario.id)} disabled={!isAdmin} className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800" />
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">{funcionario.nome}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{funcionario.nome}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {funcionario.cargo || t('export.positionNotDefined')} • {funcionario.email}
                         </div>
                       </div>
@@ -357,32 +357,32 @@ function ExportCSVModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium yt-label mb-2">
                   {t('export.startDate')}
                 </label>
-                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium yt-label mb-2">
                   {t('export.endDate')}
                 </label>
-                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field" />
               </div>
             </div>
 
-            <div className="border border-blue-200 rounded-lg overflow-hidden">
-              <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-between text-left" type="button">
-                <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+            <div className="border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+              <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                   <FiInfo className="flex-shrink-0" />
                   {t('export.csvIncludes')}
                 </span>
-                <div className={`text-blue-600 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
                   <FiChevronDown />
                 </div>
               </button>
               <div className={`transition-all duration-300 ease-in-out ${infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
-                  <ul className="text-sm text-blue-700 space-y-1 ml-4 list-disc">
+                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/40 border-t border-blue-200 dark:border-blue-800">
+                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
                     <li>{t('export.csvIncludeEmployeeData')}</li>
                     <li>{t('export.csvIncludeStats')}</li>
                     <li>{t('export.csvIncludeGraphData')}</li>
@@ -394,8 +394,8 @@ function ExportCSVModal({
             </div>
           </div>
 
-          <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-            <button onClick={onClose} disabled={gerando} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 flex justify-end gap-3">
+            <button onClick={onClose} disabled={gerando} className="px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {t('export.cancel')}
             </button>
             <button onClick={gerarCSV} disabled={gerando || funcionariosSelecionados.length === 0 || !dataInicio || !dataFim} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
@@ -422,10 +422,10 @@ function ExportCSVModal({
       padding: 0
     }}>
           <div className="p-4 w-full h-full flex items-center justify-center">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative z-[10001]">
-            <h3 className="text-lg font-bold text-red-600 mb-2">{t('export.errorMessage')}</h3>
-            <p className="text-gray-700 mb-2">{modalError.message}</p>
-            {modalError.code && <p className="text-sm text-gray-500 mb-4">Código: {modalError.code}</p>}
+            <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full p-6 relative z-[10001]">
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">{t('export.errorMessage')}</h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-2">{modalError.message}</p>
+            {modalError.code && <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Código: {modalError.code}</p>}
             <button onClick={() => setModalError({
             isOpen: false,
             message: '',
