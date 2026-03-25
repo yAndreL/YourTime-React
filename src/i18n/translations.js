@@ -156,9 +156,9 @@ export const translations = {
       saved: 'Configurações salvas com sucesso!',
       restoreConfirm: 'Confirmar Restauração',
       restoreMessage: 'Tem certeza que deseja restaurar as configurações padrão?',
-      restored: '✅ Configurações restauradas para os padrões',
+      restored: 'Configurações restauradas para os padrões',
       errorSaving: 'Erro ao salvar configurações',
-      errorRestoring: '❌ Erro ao restaurar configurações'
+      errorRestoring: 'Erro ao restaurar configurações'
     },
     notifications: {
       title: 'Notificações',
@@ -280,7 +280,7 @@ export const translations = {
       modalSelectResponsible: 'Selecione um responsável',
       delayed: 'Atrasado',
       undefined: 'Indefinido',
-      undefinedPriority: '❓ Indefinida',
+      undefinedPriority: 'Indefinida',
       modalSaving: 'Salvando...',
       modalUpdate: 'Atualizar',
       modalCreate: 'Criar',
@@ -574,7 +574,7 @@ export const translations = {
       hoursBalance: 'Saldo de horas',
       activeProjects: 'Projetos ativos',
       editProfile: 'Editar perfil',
-      statsNote: '📌 Nota: As estatísticas são calculadas automaticamente com base nos seus registros de ponto do mês atual. O saldo considera 8h/dia (22 dias úteis/mês). Horas extras são contabilizadas quando o registro diário ultrapassa 8 horas.',
+      statsNote: 'Nota: As estatísticas são calculadas automaticamente com base nos seus registros de ponto do mês atual. O saldo considera 8h/dia (22 dias úteis/mês). Horas extras são contabilizadas quando o registro diário ultrapassa 8 horas.',
       myData: 'Meus dados',
       perWeek: 'h/semana'
     },
@@ -664,8 +664,8 @@ export const translations = {
       extraHours: 'Horas Extras',
       normalHoursUpTo8: 'Horas Normais (até 8h)',
       extraHoursAbove8: 'Horas Extras (acima de 8h)',
-      chartTip: '💡 Dica: Selecione as colunas Status e Quantidade acima e crie um Gráfico de Pizza!',
-      barChartTip: '💡 Dica: Selecione os dados acima e crie um Gráfico de Barras Empilhadas!',
+      chartTip: 'Dica: Selecione as colunas Status e Quantidade acima e crie um Gráfico de Pizza!',
+      barChartTip: 'Dica: Selecione os dados acima e crie um Gráfico de Barras Empilhadas!',
       observations: 'Observações',
       rawData: 'Dados brutos',
       notes: 'Anotações',
@@ -829,9 +829,9 @@ export const translations = {
       saved: 'Settings saved successfully!',
       restoreConfirm: 'Confirm Restoration',
       restoreMessage: 'Are you sure you want to restore default settings?',
-      restored: '✅ Settings restored to defaults',
+      restored: 'Settings restored to defaults',
       errorSaving: 'Error saving settings',
-      errorRestoring: '❌ Error restoring settings'
+      errorRestoring: 'Error restoring settings'
     },
     notifications: {
       title: 'Notifications',
@@ -953,7 +953,7 @@ export const translations = {
       modalSelectResponsible: 'Select a responsible',
       delayed: 'Delayed',
       undefined: 'Undefined',
-      undefinedPriority: '❓ Undefined',
+      undefinedPriority: 'Undefined',
       modalSaving: 'Saving...',
       modalUpdate: 'Update',
       modalCreate: 'Create',
@@ -1247,7 +1247,7 @@ export const translations = {
       hoursBalance: 'Hours balance',
       activeProjects: 'Active projects',
       editProfile: 'Edit profile',
-      statsNote: '📌 Note: Statistics are automatically calculated based on your current month time records. Balance considers 8h/day (22 working days/month). Overtime is counted when daily record exceeds 8 hours.',
+      statsNote: 'Note: Statistics are automatically calculated based on your current month time records. Balance considers 8h/day (22 working days/month). Overtime is counted when daily record exceeds 8 hours.',
       myData: 'My data',
       perWeek: 'h/week'
     },
@@ -1337,8 +1337,8 @@ export const translations = {
       extraHours: 'Extra Hours',
       normalHoursUpTo8: 'Normal Hours (up to 8h)',
       extraHoursAbove8: 'Extra Hours (above 8h)',
-      chartTip: '💡 Tip: Select the Status and Quantity columns above and create a Pie Chart!',
-      barChartTip: '💡 Tip: Select the data above and create a Stacked Bar Chart!',
+      chartTip: 'Tip: Select the Status and Quantity columns above and create a Pie Chart!',
+      barChartTip: 'Tip: Select the data above and create a Stacked Bar Chart!',
       observations: 'Observations',
       rawData: 'Raw data',
       notes: 'Notes',
@@ -1499,9 +1499,9 @@ export const translations = {
       saved: '¡Configuración guardada con éxito!',
       restoreConfirm: 'Confirmar Restauración',
       restoreMessage: '¿Está seguro de que desea restaurar la configuración predeterminada?',
-      restored: '✅ Configuración restaurada a los valores predeterminados',
+      restored: 'Configuración restaurada a los valores predeterminados',
       errorSaving: 'Error al guardar configuración',
-      errorRestoring: '❌ Error al restaurar configuración'
+      errorRestoring: 'Error al restaurar configuración'
     },
     notifications: {
       title: 'Notificaciones',
@@ -1623,7 +1623,7 @@ export const translations = {
       modalSelectResponsible: 'Seleccione un responsable',
       delayed: 'Retrasado',
       undefined: 'Indefinido',
-      undefinedPriority: '❓ Indefinida',
+      undefinedPriority: 'Indefinida',
       modalSaving: 'Guardando...',
       modalUpdate: 'Actualizar',
       modalCreate: 'Crear',
@@ -1917,7 +1917,7 @@ export const translations = {
       hoursBalance: 'Balance de horas',
       activeProjects: 'Proyectos activos',
       editProfile: 'Editar perfil',
-      statsNote: '📌 Nota: Las estadísticas se calculan automáticamente en base a sus registros del mes actual. El balance considera 8h/día (22 días hábiles/mes). Las horas extras se contabilizan cuando el registro diario supera las 8 horas.',
+      statsNote: 'Nota: Las estadísticas se calculan automáticamente en base a sus registros del mes actual. El balance considera 8h/día (22 días hábiles/mes). Las horas extras se contabilizan cuando el registro diario supera las 8 horas.',
       myData: 'Mis datos',
       perWeek: 'h/semana'
     },
@@ -2007,8 +2007,8 @@ export const translations = {
       extraHours: 'Horas Extras',
       normalHoursUpTo8: 'Horas Normales (hasta 8h)',
       extraHoursAbove8: 'Horas Extras (más de 8h)',
-      chartTip: '💡 Consejo: ¡Seleccione las columnas Estado y Cantidad arriba y cree un Gráfico de Torta!',
-      barChartTip: '💡 Consejo: ¡Seleccione los datos arriba y cree un Gráfico de Barras Apiladas!',
+      chartTip: 'Consejo: ¡Seleccione las columnas Estado y Cantidad arriba y cree un Gráfico de Torta!',
+      barChartTip: 'Consejo: ¡Seleccione los datos arriba y cree un Gráfico de Barras Apiladas!',
       observations: 'Observaciones',
       rawData: 'Datos brutos',
       notes: 'Notas',
@@ -2169,9 +2169,9 @@ export const translations = {
       saved: 'Paramètres enregistrés avec succès !',
       restoreConfirm: 'Confirmer la Restauration',
       restoreMessage: 'Êtes-vous sûr de vouloir restaurer les paramètres par défaut ?',
-      restored: '✅ Paramètres restaurés aux valeurs par défaut',
+      restored: 'Paramètres restaurés aux valeurs par défaut',
       errorSaving: 'Erreur lors de l\'enregistrement des paramètres',
-      errorRestoring: '❌ Erreur lors de la restauration des paramètres'
+      errorRestoring: 'Erreur lors de la restauration des paramètres'
     },
     notifications: {
       title: 'Notifications',
@@ -2293,7 +2293,7 @@ export const translations = {
       modalSelectResponsible: 'Sélectionner un responsable',
       delayed: 'En retard',
       undefined: 'Indéfini',
-      undefinedPriority: '❓ Indéfinie',
+      undefinedPriority: 'Indéfinie',
       modalSaving: 'Enregistrement...',
       modalUpdate: 'Mettre à jour',
       modalCreate: 'Créer',
@@ -2587,7 +2587,7 @@ export const translations = {
       hoursBalance: 'Solde d\'heures',
       activeProjects: 'Projets actifs',
       editProfile: 'Modifier le profil',
-      statsNote: '📌 Note : Les statistiques sont calculées automatiquement en fonction de vos enregistrements du mois en cours. Le solde considère 8h/jour (22 jours ouvrables/mois). Les heures supplémentaires sont comptabilisées lorsque l\'enregistrement quotidien dépasse 8 heures.',
+      statsNote: 'Note : Les statistiques sont calculées automatiquement en fonction de vos enregistrements du mois en cours. Le solde considère 8h/jour (22 jours ouvrables/mois). Les heures supplémentaires sont comptabilisées lorsque l\'enregistrement quotidien dépasse 8 heures.',
       myData: 'Mes données',
       perWeek: 'h/semaine'
     },
@@ -2677,8 +2677,8 @@ export const translations = {
       extraHours: 'Heures Supplémentaires',
       normalHoursUpTo8: 'Heures Normales (jusqu\'à 8h)',
       extraHoursAbove8: 'Heures Supplémentaires (au-delà de 8h)',
-      chartTip: '💡 Astuce : Sélectionnez les colonnes Statut et Quantité ci-dessus et créez un Graphique Circulaire !',
-      barChartTip: '💡 Astuce : Sélectionnez les données ci-dessus et créez un Graphique à Barres Empilées !',
+      chartTip: 'Astuce : Sélectionnez les colonnes Statut et Quantité ci-dessus et créez un Graphique Circulaire !',
+      barChartTip: 'Astuce : Sélectionnez les données ci-dessus et créez un Graphique à Barres Empilées !',
       observations: 'Observations',
       rawData: 'Données brutes',
       notes: 'Notes',
