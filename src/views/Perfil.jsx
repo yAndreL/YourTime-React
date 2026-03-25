@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../config/supabase';
-import { useModal } from '../hooks/useModal';
 import { useToast } from '../hooks/useToast';
 import { useLanguage } from '../hooks/useLanguage';
-import Modal from '../components/ui/Modal';
 import MainLayout from '../components/layout/MainLayout';
 import PerfilSkeleton from '../components/ui/PerfilSkeleton';
 import CacheService from '../services/CacheService';
@@ -19,11 +17,6 @@ function Perfil() {
   const {
     userId
   } = useParams();
-  const {
-    modalState,
-    showError: showModalError,
-    closeModal
-  } = useModal();
   const {
     showSuccess,
     showError

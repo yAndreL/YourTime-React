@@ -7,6 +7,7 @@ import CacheService from '../services/CacheService';
 import { supabase } from '../config/supabase';
 import { useLanguage } from '../hooks/useLanguage.jsx';
 import { useTheme } from '../hooks/useTheme.jsx';
+import { useToast } from '../hooks/useToast.jsx';
 import { FiMail, FiBell, FiClock, FiBarChart2, FiSave, FiRotateCcw } from 'react-icons/fi';
 import { MdTranslate, MdLightMode } from 'react-icons/md';
 const defaultConfig = {
@@ -34,6 +35,7 @@ function Configuracoes() {
     t
   } = useLanguage();
   const { theme, setTheme } = useTheme();
+  const { showSuccess, showError } = useToast();
   const cachedOnMount = readConfigCacheSync();
   const initialConfig = cachedOnMount ? {
     ...defaultConfig,
@@ -45,9 +47,6 @@ function Configuracoes() {
   const [isLoading, setIsLoading] = useState(!cachedOnMount);
   const [showSkeleton, setShowSkeleton] = useState(!cachedOnMount);
   const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('success');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   useEffect(() => {
     if (showConfirmModal) {
@@ -73,7 +72,7 @@ function Configuracoes() {
   const carregarConfiguracoes = async () => {
     const userId = await getCurrentUserId();
     if (!userId) {
-      showToastMessage('Erro ao carregar usuário', 'error');
+      showError('Erro ao carregar usuário');
       setIsLoading(false);
       return;
     }
@@ -105,12 +104,6 @@ function Configuracoes() {
       setShowSkeleton(false);
     }
   };
-  const showToastMessage = (message, type = 'success') => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
   const handleChange = (field, value) => {
     setConfig(prev => ({
       ...prev,
@@ -121,7 +114,7 @@ function Configuracoes() {
     setIsSaving(true);
     const userId = await getCurrentUserId();
     if (!userId) {
-      showToastMessage('Erro ao salvar: usuário não encontrado', 'error');
+      showError('Erro ao salvar: usuário não encontrado');
       setIsSaving(false);
       return;
     }
@@ -139,10 +132,10 @@ function Configuracoes() {
     };
     const result = await ConfigService.atualizarConfiguracoes(userId, configParaSalvar);
     if (result.success) {
-      showToastMessage('Configurações salvas com sucesso!', 'success');
+      showSuccess('Configurações salvas com sucesso!');
       CacheService.remove('configuracoes', userId);
     } else {
-      showToastMessage('Erro ao salvar configurações', 'error');
+      showError('Erro ao salvar configurações');
     }
     setIsSaving(false);
   };
@@ -151,7 +144,7 @@ function Configuracoes() {
     setIsSaving(true);
     const userId = await getCurrentUserId();
     if (!userId) {
-      showToastMessage('Erro: usuário não encontrado', 'error');
+      showError('Erro: usuário não encontrado');
       setIsSaving(false);
       return;
     }
@@ -160,9 +153,9 @@ function Configuracoes() {
       CacheService.remove('configuracoes', userId);
       await carregarConfiguracoes();
       setTheme('light');
-      showToastMessage('✅ Configurações restauradas para os padrões', 'success');
+      showSuccess('Configurações restauradas para os padrões');
     } else {
-      showToastMessage('❌ Erro ao restaurar configurações', 'error');
+      showError('Erro ao restaurar configurações');
     }
     setIsSaving(false);
   };
@@ -336,15 +329,6 @@ function Configuracoes() {
           </div>
         </div>
       </div>
-
-      {showToast && <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-up ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
-          <div className="flex items-center gap-2">
-            <span>{toastMessage}</span>
-            <button onClick={() => setShowToast(false)} className="ml-2 text-white hover:text-gray-200">
-              ✕
-            </button>
-          </div>
-        </div>}
 
       {showConfirmModal && <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full p-6">

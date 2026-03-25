@@ -189,7 +189,7 @@ function GerenciamentoEmpresas() {
             error
           } = await supabase.from('empresas').delete().eq('id', empresa.id);
           if (error) throw error;
-          toast.showError(t('companies.companyDeleted'));
+          toast.showSuccess(t('companies.companyDeleted'));
           closeModal();
           carregarEmpresas();
         } catch (error) {
@@ -202,7 +202,7 @@ function GerenciamentoEmpresas() {
     return <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{t('companies.loadingCompanies')}</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('companies.loadingCompanies')}</p>
         </div>
       </div>;
   }
@@ -220,10 +220,10 @@ function GerenciamentoEmpresas() {
         </button>
       </div>
 
-      {empresas.length === 0 ? <div className="bg-gray-50 rounded-lg p-12 text-center">
-          <FiBriefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg mb-2">{t('companies.noCompaniesRegistered')}</p>
-          <p className="text-gray-500 mb-6">{t('companies.firstCompanyPrompt')}</p>
+      {empresas.length === 0 ? <div className="yt-inset rounded-lg p-12 text-center border border-gray-200 dark:border-gray-700">
+          <FiBriefcase className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg mb-2">{t('companies.noCompaniesRegistered')}</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">{t('companies.firstCompanyPrompt')}</p>
           <button onClick={abrirModalNovo} className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             <FiPlus className="w-5 h-5" />
             {t('companies.registerFirstCompany')}
@@ -232,43 +232,43 @@ function GerenciamentoEmpresas() {
           {empresas.map(empresa => <div key={empresa.id} className={`yt-card shadow-md p-4 sm:p-6 border-2 transition-all ${empresa.is_active ? 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600' : 'border-gray-200 dark:border-gray-700 opacity-60'}`}>
               <div className="flex items-start justify-between mb-4 gap-2">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${empresa.is_active ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                    <FiBriefcase className={`w-5 h-5 sm:w-6 sm:h-6 ${empresa.is_active ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${empresa.is_active ? 'bg-blue-100 dark:bg-blue-950/50' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                    <FiBriefcase className={`w-5 h-5 sm:w-6 sm:h-6 ${empresa.is_active ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">{empresa.nome}</h3>
-                    {empresa.cnpj && <p className="text-sm text-gray-500">CNPJ: {empresa.cnpj}</p>}
+                    {empresa.cnpj && <p className="text-sm text-gray-500 dark:text-gray-400">CNPJ: {empresa.cnpj}</p>}
                   </div>
                 </div>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${empresa.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${empresa.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
                   {empresa.is_active ? t('admin.active') : t('admin.inactive')}
                 </span>
               </div>
 
               <div className="space-y-2 mb-4">
-                {empresa.endereco && <div className="flex items-start gap-2 text-sm text-gray-600">
-                    <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                {empresa.endereco && <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-500 dark:text-gray-500" />
                     <span>{empresa.endereco}</span>
                   </div>}
-                {empresa.telefone && <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <FiPhone className="w-4 h-4" />
+                {empresa.telefone && <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <FiPhone className="w-4 h-4 text-gray-500 dark:text-gray-500" />
                     <span>{empresa.telefone}</span>
                   </div>}
-                {empresa.email && <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <FiMail className="w-4 h-4" />
+                {empresa.email && <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <FiMail className="w-4 h-4 text-gray-500 dark:text-gray-500" />
                     <span className="truncate">{empresa.email}</span>
                   </div>}
               </div>
 
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-                <button onClick={() => abrirModalEditar(empresa)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
+              <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" onClick={() => abrirModalEditar(empresa)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border dark:border-blue-800/60 dark:hover:bg-blue-950/70">
                   <FiEdit2 className="w-4 h-4" />
                   {t('admin.edit')}
                 </button>
-                <button onClick={() => handleToggleStatus(empresa)} className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${empresa.is_active ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}`} title={empresa.is_active ? 'Desativar' : 'Ativar'}>
+                <button type="button" onClick={() => handleToggleStatus(empresa)} className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium min-w-[2.75rem] ${empresa.is_active ? 'bg-yellow-50 text-yellow-800 hover:bg-yellow-100 dark:bg-amber-950/45 dark:text-amber-200 dark:border dark:border-amber-900/50 dark:hover:bg-amber-950/65' : 'bg-green-50 text-green-800 hover:bg-green-100 dark:bg-green-950/45 dark:text-green-300 dark:border dark:border-green-900/50 dark:hover:bg-green-950/65'}`} title={empresa.is_active ? 'Desativar' : 'Ativar'}>
                   {empresa.is_active ? <FiX className="w-4 h-4" /> : <FiCheck className="w-4 h-4" />}
                 </button>
-                <button onClick={() => handleExcluir(empresa)} className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium" title="Excluir">
+                <button type="button" onClick={() => handleExcluir(empresa)} className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium min-w-[2.75rem] bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/45 dark:text-red-300 dark:border dark:border-red-900/50 dark:hover:bg-red-950/65" title="Excluir">
                   <FiTrash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -278,42 +278,42 @@ function GerenciamentoEmpresas() {
       <Modal isOpen={showFormModal} onClose={() => setShowFormModal(false)} title={editando ? t('companies.editCompany') : t('companies.registerCompany')} type="info" showCancel={false}>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium yt-label mb-2">
               {t('companies.companyName')} *
             </label>
-            <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={t('companies.companyNamePlaceholder')} />
+            <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className="w-full px-3 py-2 rounded-md border yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" placeholder={t('companies.companyNamePlaceholder')} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium yt-label mb-2">
               {t('companies.cnpj')}
             </label>
-            <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={t('companies.cnpjPlaceholder')} />
+            <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} className="w-full px-3 py-2 rounded-md border yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" placeholder={t('companies.cnpjPlaceholder')} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium yt-label mb-2">
               {t('companies.address')}
             </label>
-            <input type="text" name="endereco" value={formData.endereco} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={t('companies.addressPlaceholder')} />
+            <input type="text" name="endereco" value={formData.endereco} onChange={handleChange} className="w-full px-3 py-2 rounded-md border yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" placeholder={t('companies.addressPlaceholder')} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium yt-label mb-2">
               {t('companies.phone')}
             </label>
-            <input type="tel" name="telefone" value={formData.telefone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={t('companies.phonePlaceholder')} />
+            <input type="tel" name="telefone" value={formData.telefone} onChange={handleChange} className="w-full px-3 py-2 rounded-md border yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" placeholder={t('companies.phonePlaceholder')} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium yt-label mb-2">
               {t('companies.email')}
             </label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder={t('companies.emailPlaceholder')} />
+            <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-3 py-2 rounded-md border yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400" placeholder={t('companies.emailPlaceholder')} />
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+            <button type="button" onClick={() => setShowFormModal(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
               {t('companies.cancel')}
             </button>
             <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">

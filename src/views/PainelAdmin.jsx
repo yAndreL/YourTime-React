@@ -22,15 +22,6 @@ function PainelAdministrativo() {
   const [dataSelecionada, setDataSelecionada] = useState('');
   const [buscaTexto, setBuscaTexto] = useState('');
   const [abaAtiva, setAbaAtiva] = useState('funcionarios');
-  const [modalError, setModalError] = useState({
-    isOpen: false,
-    message: '',
-    code: ''
-  });
-  const [modalSuccess, setModalSuccess] = useState({
-    isOpen: false,
-    message: ''
-  });
   const [diasComPontosPendentes, setDiasComPontosPendentes] = useState([]);
   const [totalPontosPendentes, setTotalPontosPendentes] = useState(0);
   const [menuAberto, setMenuAberto] = useState(null);
@@ -277,16 +268,11 @@ function PainelAdministrativo() {
       } : funcionario));
       setModalConfirmarExclusao({
         isOpen: false,
-        funcionarioId: null,
-        funcionarioNome: ''
+        funcionario: null
       });
       showSuccess(t('admin.employeeRemoved'));
     } catch (error) {
-      setModalError({
-        isOpen: true,
-        message: error.message || 'Erro ao remover funcionário',
-        code: 'PA-004'
-      });
+      showError(error.message || 'Erro ao remover funcionário');
     }
   };
   const reativarFuncionario = async funcionarioId => {
@@ -530,12 +516,12 @@ function PainelAdministrativo() {
                               
                               {menuAberto === funcionario.id && <>
                                   <div className="fixed inset-0 z-10" onClick={() => setMenuAberto(null)} />
-                                  <div className="absolute left-8 top-0 z-20 mt-2 w-48 yt-modal-surface rounded-md shadow-lg">
-                                    <div className="py-1">
+                                  <div className="absolute left-8 top-0 z-20 mt-2 w-48 yt-modal-surface rounded-md shadow-lg whitespace-normal">
+                                    <div className="flex flex-col py-1">
                                       <button type="button" onClick={() => {
                             verPerfilFuncionario(funcionario.id);
                             setMenuAberto(null);
-                          }} className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2">
+                          }} className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 shrink-0">
                                         <FiUser className="w-4 h-4" /> {t('admin.viewProfile')}
                                       </button>
                                       <button type="button" onClick={() => {
@@ -544,7 +530,7 @@ function PainelAdministrativo() {
                               funcionario
                             });
                             setMenuAberto(null);
-                          }} className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2">
+                          }} className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2 shrink-0">
                                         <FiTrash2 className="w-4 h-4" /> {t('admin.removeEmployee')}
                                       </button>
                                     </div>
@@ -553,7 +539,7 @@ function PainelAdministrativo() {
                             </td>
                             <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900">{funcionario.nome || 'Nome não informado'}</div>
+                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900 dark:text-white">{funcionario.nome || 'Nome não informado'}</div>
                                 <div className="hidden sm:block text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500">{funcionario.email}</div>
                                 <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400">{funcionario.telefone}</div>
                               </div>
@@ -632,12 +618,12 @@ function PainelAdministrativo() {
 
                                 {menuAberto === funcionario.id && <>
                                     <div className="fixed inset-0 z-10" onClick={() => setMenuAberto(null)}></div>
-                                    <div className="absolute left-8 top-0 z-20 mt-2 w-48 yt-modal-surface rounded-md shadow-lg">
-                                      <div className="py-1">
+                                    <div className="absolute left-8 top-0 z-20 mt-2 w-48 yt-modal-surface rounded-md shadow-lg whitespace-normal">
+                                      <div className="flex flex-col py-1">
                                         <button type="button" onClick={() => {
                               reativarFuncionario(funcionario.id);
                               setMenuAberto(null);
-                            }} className="w-full px-4 py-2 text-left text-xs sm:text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40 flex items-center gap-2">
+                            }} className="w-full px-4 py-2 text-left text-xs sm:text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40 flex items-center gap-2 shrink-0">
                                         <FiRefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t('admin.reactivate')}
                                       </button>
                                       </div>
@@ -647,7 +633,7 @@ function PainelAdministrativo() {
                             </td>
                             <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
                               <div>
-                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900 dark:text-gray-100">{funcionario.nome || 'Nome não informado'}</div>
+                                <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium text-gray-900 dark:text-white">{funcionario.nome || 'Nome não informado'}</div>
                                 <div className="hidden sm:block text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-500 dark:text-gray-400">{funcionario.email}</div>
                                 <div className="text-[8px] sm:text-[9px] md:text-xs text-gray-400 dark:text-gray-500">{funcionario.telefone}</div>
                               </div>
@@ -675,23 +661,6 @@ function PainelAdministrativo() {
             </div> : <GerenciamentoEmpresas />}
         </div>
       </div>
-
-      {modalError.isOpen && <Modal isOpen={modalError.isOpen} onClose={() => setModalError({
-      isOpen: false,
-      message: '',
-      code: ''
-    })} title="Erro" type="error">
-          <div className="space-y-2">
-            <p className="text-gray-700 dark:text-gray-200 whitespace-pre-line">{modalError.message}</p>
-          </div>
-        </Modal>}
-
-      {modalSuccess.isOpen && <Modal isOpen={modalSuccess.isOpen} onClose={() => setModalSuccess({
-      isOpen: false,
-      message: ''
-    })} title="Sucesso" type="success">
-          <p className="text-gray-700 dark:text-gray-200">{modalSuccess.message}</p>
-        </Modal>}
 
       {modalConfirmarExclusao.isOpen && <Modal isOpen={modalConfirmarExclusao.isOpen} onClose={() => setModalConfirmarExclusao({
       isOpen: false,

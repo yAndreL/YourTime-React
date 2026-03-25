@@ -43,9 +43,21 @@ export const ToastProvider = ({
     showInfo
   }}>
       {children}
-      
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        {toasts.map(toast => <Toast key={toast.id} message={toast.message} type={toast.type} duration={toast.duration} onClose={() => removeToast(toast.id)} />)}
+
+      <div
+        className="pointer-events-none fixed bottom-4 right-4 z-[200] flex max-h-[calc(100dvh-2rem)] w-[min(100vw-1.5rem,24rem)] flex-col-reverse gap-2 overflow-y-auto overscroll-contain sm:bottom-6 sm:right-6"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
       </div>
     </ToastContext.Provider>;
 };

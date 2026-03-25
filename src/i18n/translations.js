@@ -289,7 +289,9 @@ export const translations = {
       createNewOrAdjustFilters: 'Crie um novo projeto ou ajuste os filtros',
       deleteConfirmTitle: 'Confirmar Exclusão',
       deleteConfirmMessage: 'Tem certeza que deseja excluir este projeto? Todos os agendamentos vinculados a ele também serão excluídos. Esta ação não pode ser desfeita.',
-      projectDeleted: 'Projeto e agendamentos vinculados excluídos com sucesso!'
+      projectDeleted: 'Projeto e agendamentos vinculados excluídos com sucesso!',
+      errorSaveProject: 'Não foi possível salvar o projeto. Tente novamente.',
+      errorDeleteProject: 'Não foi possível excluir o projeto. Tente novamente.'
     },
     login: {
       title: 'Bem-vindo de volta',
@@ -504,7 +506,18 @@ export const translations = {
       confirmPasswordPlaceholder: 'Confirme a senha',
       backToPanel: 'Voltar ao Painel',
       registerEmployee: 'Cadastrar Funcionário',
-      noCompaniesMessage: 'Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.'
+      noCompaniesMessage: 'Nenhuma empresa cadastrada. Cadastre empresas primeiro na aba "Empresas" do Painel Admin.',
+      companiesSelectedOne: '1 empresa selecionada',
+      companiesSelectedMany: '{{count}} empresas selecionadas',
+      errorOrphanedEmail:
+        'Este e-mail já existe no login, mas o cadastro não terminou. No Supabase (Authentication → Users) exclua o usuário ou use Esqueci minha senha e tente de novo.',
+      errorRlsPermission:
+        'Não foi possível salvar os dados do colaborador. Tente novamente em instantes. Se continuar, peça ajuda ao administrador do sistema.',
+      errorCompanyLink: 'Não foi possível vincular o colaborador às empresas. Tente novamente ou contate o suporte.',
+      errorEmailInUse: 'Este e-mail já está cadastrado no sistema.',
+      errorGeneric: 'Não foi possível concluir o cadastro. Tente novamente.',
+      confirmEmailNotice: 'Pode ser necessário confirmar o e-mail antes do primeiro login (configuração do Supabase → Authentication).',
+      registerSuccess: 'Usuário cadastrado com sucesso'
     },
     timeRecordForm: {
       title: 'Registro de Ponto',
@@ -949,7 +962,9 @@ export const translations = {
       createNewOrAdjustFilters: 'Create a new project or adjust the filters',
       deleteConfirmTitle: 'Confirm Deletion',
       deleteConfirmMessage: 'Are you sure you want to delete this project? All time entries linked to it will also be deleted. This action cannot be undone.',
-      projectDeleted: 'Project and linked time entries deleted successfully!'
+      projectDeleted: 'Project and linked time entries deleted successfully!',
+      errorSaveProject: 'Could not save the project. Please try again.',
+      errorDeleteProject: 'Could not delete the project. Please try again.'
     },
     login: {
       title: 'Welcome back',
@@ -1164,7 +1179,18 @@ export const translations = {
       confirmPasswordPlaceholder: 'Confirm the password',
       backToPanel: 'Back to Panel',
       registerEmployee: 'Register Employee',
-      noCompaniesMessage: 'No companies registered. Register companies first in the "Companies" tab of the Admin Panel.'
+      noCompaniesMessage: 'No companies registered. Register companies first in the "Companies" tab of the Admin Panel.',
+      companiesSelectedOne: '1 company selected',
+      companiesSelectedMany: '{{count}} companies selected',
+      errorOrphanedEmail:
+        'This email already exists in Auth, but signup did not finish. In Supabase (Authentication → Users) delete the user or use Forgot password, then try again.',
+      errorRlsPermission:
+        'Could not save the employee data. Please try again shortly. If it persists, contact your system administrator.',
+      errorCompanyLink: 'Could not link the employee to companies. Please try again or contact support.',
+      errorEmailInUse: 'This email is already registered.',
+      errorGeneric: 'Could not complete registration. Please try again.',
+      confirmEmailNotice: 'Email confirmation may be required before first login (Supabase → Authentication settings).',
+      registerSuccess: 'User registered successfully'
     },
     timeRecordForm: {
       title: 'Time entry',
@@ -1606,7 +1632,9 @@ export const translations = {
       createNewOrAdjustFilters: 'Cree un nuevo proyecto o ajuste los filtros',
       deleteConfirmTitle: 'Confirmar Eliminación',
       deleteConfirmMessage: '¿Está seguro de que desea eliminar este proyecto? Todos los registros vinculados a él también serán eliminados. Esta acción no se puede deshacer.',
-      projectDeleted: '¡Proyecto y registros vinculados eliminados con éxito!'
+      projectDeleted: '¡Proyecto y registros vinculados eliminados con éxito!',
+      errorSaveProject: 'No se pudo guardar el proyecto. Inténtelo de nuevo.',
+      errorDeleteProject: 'No se pudo eliminar el proyecto. Inténtelo de nuevo.'
     },
     login: {
       title: 'Bienvenido de nuevo',
@@ -1821,7 +1849,18 @@ export const translations = {
       confirmPasswordPlaceholder: 'Confirme la contraseña',
       backToPanel: 'Volver al Panel',
       registerEmployee: 'Registrar Empleado',
-      noCompaniesMessage: 'Ninguna empresa registrada. Registre empresas primero en la pestaña "Empresas" del Panel Admin.'
+      noCompaniesMessage: 'Ninguna empresa registrada. Registre empresas primero en la pestaña "Empresas" del Panel Admin.',
+      companiesSelectedOne: '1 empresa seleccionada',
+      companiesSelectedMany: '{{count}} empresas seleccionadas',
+      errorOrphanedEmail:
+        'Este correo ya existe en Auth, pero el registro no terminó. En Supabase (Authentication → Users) elimine el usuario o use Olvidé mi contraseña.',
+      errorRlsPermission:
+        'No se pudieron guardar los datos del colaborador. Inténtelo de nuevo. Si persiste, contacte al administrador.',
+      errorCompanyLink: 'No se pudo vincular al colaborador con las empresas. Inténtelo de nuevo o contacte soporte.',
+      errorEmailInUse: 'Este correo ya está registrado.',
+      errorGeneric: 'No se pudo completar el registro. Inténtelo de nuevo.',
+      confirmEmailNotice: 'Puede ser necesario confirmar el correo antes del primer acceso (Supabase → Authentication).',
+      registerSuccess: 'Usuario registrado con éxito'
     },
     timeRecordForm: {
       title: 'Registro de Hora',
@@ -2263,7 +2302,9 @@ export const translations = {
       createNewOrAdjustFilters: 'Créez un nouveau projet ou ajustez les filtres',
       deleteConfirmTitle: 'Confirmer la Suppression',
       deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer ce projet ? Tous les enregistrements liés seront également supprimés. Cette action ne peut pas être annulée.',
-      projectDeleted: 'Projet et enregistrements liés supprimés avec succès !'
+      projectDeleted: 'Projet et enregistrements liés supprimés avec succès !',
+      errorSaveProject: 'Impossible d’enregistrer le projet. Veuillez réessayer.',
+      errorDeleteProject: 'Impossible de supprimer le projet. Veuillez réessayer.'
     },
     login: {
       title: 'Bienvenue',
@@ -2478,7 +2519,18 @@ export const translations = {
       confirmPasswordPlaceholder: 'Confirmez le mot de passe',
       backToPanel: 'Retour au Panneau',
       registerEmployee: 'Enregistrer l\'Employé',
-      noCompaniesMessage: 'Aucune entreprise enregistrée. Enregistrez d\'abord des entreprises dans l\'onglet "Entreprises" du Panneau Admin.'
+      noCompaniesMessage: 'Aucune entreprise enregistrée. Enregistrez d\'abord des entreprises dans l\'onglet "Entreprises" du Panneau Admin.',
+      companiesSelectedOne: '1 entreprise sélectionnée',
+      companiesSelectedMany: '{{count}} entreprises sélectionnées',
+      errorOrphanedEmail:
+        'Cet e-mail existe déjà dans Auth, mais l\'inscription n\'est pas terminée. Dans Supabase (Authentication → Users), supprimez l\'utilisateur ou utilisez Mot de passe oublié.',
+      errorRlsPermission:
+        'Impossible d\'enregistrer les données du collaborateur. Réessayez dans un instant. Si le problème persiste, contactez l\'administrateur.',
+      errorCompanyLink: 'Impossible de lier le collaborateur aux entreprises. Réessayez ou contactez le support.',
+      errorEmailInUse: 'Cet e-mail est déjà enregistré.',
+      errorGeneric: 'Impossible de terminer l\'inscription. Réessayez.',
+      confirmEmailNotice: 'Une confirmation par e-mail peut être requise avant la première connexion (Supabase → Authentication).',
+      registerSuccess: 'Utilisateur enregistré avec succès'
     },
     timeRecordForm: {
       title: 'Enregistrement d\'Heure',

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiDownload, FiCheck, FiChevronDown, FiInfo } from 'react-icons/fi';
 import { supabase } from '../config/supabase';
-import Toast from './ui/Toast';
 import { useLanguage } from '../hooks/useLanguage';
+import { useToast } from '../hooks/useToast';
 function ExportCSVModal({
   isOpen,
   onClose,
@@ -12,6 +12,7 @@ function ExportCSVModal({
     t,
     currentLanguage
   } = useLanguage();
+  const { showSuccess } = useToast();
   const getWeekRange = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
@@ -43,8 +44,6 @@ function ExportCSVModal({
     message: '',
     code: ''
   });
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
   const [infoExpanded, setInfoExpanded] = useState(false);
   useEffect(() => {
     if (isOpen) {
@@ -282,11 +281,10 @@ function ExportCSVModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      setToastMessage(t('export.csvGenerated'));
-      setShowToast(true);
+      showSuccess(t('export.csvGenerated'));
       setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 400);
     } catch (error) {
       setModalError({
         isOpen: true,
@@ -437,7 +435,6 @@ function ExportCSVModal({
           </div>
         </div>}
 
-      {showToast && <Toast message={toastMessage} type="success" onClose={() => setShowToast(false)} />}
     </>;
 }
 export default ExportCSVModal;

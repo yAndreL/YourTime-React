@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase';
 import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle, FiInfo, FiChevronDown } from 'react-icons/fi';
 import ConfigService from '../services/ConfigService';
 import { useLanguage } from '../hooks/useLanguage';
+import { useToast } from '../hooks/useToast';
 import { getLocalDateString } from '../utils/dateUtils';
 function ExportPDFModal({
   isOpen,
@@ -13,6 +14,7 @@ function ExportPDFModal({
     t,
     currentLanguage
   } = useLanguage();
+  const { showSuccess } = useToast();
   const [funcionarios, setFuncionarios] = useState([]);
   const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
@@ -24,8 +26,6 @@ function ExportPDFModal({
     message: '',
     code: ''
   });
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [infoExpanded, setInfoExpanded] = useState(false);
   useEffect(() => {
@@ -370,12 +370,10 @@ function ExportPDFModal({
         const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`;
         doc.save(nomeArquivo);
       }
-      setToastMessage('Relatório em PDF gerado!');
-      setShowToast(true);
+      showSuccess('Relatório em PDF gerado!');
       setTimeout(() => {
-        setShowToast(false);
         onClose();
-      }, 2000);
+      }, 400);
     } catch (error) {
       let errorCode = 'EXP-004';
       let errorMessage = t('export.errorGenerating');
@@ -563,12 +561,6 @@ function ExportPDFModal({
           </div>
         </div>}
 
-      {showToast && <div className="fixed bottom-4 right-4 px-6 py-3 bg-green-500 text-white rounded-lg shadow-lg z-[70] animate-slide-up">
-          <div className="flex items-center gap-2">
-            <FiDownload className="w-5 h-5" />
-            <span className="font-medium">{toastMessage}</span>
-          </div>
-        </div>}
     </div>;
 }
 export default ExportPDFModal;

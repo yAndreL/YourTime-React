@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { supabase, createClient } from '../config/supabase.js';
+import { supabase } from '../config/supabase.js';
 import MainLayout from '../components/layout/MainLayout';
 import Modal from '../components/ui/Modal';
 import GerenciamentoProjetosSkeleton from '../components/ui/GerenciamentoProjetosSkeleton';
 import { useModal } from '../hooks/useModal';
+import { useToast } from '../hooks/useToast';
 import { useLanguage } from '../hooks/useLanguage';
 import CacheService from '../services/CacheService';
 import { formatDate as formatDateUtil } from '../utils/dateUtils';
@@ -13,13 +14,8 @@ function GerenciamentoProjetos() {
     t,
     currentLanguage
   } = useLanguage();
-  const {
-    modalState,
-    showSuccess,
-    showError,
-    showConfirm,
-    closeModal: closeNotificationModal
-  } = useModal();
+  const { showSuccess, showError } = useToast();
+  const { modalState, showConfirm, closeModal: closeNotificationModal } = useModal();
   const getCachedData = key => {
     try {
       const userId = sessionStorage.getItem('currentUserId');
@@ -434,46 +430,12 @@ function GerenciamentoProjetos() {
         superior_empresa_id: superiorEmpresaId
       };
       let result;
-      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SECRET_KEY || import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-      try {
-        if (serviceRoleKey) {
-          const adminSupabase = createClient(import.meta.env.VITE_SUPABASE_URL, serviceRoleKey);
-          if (editingProject) {
-            result = await adminSupabase.from('projetos').update(projectData).eq('id', editingProject.id).select();
-          } else {
-            result = await adminSupabase.from('projetos').insert([projectData]).select();
-          }
-        } else {
-          if (editingProject) {
-            result = await supabase.from('projetos').update(projectData).eq('id', editingProject.id).select();
-          } else {
-            result = await supabase.from('projetos').insert([projectData]).select();
-          }
-        }
-        if (result.error) {
-          throw result.error;
-        }
-      } catch (error) {
-        if (error.message.includes('row-level security policy')) {
-          try {
-            const fallbackSupabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY);
-            if (editingProject) {
-              result = await fallbackSupabase.from('projetos').update(projectData).eq('id', editingProject.id).select();
-            } else {
-              result = await fallbackSupabase.from('projetos').insert([projectData]).select();
-            }
-            if (result.error) throw result.error;
-          } catch (fallbackError) {
-            throw new Error(`Erro de segurança RLS: ${error.message}\n\n` + `Tentativa alternativa também falhou: ${fallbackError.message}\n\n` + `Verifique se:\n` + `1. A política RLS permite operações para usuários autenticados\n` + `2. Não há políticas conflitantes\n` + `3. Configure VITE_SUPABASE_SECRET_KEY (nova) ou VITE_SUPABASE_SERVICE_ROLE_KEY (legado) no .env`);
-          }
-        } else {
-          throw error;
-        }
+      if (editingProject) {
+        result = await supabase.from('projetos').update(projectData).eq('id', editingProject.id).select();
+      } else {
+        result = await supabase.from('projetos').insert([projectData]).select();
       }
       if (result.error) {
-        if (result.error.message.includes('row-level security policy')) {
-          throw new Error('Erro de segurança: A tabela "projetos" tem políticas de segurança que impedem a inserção.\n\n' + 'Verificações necessárias:\n' + '1. ✅ Política INSERT criada?\n' + '2. ✅ Política aplicada a "public" ou "authenticated"?\n' + '3. ✅ Não há políticas conflitantes?\n' + '4. ✅ Service Role Key configurada?\n\n' + 'Solução alternativa: Configure VITE_SUPABASE_SECRET_KEY (ou service_role legado) no .env');
-        }
         throw result.error;
       }
       const {
@@ -487,12 +449,8 @@ function GerenciamentoProjetos() {
       await carregarProjetos(user?.id, false);
       showSuccess('Projeto salvo com sucesso!');
       closeModal();
-    } catch (error) {
-      let mensagemErro = error.message;
-      if (error.message.includes('row-level security policy')) {
-        mensagemErro = 'Erro de segurança: Políticas RLS impedem operações na tabela "projetos".\n\n' + '✅ SOLUÇÕES TESTADAS E FUNCIONANDO:\n' + '1. 🔑 Service Role Key configurada automaticamente\n' + '2. 🔄 Sistema tenta múltiplas abordagens automaticamente\n' + '3. ⚠️ Se ainda falhar, configure manualmente no .env:\n' + '   VITE_SUPABASE_SECRET_KEY=sua_secret_key\n' + '   (ou legado: VITE_SUPABASE_SERVICE_ROLE_KEY)\n\n' + '📋 Política RLS sugerida para desenvolvimento:\n' + 'CREATE POLICY "Allow all operations" ON projetos FOR ALL USING (true);';
-      }
-      showError(mensagemErro, 'Erro ao salvar projeto');
+    } catch {
+      showError(t('projects.errorSaveProject'));
     } finally {
       setLoading(false);
     }
@@ -505,13 +463,13 @@ function GerenciamentoProjetos() {
           error: agendamentoError
         } = await supabase.from('agendamento').delete().eq('projeto_id', projetoId);
         if (agendamentoError) {
-          throw new Error('Erro ao excluir agendamentos do projeto: ' + agendamentoError.message);
+          throw agendamentoError;
         }
         const {
           error: projetoError
         } = await supabase.from('projetos').delete().eq('id', projetoId);
         if (projetoError) {
-          throw new Error('Erro ao excluir projeto: ' + projetoError.message);
+          throw projetoError;
         }
         const {
           data: {
@@ -523,8 +481,8 @@ function GerenciamentoProjetos() {
         }
         await carregarProjetos(user?.id, false);
         showSuccess(t('projects.projectDeleted'));
-      } catch (error) {
-        showError(error.message || 'Erro ao excluir projeto');
+      } catch {
+        showError(t('projects.errorDeleteProject'));
       } finally {
         setLoading(false);
       }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiDownload, FiFileText, FiFile, FiCheckCircle, FiAlertTriangle, FiXCircle } from 'react-icons/fi';
+import { FiX, FiDownload, FiFileText, FiFile } from 'react-icons/fi';
 import { supabase } from '../config/supabase';
 import { useLanguage } from '../hooks/useLanguage';
+import { useToast } from '../hooks/useToast';
 const gerarGraficoQuickChart = async config => {
   const url = 'https://quickchart.io/chart';
   const params = new URLSearchParams({
@@ -30,6 +31,7 @@ function ExportDataModal({
     t,
     currentLanguage
   } = useLanguage();
+  const { showSuccess, showError, showWarning } = useToast();
   const getWeekRange = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
@@ -56,9 +58,6 @@ function ExportDataModal({
   const [dataFim, setDataFim] = useState(weekRange.fim);
   const [loading, setLoading] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('success');
   const [searchTerm, setSearchTerm] = useState('');
   useEffect(() => {
     if (isOpen) {
@@ -70,12 +69,6 @@ function ExportDataModal({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
-  const mostrarToast = (mensagem, tipo = 'success') => {
-    setToastMessage(mensagem);
-    setToastType(tipo);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-  };
   useEffect(() => {
     const carregarFuncionarios = async () => {
       try {
@@ -106,7 +99,7 @@ function ExportDataModal({
           setFuncionariosSelecionados([funcionariosData[0].id]);
         }
       } catch (error) {
-        mostrarToast(`${t('export.errorLoadingEmployees')}: ${error.message}`, 'error');
+        showError(`${t('export.errorLoadingEmployees')}: ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -150,11 +143,11 @@ function ExportDataModal({
   };
   const gerarCSVSimples = async () => {
     if (funcionariosSelecionados.length === 0) {
-      mostrarToast(t('export.selectAtLeastOne'), 'warning');
+      showWarning(t('export.selectAtLeastOne'));
       return;
     }
     if (!dataInicio || !dataFim) {
-      mostrarToast(t('export.selectPeriod'), 'warning');
+      showWarning(t('export.selectPeriod'));
       return;
     }
     try {
@@ -215,20 +208,20 @@ function ExportDataModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      mostrarToast(t('export.csvGenerated'), 'success');
+      showSuccess(t('export.csvGenerated'));
     } catch (error) {
-      mostrarToast(`${t('export.errorGeneratingCSV')}: ${error.message}`, 'error');
+      showError(`${t('export.errorGeneratingCSV')}: ${error.message}`);
     } finally {
       setGerando(false);
     }
   };
   const gerarXLSX = async () => {
     if (funcionariosSelecionados.length === 0) {
-      mostrarToast(t('export.selectAtLeastOne'), 'warning');
+      showWarning(t('export.selectAtLeastOne'));
       return;
     }
     if (!dataInicio || !dataFim) {
-      mostrarToast(t('export.selectPeriod'), 'warning');
+      showWarning(t('export.selectPeriod'));
       return;
     }
     try {
@@ -999,9 +992,9 @@ function ExportDataModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      mostrarToast(t('export.excelGenerated'), 'success');
+      showSuccess(t('export.excelGenerated'));
     } catch (error) {
-      mostrarToast(`${t('export.errorGeneratingExcel')}: ${error.message}`, 'error');
+      showError(`${t('export.errorGeneratingExcel')}: ${error.message}`);
     } finally {
       setGerando(false);
     }
@@ -1108,14 +1101,6 @@ function ExportDataModal({
         </div>
       </div>
 
-      {showToast && <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-[10001] animate-slide-up ${toastType === 'success' ? 'bg-green-500 text-white' : toastType === 'error' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white'}`}>
-          <div className="flex items-center gap-2">
-            {toastType === 'success' && <FiCheckCircle className="w-5 h-5" />}
-            {toastType === 'error' && <FiXCircle className="w-5 h-5" />}
-            {toastType === 'warning' && <FiAlertTriangle className="w-5 h-5" />}
-            <span className="font-medium">{toastMessage}</span>
-          </div>
-        </div>}
     </>;
 }
 export default ExportDataModal;
