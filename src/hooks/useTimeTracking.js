@@ -1,0 +1,232 @@
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../config/supabase.js';
+import { useLanguage } from './useLanguage.jsx';
+import { getLocalDateString } from '../utils/dateUtils';
+export function useTimeTracking() {
+  const {
+    t
+  } = useLanguage();
+  const [userData, setUserData] = useState(null);
+  const [timeRecords, setTimeRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const cachedTimeRecords = sessionStorage.getItem('cachedTimeRecords');
+    if (cachedTimeRecords) {
+      try {
+        const parsed = JSON.parse(cachedTimeRecords);
+        setTimeRecords(parsed);
+        setLoading(false);
+      } catch (e) {}
+    }
+  }, []);
+  const fetchUserData = async () => {
+    try {
+      const hasCache = sessionStorage.getItem('cachedTimeRecords');
+      if (!hasCache) {
+        setLoading(true);
+      }
+      setError(null);
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+      const {
+        data: profile,
+        error: userError
+      } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (userError) {
+        throw userError;
+      }
+      if (profile) {
+        setUserData(profile);
+      } else {
+        setUserData(null);
+      }
+    } catch (err) {
+      setError(`Erro ao buscar dados do usuário: ${err.message}`);
+      setUserData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const formatDateForDB = date => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const fetchTimeRecords = async () => {
+    try {
+      if (!userData?.id) {
+        return;
+      }
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 90);
+      startDate.setHours(0, 0, 0, 0);
+      const {
+        data: records,
+        error: recordsError
+      } = await supabase.from('agendamento').select('*').eq('user_id', userData.id).gte('data', formatDateForDB(startDate)).order('data', {
+        ascending: true
+      });
+      if (recordsError) {
+        throw recordsError;
+      }
+      setTimeRecords(records || []);
+      sessionStorage.setItem('cachedTimeRecords', JSON.stringify(records || []));
+      setError(null);
+    } catch (err) {
+      setError(`Erro ao buscar registros: ${err.message}`);
+      setTimeRecords([]);
+    }
+  };
+  const calculateTimeBalance = () => {
+    if (!timeRecords.length) return '+00:00';
+    let totalMinutes = 0;
+    timeRecords.forEach(record => {
+      const workedMinutes = calculateDailyWorkedMinutes(record);
+      totalMinutes += workedMinutes;
+    });
+    const hours = Math.floor(Math.abs(totalMinutes) / 60);
+    const minutes = Math.abs(totalMinutes) % 60;
+    const sign = totalMinutes >= 0 ? '+' : '-';
+    return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+  const calculateDailyWorkedMinutes = record => {
+    let totalMinutes = 0;
+    if (record.entrada1 && record.saida1) {
+      const entrada1 = new Date(`2000-01-01T${record.entrada1}`);
+      const saida1 = new Date(`2000-01-01T${record.saida1}`);
+      totalMinutes += (saida1 - entrada1) / (1000 * 60);
+    }
+    if (record.entrada2 && record.saida2) {
+      const entrada2 = new Date(`2000-01-01T${record.entrada2}`);
+      const saida2 = new Date(`2000-01-01T${record.saida2}`);
+      totalMinutes += (saida2 - entrada2) / (1000 * 60);
+    }
+    return totalMinutes;
+  };
+  const calculateTodayApprovedHours = () => {
+    const today = getLocalDateString();
+    const todayRecords = timeRecords.filter(record => record.data === today && record.status === 'A');
+    if (!todayRecords.length) return '00:00';
+    const totalMinutes = todayRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+  const calculateTodayPendingHours = () => {
+    const pendingRecords = timeRecords.filter(record => record.status === 'P');
+    if (!pendingRecords.length) return '00:00';
+    const totalMinutes = pendingRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+  const getDashboardData = () => {
+    return {
+      saldoHoras: calculateTimeBalance(),
+      horasHoje: calculateTodayApprovedHours(),
+      horasPendentes: calculateTodayPendingHours(),
+      status: t('dashboard.working'),
+      isWorking: true,
+      timeRecords: timeRecords
+    };
+  };
+  const getWeeklyChartData = () => {
+    const weekDays = [t('dashboard.monday'), t('dashboard.tuesday'), t('dashboard.wednesday'), t('dashboard.thursday'), t('dashboard.friday'), t('dashboard.saturday'), t('dashboard.sunday')];
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    startOfWeek.setDate(today.getDate() + diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    const weekRecords = timeRecords.filter(r => {
+      const recordDate = new Date(r.data + 'T00:00:00');
+      const isInWeek = recordDate >= startOfWeek && recordDate <= endOfWeek;
+      const isApprovedOrPending = r.status === 'A' || r.status === 'P';
+      return isInWeek && isApprovedOrPending;
+    });
+    const todayYear = today.getFullYear();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
+    return weekDays.map((day, index) => {
+      const targetDate = new Date(startOfWeek);
+      targetDate.setDate(startOfWeek.getDate() + index);
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(targetDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${dayNum}`;
+      const record = weekRecords.find(r => r.data === dateStr);
+      const minutes = record ? calculateDailyWorkedMinutes(record) : 0;
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const isToday = dateStr === todayStr;
+      return {
+        dia: day,
+        horas: minutes > 0 ? `${hours}:${mins.toString().padStart(2, '0')}` : '0:00',
+        entrada: record?.entrada1 || '--:--',
+        saida: record?.saida2 || record?.saida1 || '--:--',
+        isToday: isToday,
+        status: record?.status || null
+      };
+    });
+  };
+  const registerTimeRecord = async timeData => {
+    try {
+      if (!userData?.id) {
+        throw new Error('Usuário não identificado');
+      }
+      const {
+        data,
+        error
+      } = await supabase.from('agendamento').insert([{
+        user_id: userData.id,
+        ...timeData
+      }]).select();
+      if (error) throw error;
+      await fetchTimeRecords();
+      return {
+        success: true,
+        data
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  };
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+  useEffect(() => {
+    if (userData?.id) {
+      fetchTimeRecords();
+    }
+  }, [userData]);
+  const dashboardData = useMemo(() => getDashboardData(), [timeRecords, t]);
+  const weeklyData = useMemo(() => getWeeklyChartData(), [timeRecords, t]);
+  return {
+    userData,
+    timeRecords,
+    loading,
+    error,
+    dashboardData,
+    weeklyData,
+    registerTimeRecord,
+    refetch: fetchTimeRecords
+  };
+}
+export default useTimeTracking;
