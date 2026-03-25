@@ -669,8 +669,8 @@ export const translations = {
       observations: 'Observações',
       rawData: 'Dados brutos',
       notes: 'Anotações',
-      csvButtonLabel: 'CSV (Dados Brutos)',
-      excelButtonLabel: 'XLSX (Relatório Visual)'
+      csvButtonLabel: 'CSV',
+      excelButtonLabel: 'XLSX'
     }
   },
   'en-US': {
@@ -1342,8 +1342,8 @@ export const translations = {
       observations: 'Observations',
       rawData: 'Raw data',
       notes: 'Notes',
-      csvButtonLabel: 'CSV (Raw Data)',
-      excelButtonLabel: 'XLSX (Visual Report)'
+      csvButtonLabel: 'CSV',
+      excelButtonLabel: 'XLSX'
     }
   },
   'es-ES': {
@@ -2012,8 +2012,8 @@ export const translations = {
       observations: 'Observaciones',
       rawData: 'Datos brutos',
       notes: 'Notas',
-      csvButtonLabel: 'CSV (Datos Brutos)',
-      excelButtonLabel: 'XLSX (Informe Visual)'
+      csvButtonLabel: 'CSV',
+      excelButtonLabel: 'XLSX'
     }
   },
   'fr-FR': {
@@ -2682,8 +2682,8 @@ export const translations = {
       observations: 'Observations',
       rawData: 'Données brutes',
       notes: 'Notes',
-      csvButtonLabel: 'CSV (Données Brutes)',
-      excelButtonLabel: 'XLSX (Rapport Visuel)'
+      csvButtonLabel: 'CSV',
+      excelButtonLabel: 'XLSX'
     }
   }
 };
