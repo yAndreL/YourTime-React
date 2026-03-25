@@ -33,8 +33,8 @@ function AcessoNegado() {
           </div>
 
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Acesso Negado
-          </h1>
+            Acesso Negado!
+          </h1> 
 
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
             Você não tem permissão para acessar esta área.
