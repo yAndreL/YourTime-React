@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import { useLanguage } from '../../hooks/useLanguage.jsx';
-import { FiHome, FiFileText, FiCalendar, FiTarget, FiSettings, FiUserCheck, FiUser, FiX, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiFileText, FiCalendar, FiTarget, FiSettings, FiUserCheck, FiUser, FiX, FiLogOut, FiClock, FiAlertTriangle, FiClipboard, FiUserMinus } from 'react-icons/fi';
 function Sidebar({
   sidebarOpen,
   setSidebarOpen
@@ -65,8 +65,8 @@ function Sidebar({
     icon: FiHome,
     label: t('menu.dashboard')
   }, {
-    path: '/formulario-ponto',
-    icon: FiFileText,
+    path: '/batida-ponto',
+    icon: FiClock,
     label: t('menu.timeRecord')
   }, {
     path: '/painel-admin',
@@ -74,9 +74,22 @@ function Sidebar({
     label: t('menu.adminPanel'),
     adminOnly: true
   }, {
+    path: '/irregularidades',
+    icon: FiAlertTriangle,
+    label: t('menu.irregularidades'),
+    adminOnly: true
+  }, {
     path: '/historico',
     icon: FiCalendar,
     label: t('menu.history')
+  }, {
+    path: '/espelho-ponto',
+    icon: FiClipboard,
+    label: t('menu.espelhoPonto')
+  }, {
+    path: '/ausencias',
+    icon: FiUserMinus,
+    label: t('menu.ausencias')
   }, {
     path: '/projeto',
     icon: FiTarget,

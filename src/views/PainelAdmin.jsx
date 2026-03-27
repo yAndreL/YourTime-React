@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { useLanguage } from '../hooks/useLanguage';
 import { supabase } from '../config/supabase.js';
 import NotificationService from '../services/NotificationService';
+import AuditoriaService from '../services/AuditoriaService';
 import { getLocalDateString, formatDate } from '../utils/dateUtils';
 import { FiUsers, FiCheckCircle, FiClock, FiLock, FiEye, FiX, FiRefreshCw, FiCheck, FiXCircle, FiPlus, FiBriefcase, FiMoreVertical, FiTrash2, FiUser } from 'react-icons/fi';
 function PainelAdministrativo() {
@@ -300,14 +301,30 @@ function PainelAdministrativo() {
       const {
         data: agendamento,
         error: fetchError
-      } = await supabase.from('agendamento').select('data').eq('id', agendamentoId).single();
+      } = await supabase.from('agendamento').select('*').eq('id', agendamentoId).single();
       if (fetchError) throw fetchError;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const adminId = session?.user?.id;
+
       const {
         error
       } = await supabase.from('agendamento').update({
-        status: 'A'
+        status: 'A',
+        aprovado_por: adminId,
+        aprovado_em: new Date().toISOString()
       }).eq('id', agendamentoId);
       if (error) throw error;
+
+      await AuditoriaService.registrar({
+        userId: adminId,
+        acao: 'aprovar_ponto',
+        tabela: 'agendamento',
+        registroId: agendamentoId,
+        dadosAnteriores: { status: agendamento.status },
+        dadosNovos: { status: 'A', aprovado_por: adminId }
+      });
+
       await NotificationService.notificarPontoAprovado(funcionarioId, agendamentoId, agendamento.data);
       await carregarFuncionarios();
       await carregarDiasComPontosPendentes();
@@ -321,14 +338,31 @@ function PainelAdministrativo() {
       const {
         data: agendamento,
         error: fetchError
-      } = await supabase.from('agendamento').select('data').eq('id', agendamentoId).single();
+      } = await supabase.from('agendamento').select('*').eq('id', agendamentoId).single();
       if (fetchError) throw fetchError;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const adminId = session?.user?.id;
+
       const {
         error
       } = await supabase.from('agendamento').update({
-        status: 'R'
+        status: 'R',
+        aprovado_por: adminId,
+        aprovado_em: new Date().toISOString(),
+        motivo_rejeicao: 'Ponto rejeitado pelo administrador'
       }).eq('id', agendamentoId);
       if (error) throw error;
+
+      await AuditoriaService.registrar({
+        userId: adminId,
+        acao: 'rejeitar_ponto',
+        tabela: 'agendamento',
+        registroId: agendamentoId,
+        dadosAnteriores: { status: agendamento.status },
+        dadosNovos: { status: 'R', motivo_rejeicao: 'Ponto rejeitado pelo administrador' }
+      });
+
       await NotificationService.notificarPontoRejeitado(funcionarioId, agendamentoId, agendamento.data, 'Ponto rejeitado pelo administrador');
       await carregarFuncionarios();
       await carregarDiasComPontosPendentes();

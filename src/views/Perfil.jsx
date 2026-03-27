@@ -84,7 +84,9 @@ function Perfil() {
         cargo: initialUserData.cargo || '',
         departamento: initialUserData.departamento || '',
         data_admissao: initialUserData.data_admissao || '',
-        carga_horaria: initialUserData.carga_horaria || 40
+        carga_horaria: initialUserData.carga_horaria || 40,
+        hora_entrada: (initialUserData.hora_entrada || '09:00:00').substring(0, 5),
+        hora_saida: (initialUserData.hora_saida || '18:00:00').substring(0, 5)
       };
     }
     return {
@@ -92,7 +94,9 @@ function Perfil() {
       cargo: '',
       departamento: '',
       data_admissao: '',
-      carga_horaria: 40
+      carga_horaria: 40,
+      hora_entrada: '09:00',
+      hora_saida: '18:00'
     };
   };
   const [formData, setFormData] = useState(initializeFormData());
@@ -184,6 +188,8 @@ function Perfil() {
       departamento: profile?.departamento || '',
       data_admissao: profile?.data_admissao || getLocalDateString(),
       carga_horaria: profile?.carga_horaria || 40,
+      hora_entrada: profile?.hora_entrada || '09:00:00',
+      hora_saida: profile?.hora_saida || '18:00:00',
       user_id: targetUserId,
       role: profile?.role || 'user',
       superior_empresa_id: superiorEmpresaResolved,
@@ -204,7 +210,9 @@ function Perfil() {
       cargo: userDataBuilt.cargo,
       departamento: userDataBuilt.departamento,
       data_admissao: userDataBuilt.data_admissao,
-      carga_horaria: userDataBuilt.carga_horaria
+      carga_horaria: userDataBuilt.carga_horaria,
+      hora_entrada: (userDataBuilt.hora_entrada || '09:00:00').substring(0, 5),
+      hora_saida: (userDataBuilt.hora_saida || '18:00:00').substring(0, 5)
     });
   };
   const resolveSuperiorEmpresaId = async (profile, targetUserId) => {
@@ -242,7 +250,9 @@ function Perfil() {
           cargo: cachedProfile.cargo,
           departamento: cachedProfile.departamento,
           data_admissao: cachedProfile.data_admissao,
-          carga_horaria: cachedProfile.carga_horaria
+          carga_horaria: cachedProfile.carga_horaria,
+          hora_entrada: (cachedProfile.hora_entrada || '09:00:00').substring(0, 5),
+          hora_saida: (cachedProfile.hora_saida || '18:00:00').substring(0, 5)
         });
         if (cachedStats) {
           setStatistics(cachedStats);
@@ -300,7 +310,9 @@ function Perfil() {
       cargo: userData.cargo,
       departamento: userData.departamento,
       data_admissao: userData.data_admissao,
-      carga_horaria: userData.carga_horaria
+      carga_horaria: userData.carga_horaria,
+      hora_entrada: (userData.hora_entrada || '09:00:00').substring(0, 5),
+      hora_saida: (userData.hora_saida || '18:00:00').substring(0, 5)
     });
     setNewPassword('');
     setConfirmPassword('');
@@ -341,23 +353,22 @@ function Perfil() {
         data: existingProfile
       } = await supabase.from('profiles').select('id').eq('id', user.id).single();
       let result;
+      const dadosPerfil = {
+        nome: formData.nome,
+        cargo: formData.cargo,
+        departamento: formData.departamento,
+        data_admissao: formData.data_admissao,
+        carga_horaria: formData.carga_horaria,
+        hora_entrada: `${formData.hora_entrada}:00`,
+        hora_saida: `${formData.hora_saida}:00`
+      };
       if (existingProfile) {
-        result = await supabase.from('profiles').update({
-          nome: formData.nome,
-          cargo: formData.cargo,
-          departamento: formData.departamento,
-          data_admissao: formData.data_admissao,
-          carga_horaria: formData.carga_horaria
-        }).eq('id', user.id);
+        result = await supabase.from('profiles').update(dadosPerfil).eq('id', user.id);
       } else {
         result = await supabase.from('profiles').insert({
           id: user.id,
-          nome: formData.nome,
           email: user.email,
-          cargo: formData.cargo,
-          departamento: formData.departamento,
-          data_admissao: formData.data_admissao,
-          carga_horaria: formData.carga_horaria
+          ...dadosPerfil
         });
       }
       if (result.error) {
@@ -620,6 +631,23 @@ function Perfil() {
                     {isEditing && isAdmin ? <input type="number" name="carga_horaria" value={formData.carga_horaria} onChange={handleInputChange} min="1" max="60" className="w-full px-3 py-2 text-sm border rounded-md yt-field focus:ring-2 focus:ring-blue-500 focus:border-transparent" /> : <p className="text-sm text-gray-900 dark:text-gray-100 yt-inset px-3 py-2 rounded-md border border-gray-200/80 dark:border-gray-700/80">
                         {userData?.carga_horaria || 40}{t('profile.perWeek')}
                       </p>}
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      <FiClock className="w-3.5 h-3.5" /> {t('profile.workShift')}
+                    </label>
+                    {isEditing && isAdmin ? (
+                      <div className="flex items-center gap-2">
+                        <input type="time" name="hora_entrada" value={formData.hora_entrada} onChange={handleInputChange} className="flex-1 px-3 py-2 text-sm border rounded-md yt-field focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{t('profile.shiftSeparator')}</span>
+                        <input type="time" name="hora_saida" value={formData.hora_saida} onChange={handleInputChange} className="flex-1 px-3 py-2 text-sm border rounded-md yt-field focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-900 dark:text-gray-100 yt-inset px-3 py-2 rounded-md border border-gray-200/80 dark:border-gray-700/80">
+                        {(userData?.hora_entrada || '09:00:00').substring(0, 5)} - {(userData?.hora_saida || '18:00:00').substring(0, 5)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

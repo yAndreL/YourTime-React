@@ -1,4 +1,5 @@
 import { StrictMode, lazy, Suspense } from 'react';
+import OfflineService from './services/OfflineService';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './index.css';
@@ -17,18 +18,23 @@ const VerificarCodigo = lazy(() => import('./views/VerificarCodigo.jsx'));
 const ResetarSenha = lazy(() => import('./views/ResetarSenha.jsx'));
 const PainelAdmin = lazy(() => import('./views/PainelAdmin.jsx'));
 const FormularioPonto = lazy(() => import('./components/forms/FormularioPonto.jsx'));
+const BatidaPonto = lazy(() => import('./views/BatidaPonto.jsx'));
 const HistoricoApontamento = lazy(() => import('./views/HistoricoApontamento.jsx'));
 const GerenciamentoProjetos = lazy(() => import('./views/GerenciamentoProjetos.jsx'));
 const Perfil = lazy(() => import('./views/Perfil.jsx'));
 const Configuracoes = lazy(() => import('./views/Configuracoes.jsx'));
 const AcessoNegado = lazy(() => import('./views/AcessoNegado.jsx'));
 const Notificacoes = lazy(() => import('./views/Notificacoes.jsx'));
+const DashboardIrregularidades = lazy(() => import('./views/DashboardIrregularidades.jsx'));
+const EspelhoPonto = lazy(() => import('./views/EspelhoPonto.jsx'));
+const GestaoAusencias = lazy(() => import('./views/GestaoAusencias.jsx'));
 
 if (typeof window !== 'undefined') {
   const path = window.location.pathname;
   if (path === '/' || path === '/home') {
     void import('./App_clean_new.jsx');
   }
+  OfflineService.registrarServiceWorker();
 }
 
 const LoadingFallback = () => {
@@ -58,6 +64,7 @@ createRoot(document.getElementById('root')).render(<StrictMode>
 
           <Route path="/" element={<ProtectedRoute><App_clean /></ProtectedRoute>} />
           <Route path="/home" element={<ProtectedRoute><App_clean /></ProtectedRoute>} />
+          <Route path="/batida-ponto" element={<ProtectedRoute><BatidaPonto /></ProtectedRoute>} />
           <Route path="/formulario-ponto" element={<ProtectedRoute><FormularioPonto /></ProtectedRoute>} />
           <Route path="/historico" element={<ProtectedRoute><HistoricoApontamento /></ProtectedRoute>} />
           <Route path="/projeto" element={<ProtectedRoute><GerenciamentoProjetos /></ProtectedRoute>} />
@@ -68,6 +75,9 @@ createRoot(document.getElementById('root')).render(<StrictMode>
 
           <Route path="/cadastro" element={<ProtectedRoute requireAdmin={true}><CadastroUser /></ProtectedRoute>} />
           <Route path="/painel-admin" element={<ProtectedRoute requireAdmin={true}><PainelAdmin /></ProtectedRoute>} />
+          <Route path="/irregularidades" element={<ProtectedRoute requireAdmin={true}><DashboardIrregularidades /></ProtectedRoute>} />
+          <Route path="/espelho-ponto" element={<ProtectedRoute><EspelhoPonto /></ProtectedRoute>} />
+          <Route path="/ausencias" element={<ProtectedRoute><GestaoAusencias /></ProtectedRoute>} />
 
           <Route path="/acesso-negado" element={<AcessoNegado />} />
         </Routes>

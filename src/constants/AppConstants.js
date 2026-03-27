@@ -22,13 +22,13 @@ export const ROUTES = {
 };
 export const USER_ROLES = {
   ADMIN: 'admin',
-  USER: 'user',
+  USER: 'usuario',
   MANAGER: 'manager'
 };
 export const AGENDAMENTO_STATUS = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected'
+  PENDING: 'P',
+  APPROVED: 'A',
+  REJECTED: 'R'
 };
 export const TIME_FORMATS = {
   TIME: 'HH:MM',

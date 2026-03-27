@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from '../ui/NotificationBell';
+import StatusWidget from '../ui/StatusWidget';
 import { supabase } from '../../config/supabase';
 import { useSecureCache } from '../../hooks/useSecureCache';
 import { useLanguage } from '../../hooks/useLanguage.jsx';
@@ -112,6 +113,7 @@ function MainLayout({ children, title, subtitle }) {
               </div>
 
               <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
+                <StatusWidget />
                 <div ref={quickActionsRef} className="relative flex-shrink-0">
                   <button
                     type="button"

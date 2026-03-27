@@ -88,9 +88,10 @@ export function useTimeTracking() {
     }
   };
   const calculateTimeBalance = () => {
-    if (!timeRecords.length) return '+00:00';
+    const registrosValidos = timeRecords.filter(record => record.status !== 'R');
+    if (!registrosValidos.length) return '+00:00';
     let totalMinutes = 0;
-    timeRecords.forEach(record => {
+    registrosValidos.forEach(record => {
       const workedMinutes = calculateDailyWorkedMinutes(record);
       totalMinutes += workedMinutes;
     });
@@ -123,20 +124,40 @@ export function useTimeTracking() {
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
   const calculateTodayPendingHours = () => {
-    const pendingRecords = timeRecords.filter(record => record.status === 'P');
+    const today = getLocalDateString();
+    const pendingRecords = timeRecords.filter(record => record.data === today && record.status === 'P');
     if (!pendingRecords.length) return '00:00';
     const totalMinutes = pendingRecords.reduce((sum, record) => sum + calculateDailyWorkedMinutes(record), 0);
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
+  const verificarSeEstaTrabalhandoAgora = () => {
+    const today = getLocalDateString();
+    const registroHoje = timeRecords.find(r => r.data === today && r.status !== 'R');
+    if (!registroHoje) return { isWorking: false, status: t('dashboard.noRecord') };
+    if (registroHoje.entrada1 && !registroHoje.saida1) {
+      return { isWorking: true, status: t('dashboard.working') };
+    }
+    if (registroHoje.saida1 && !registroHoje.entrada2) {
+      return { isWorking: false, status: t('dashboard.onBreak') };
+    }
+    if (registroHoje.entrada2 && !registroHoje.saida2) {
+      return { isWorking: true, status: t('dashboard.working') };
+    }
+    if (registroHoje.saida2) {
+      return { isWorking: false, status: t('dashboard.dayCompleted') };
+    }
+    return { isWorking: false, status: t('dashboard.noRecord') };
+  };
   const getDashboardData = () => {
+    const statusAtual = verificarSeEstaTrabalhandoAgora();
     return {
       saldoHoras: calculateTimeBalance(),
       horasHoje: calculateTodayApprovedHours(),
       horasPendentes: calculateTodayPendingHours(),
-      status: t('dashboard.working'),
-      isWorking: true,
+      status: statusAtual.status,
+      isWorking: statusAtual.isWorking,
       timeRecords: timeRecords
     };
   };

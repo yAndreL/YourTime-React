@@ -53,7 +53,7 @@ function Login() {
           return;
         }
         if (profile) {
-          sessionStorage.setItem('isAdmin', (profile.role === 'admin').toString());
+          sessionStorage.setItem('userRole', profile.role || 'usuario');
         }
         navigate('/');
       }

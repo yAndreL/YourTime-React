@@ -49,6 +49,8 @@ function CadastroUser() {
     acesso: 'user',
     departamento: '',
     carga_horaria: 40,
+    hora_entrada: '09:00',
+    hora_saida: '18:00',
     senha: '',
     confirmarSenha: ''
   });
@@ -265,6 +267,8 @@ function CadastroUser() {
         telefone: formData.telefone || null,
         departamento: formData.departamento || null,
         carga_horaria: parseInt(formData.carga_horaria, 10),
+        hora_entrada: `${formData.hora_entrada}:00`,
+        hora_saida: `${formData.hora_saida}:00`,
         role: roleDb,
         is_active: true,
         superior_empresa_id: superiorEmpresaId
@@ -461,6 +465,34 @@ function CadastroUser() {
                         required
                         className={inputClass}
                         placeholder="40"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>{t('employeeForm.shiftStart')}</label>
+                    <div className="relative">
+                      <FiClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
+                      <input
+                        type="time"
+                        name="hora_entrada"
+                        value={formData.hora_entrada}
+                        onChange={handleChange}
+                        required
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>{t('employeeForm.shiftEnd')}</label>
+                    <div className="relative">
+                      <FiClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
+                      <input
+                        type="time"
+                        name="hora_saida"
+                        value={formData.hora_saida}
+                        onChange={handleChange}
+                        required
+                        className={inputClass}
                       />
                     </div>
                   </div>
