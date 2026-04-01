@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
 import { useLanguage } from '../hooks/useLanguage';
+import { useFusoHorario } from '../hooks/useFusoHorario.jsx';
 import { useToast } from '../hooks/useToast';
 import { supabase } from '../config/supabase';
 import CalculoTrabalhistaService from '../services/CalculoTrabalhistaService';
 import BatidaService from '../services/BatidaService';
-import { getLocalDateString, formatDate } from '../utils/dateUtils';
+import { obterDataCalendarioIsoNoFuso } from '../utils/fusoHorarioData';
 import { FiAlertTriangle, FiClock, FiUserX, FiTrendingDown, FiFilter, FiUsers, FiArrowDown, FiArrowUp } from 'react-icons/fi';
 
 function DashboardIrregularidades() {
   const { t } = useLanguage();
+  const { fusoHorario } = useFusoHorario();
   const { showError } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [carregandoIrregularidades, setCarregandoIrregularidades] = useState(true);
   const [funcionarios, setFuncionarios] = useState([]);
   const [jornadas, setJornadas] = useState([]);
   const [resumo, setResumo] = useState({ atrasos: 0, faltas: 0, saidasAntecipadas: 0, horasExtras: 0, totalMinutosAtraso: 0 });
@@ -24,68 +26,68 @@ function DashboardIrregularidades() {
   const [departamentos, setDepartamentos] = useState([]);
 
   useEffect(() => {
-    const hoje = new Date();
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    setPeriodoInicio(inicioMes.toISOString().split('T')[0]);
-    setPeriodoFim(getLocalDateString());
-  }, []);
+    const hojeYmd = obterDataCalendarioIsoNoFuso(new Date(), fusoHorario);
+    const [ano, mes] = hojeYmd.split('-');
+    setPeriodoInicio(`${ano}-${mes}-01`);
+    setPeriodoFim(hojeYmd);
+  }, [fusoHorario]);
 
   useEffect(() => {
     if (periodoInicio && periodoFim) {
       carregarDados();
     }
-  }, [periodoInicio, periodoFim, filtroDepartamento]);
+  }, [periodoInicio, periodoFim, filtroDepartamento, fusoHorario]);
 
   const carregarDados = async () => {
     try {
-      setLoading(true);
+      setCarregandoIrregularidades(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { data: profile } = await supabase
+      const { data: perfil } = await supabase
         .from('profiles')
         .select('superior_empresa_id')
         .eq('id', session.user.id)
         .single();
 
-      if (!profile?.superior_empresa_id) return;
-      const empresaId = profile.superior_empresa_id;
+      if (!perfil?.superior_empresa_id) return;
+      const empresaId = perfil.superior_empresa_id;
 
-      let queryFuncionarios = supabase
+      let consultaFuncionarios = supabase
         .from('profiles')
         .select('id, nome, email, cargo, departamento, carga_horaria, is_active')
         .eq('superior_empresa_id', empresaId)
         .eq('is_active', true);
 
       if (filtroDepartamento) {
-        queryFuncionarios = queryFuncionarios.eq('departamento', filtroDepartamento);
+        consultaFuncionarios = consultaFuncionarios.eq('departamento', filtroDepartamento);
       }
 
-      const { data: funcs } = await queryFuncionarios;
-      setFuncionarios(funcs || []);
+      const { data: listaFuncionarios } = await consultaFuncionarios;
+      setFuncionarios(listaFuncionarios || []);
 
-      const deptos = [...new Set((funcs || []).map(f => f.departamento).filter(Boolean))];
+      const deptos = [...new Set((listaFuncionarios || []).map(f => f.departamento).filter(Boolean))];
       setDepartamentos(deptos);
 
-      const { data: jornadasData } = await supabase
+      const { data: dadosJornadas } = await supabase
         .from('jornadas')
         .select('*')
         .eq('superior_empresa_id', empresaId)
         .gte('data', periodoInicio)
         .lte('data', periodoFim);
 
-      setJornadas(jornadasData || []);
+      setJornadas(dadosJornadas || []);
 
-      calcularMetricas(funcs || [], jornadasData || []);
-      calcularSemPontoHoje(funcs || [], jornadasData || []);
+      calcularMetricas(listaFuncionarios || [], dadosJornadas || []);
+      calcularSemPontoHoje(listaFuncionarios || [], dadosJornadas || []);
     } catch (error) {
       showError('Erro ao carregar dados');
     } finally {
-      setLoading(false);
+      setCarregandoIrregularidades(false);
     }
   };
 
-  const calcularMetricas = (funcs, jornadasData) => {
+  const calcularMetricas = (listaFuncionarios, dadosJornadas) => {
     let totalAtrasos = 0;
     let totalFaltas = 0;
     let totalSaidasAntecipadas = 0;
@@ -95,21 +97,21 @@ function DashboardIrregularidades() {
     const faltasPorFuncionario = {};
     const atrasosPorFuncionario = {};
 
-    for (const func of funcs) {
-      faltasPorFuncionario[func.id] = { nome: func.nome, departamento: func.departamento, faltas: 0 };
-      atrasosPorFuncionario[func.id] = { nome: func.nome, departamento: func.departamento, atrasos: 0, totalMinutosAtraso: 0 };
+    for (const funcionario of listaFuncionarios) {
+      faltasPorFuncionario[funcionario.id] = { nome: funcionario.nome, departamento: funcionario.departamento, faltas: 0 };
+      atrasosPorFuncionario[funcionario.id] = { nome: funcionario.nome, departamento: funcionario.departamento, atrasos: 0, totalMinutosAtraso: 0 };
     }
 
     const diasNoPeriodo = obterDiasUteisPeriodo(periodoInicio, periodoFim);
 
-    for (const func of funcs) {
-      const jornadasFunc = jornadasData.filter(j => j.user_id === func.id);
+    for (const funcionario of listaFuncionarios) {
+      const jornadasFunc = dadosJornadas.filter(j => j.user_id === funcionario.id);
       const datasComJornada = new Set(jornadasFunc.map(j => j.data));
 
       for (const dia of diasNoPeriodo) {
         if (!datasComJornada.has(dia)) {
           totalFaltas++;
-          faltasPorFuncionario[func.id].faltas++;
+          faltasPorFuncionario[funcionario.id].faltas++;
         }
       }
 
@@ -117,8 +119,8 @@ function DashboardIrregularidades() {
         if (jornada.atraso_minutos > 0) {
           totalAtrasos++;
           totalMinutosAtraso += jornada.atraso_minutos;
-          atrasosPorFuncionario[func.id].atrasos++;
-          atrasosPorFuncionario[func.id].totalMinutosAtraso += jornada.atraso_minutos;
+          atrasosPorFuncionario[funcionario.id].atrasos++;
+          atrasosPorFuncionario[funcionario.id].totalMinutosAtraso += jornada.atraso_minutos;
         }
         if (jornada.saida_antecipada_minutos > 0) {
           totalSaidasAntecipadas++;
@@ -143,19 +145,19 @@ function DashboardIrregularidades() {
       .slice(0, 10);
     setRankingFaltas(ranking);
 
-    const rankingAtr = Object.values(atrasosPorFuncionario)
+    const rankingAtrasos = Object.values(atrasosPorFuncionario)
       .sort((a, b) => b.atrasos - a.atrasos)
       .filter(f => f.atrasos > 0)
       .slice(0, 10);
-    setRankingAtrasos(rankingAtr);
+    setRankingAtrasos(rankingAtrasos);
   };
 
-  const calcularSemPontoHoje = (funcs, jornadasData) => {
-    const hoje = getLocalDateString();
-    const jornadasHoje = jornadasData.filter(j => j.data === hoje);
+  const calcularSemPontoHoje = (listaFuncionarios, dadosJornadas) => {
+    const hoje = obterDataCalendarioIsoNoFuso(new Date(), fusoHorario);
+    const jornadasHoje = dadosJornadas.filter(j => j.data === hoje);
     const idsComPonto = new Set(jornadasHoje.map(j => j.user_id));
 
-    const semPonto = funcs.filter(f => !idsComPonto.has(f.id));
+    const semPonto = listaFuncionarios.filter(f => !idsComPonto.has(f.id));
     setSemPontoHoje(semPonto);
   };
 
@@ -167,7 +169,10 @@ function DashboardIrregularidades() {
     while (current <= end) {
       const diaSemana = current.getDay();
       if (diaSemana !== 0 && diaSemana !== 6) {
-        dias.push(current.toISOString().split('T')[0]);
+        const y = current.getFullYear();
+        const m = String(current.getMonth() + 1).padStart(2, '0');
+        const d = String(current.getDate()).padStart(2, '0');
+        dias.push(`${y}-${m}-${d}`);
       }
       current.setDate(current.getDate() + 1);
     }
@@ -181,16 +186,16 @@ function DashboardIrregularidades() {
         <div className="yt-card p-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('export.startDate')}</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('exportacao.startDate')}</label>
               <input type="date" value={periodoInicio} onChange={e => setPeriodoInicio(e.target.value)} className="px-3 py-2 border rounded-lg yt-field text-sm" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('export.endDate')}</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('exportacao.endDate')}</label>
               <input type="date" value={periodoFim} onChange={e => setPeriodoFim(e.target.value)} className="px-3 py-2 border rounded-lg yt-field text-sm" />
             </div>
             {departamentos.length > 0 && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('profile.department')}</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('perfil.department')}</label>
                 <select value={filtroDepartamento} onChange={e => setFiltroDepartamento(e.target.value)} className="px-3 py-2 border rounded-lg yt-field text-sm">
                   <option value="">Todos</option>
                   {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
@@ -250,17 +255,17 @@ function DashboardIrregularidades() {
               <FiAlertTriangle className="w-4 h-4 text-red-500" />
               {t('irregularidades.semPontoHoje')} ({semPontoHoje.length})
             </h3>
-            {loading ? (
+            {carregandoIrregularidades ? (
               <div className="text-center py-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>
             ) : semPontoHoje.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('irregularidades.todosComPonto')}</p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {semPontoHoje.map(func => (
-                  <div key={func.id} className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                {semPontoHoje.map(funcionario => (
+                  <div key={funcionario.id} className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
                     <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{func.nome}</span>
-                      {func.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{func.departamento}</span>}
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{funcionario.nome}</span>
+                      {funcionario.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{funcionario.departamento}</span>}
                     </div>
                     <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 px-2 py-1 rounded">{t('irregularidades.semRegistro')}</span>
                   </div>
@@ -279,16 +284,16 @@ function DashboardIrregularidades() {
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('irregularidades.semFaltas')}</p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {rankingFaltas.map((func, i) => (
+                {rankingFaltas.map((funcionario, i) => (
                   <div key={i} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="w-6 h-6 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-full flex items-center justify-center text-xs font-bold">{i + 1}</span>
                       <div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{func.nome}</span>
-                        {func.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 block">{func.departamento}</span>}
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{funcionario.nome}</span>
+                        {funcionario.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 block">{funcionario.departamento}</span>}
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-red-600 dark:text-red-400">{func.faltas} {func.faltas === 1 ? t('irregularidades.faltaSingular') : t('irregularidades.faltaPlural')}</span>
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400">{funcionario.faltas} {funcionario.faltas === 1 ? t('irregularidades.faltaSingular') : t('irregularidades.faltaPlural')}</span>
                   </div>
                 ))}
               </div>
@@ -305,18 +310,18 @@ function DashboardIrregularidades() {
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t('irregularidades.semAtrasos')}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {rankingAtrasos.map((func, i) => (
+                {rankingAtrasos.map((funcionario, i) => (
                   <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="w-6 h-6 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 rounded-full flex items-center justify-center text-xs font-bold">{i + 1}</span>
                       <div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{func.nome}</span>
-                        {func.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 block">{func.departamento}</span>}
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{funcionario.nome}</span>
+                        {funcionario.departamento && <span className="text-xs text-gray-500 dark:text-gray-400 block">{funcionario.departamento}</span>}
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400 block">{func.atrasos}x</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{BatidaService.formatarMinutosDescritivo(func.totalMinutosAtraso)} total</span>
+                      <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400 block">{funcionario.atrasos}x</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{BatidaService.formatarMinutosDescritivo(funcionario.totalMinutosAtraso)} total</span>
                     </div>
                   </div>
                 ))}

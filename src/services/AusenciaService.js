@@ -221,7 +221,7 @@ class AusenciaService {
         const diaSemana = diaAlvo.getDay();
         if (diaSemana === 0 || diaSemana === 6) continue;
 
-        const dataStr = diaAlvo.toISOString().split('T')[0];
+        const dataStr = `${diaAlvo.getFullYear()}-${String(diaAlvo.getMonth() + 1).padStart(2, '0')}-${String(diaAlvo.getDate()).padStart(2, '0')}`;
 
         const ausenciaExistenteNodia = await this.verificarFeriadoNoDia(dataStr, superiorEmpresaId);
         if (ausenciaExistenteNodia) continue;
@@ -233,7 +233,7 @@ class AusenciaService {
           const temRegistroPonto = await this.verificarRegistroPontoNoDia(funcionario.id, dataStr);
           if (temRegistroPonto) continue;
 
-          await supabase.from('ausencias').insert([{
+          const { error: erroInsert } = await supabase.from('ausencias').insert([{
             user_id: funcionario.id,
             data_inicio: dataStr,
             data_fim: dataStr,
@@ -242,6 +242,19 @@ class AusenciaService {
             status: 'pendente',
             superior_empresa_id: superiorEmpresaId
           }]);
+
+          if (erroInsert) {
+            const semPermissao =
+              erroInsert.code === '42501' ||
+              String(erroInsert.message || '').toLowerCase().includes('permission') ||
+              String(erroInsert.message || '').toLowerCase().includes('policy');
+            return {
+              success: false,
+              error: erroInsert.message,
+              geradas,
+              semPermissaoInsercao: semPermissao
+            };
+          }
           geradas++;
         }
       }

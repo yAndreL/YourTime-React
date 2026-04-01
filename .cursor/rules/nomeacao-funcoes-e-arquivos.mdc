@@ -1,0 +1,9 @@
+---
+description: 
+alwaysApply: true
+---
+
+Vamos seguir um padrão de nomenclatura seguindo o padrão do react, ex useBlablabla, getBlalabla, porém sendo descritivas no contexto, por exemplo getImagem ser algo como getImagemPerfilUsuario
+E o nome dos arquivos todos em português, mas seguindo o padrão do react
+Lembrando, todas as funções e textos referências (em exceção funções nativas do próprio React) devem estar em portugues brasilerio, exemplo  'history.approved' deve ser 'historico.aprovados'
+formatDate ser formatarData

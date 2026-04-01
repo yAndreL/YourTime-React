@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 import { translations } from '../i18n/translations';
-import { formatDate } from '../utils/dateUtils';
+import { formatarData } from '../utils/dateUtils';
 const t = (language, key) => {
   const keys = key.split('.');
   let value = translations[language] || translations['pt-BR'];
@@ -175,13 +175,13 @@ class NotificationService {
   static async notificarAdminsPontoPendente(agendamentoId, funcionarioNome, dataPonto, userId = null) {
     try {
       const {
-        data: funcionarioProfile,
-        error: profileError
+        data: perfilFuncionario,
+        error: erroPerfil
       } = await supabase.from('profiles').select('superior_empresa_id').eq('id', userId).single();
-      if (profileError) {
-        throw profileError;
+      if (erroPerfil) {
+        throw erroPerfil;
       }
-      const superiorEmpresaId = funcionarioProfile?.superior_empresa_id;
+      const superiorEmpresaId = perfilFuncionario?.superior_empresa_id;
       if (!superiorEmpresaId) {
         return {
           success: false,
@@ -190,10 +190,10 @@ class NotificationService {
       }
       const {
         data: admins,
-        error: adminsError
+        error: erroAdmins
       } = await supabase.from('profiles').select('id, nome, email, superior_empresa_id').eq('role', 'admin').eq('superior_empresa_id', superiorEmpresaId);
-      if (adminsError) {
-        throw adminsError;
+      if (erroAdmins) {
+        throw erroAdmins;
       }
       if (!admins || admins.length === 0) {
         return {
@@ -207,16 +207,16 @@ class NotificationService {
           success: true
         };
       }
-      const dataFormatada = formatDate(dataPonto, 'DD/MM/YYYY');
+      const dataFormatada = formatarData(dataPonto, 'DD/MM/YYYY');
       const promises = adminsParaNotificar.map(async admin => {
         const {
-          data: adminConfig
+          data: configuracaoAdmin
         } = await supabase.from('configuracoes').select('language').eq('user_id', admin.id).single();
-        const language = adminConfig?.language || 'pt-BR';
-        const result = await this.criarNotificacao({
+        const idioma = configuracaoAdmin?.language || 'pt-BR';
+        const resultado = await this.criarNotificacao({
           userId: admin.id,
-          titulo: t(language, 'notifications.pendingApprovalTitle'),
-          mensagem: t(language, 'notifications.pendingApprovalMessage'),
+          titulo: t(idioma, 'notificacoes.pendingApprovalTitle'),
+          mensagem: t(idioma, 'notificacoes.pendingApprovalMessage'),
           tipo: 'aprovacao_pendente',
           agendamentoId,
           metadata: {
@@ -225,9 +225,9 @@ class NotificationService {
             data_formatada: dataFormatada
           }
         });
-        return result;
+        return resultado;
       });
-      const results = await Promise.all(promises);
+      const resultados = await Promise.all(promises);
       return {
         success: true
       };
@@ -240,13 +240,13 @@ class NotificationService {
   }
   static async notificarPontoAprovado(userId, agendamentoId, data) {
     const {
-      data: config
+      data: configuracao
     } = await supabase.from('configuracoes').select('language').eq('user_id', userId).single();
-    const language = config?.language || 'pt-BR';
+    const idioma = configuracao?.language || 'pt-BR';
     return await this.criarNotificacao({
       userId,
-      titulo: t(language, 'notifications.approvedTitle'),
-      mensagem: t(language, 'notifications.approvedMessage').replace('{date}', data),
+      titulo: t(idioma, 'notificacoes.approvedTitle'),
+      mensagem: t(idioma, 'notificacoes.approvedMessage').replace('{date}', data),
       tipo: 'ponto_aprovado',
       agendamentoId,
       metadata: {
@@ -256,13 +256,13 @@ class NotificationService {
   }
   static async notificarPontoRejeitado(userId, agendamentoId, data, motivo) {
     const {
-      data: config
+      data: configuracao
     } = await supabase.from('configuracoes').select('language').eq('user_id', userId).single();
-    const language = config?.language || 'pt-BR';
+    const idioma = configuracao?.language || 'pt-BR';
     return await this.criarNotificacao({
       userId,
-      titulo: t(language, 'notifications.rejectedTitle'),
-      mensagem: t(language, 'notifications.rejectedMessage').replace('{date}', data).replace('{reason}', motivo),
+      titulo: t(idioma, 'notificacoes.rejectedTitle'),
+      mensagem: t(idioma, 'notificacoes.rejectedMessage').replace('{date}', data).replace('{reason}', motivo),
       tipo: 'ponto_rejeitado',
       agendamentoId,
       metadata: {
@@ -273,18 +273,18 @@ class NotificationService {
   }
   static async enviarLembretePonto(userId, momento) {
     const {
-      data: config
+      data: configuracao
     } = await supabase.from('configuracoes').select('language').eq('user_id', userId).single();
-    const language = config?.language || 'pt-BR';
+    const idioma = configuracao?.language || 'pt-BR';
     const mensagens = {
-      inicio: t(language, 'notifications.reminderStart'),
-      intervalo: t(language, 'notifications.reminderBreak'),
-      fim: t(language, 'notifications.reminderEnd')
+      inicio: t(idioma, 'notificacoes.reminderStart'),
+      intervalo: t(idioma, 'notificacoes.reminderBreak'),
+      fim: t(idioma, 'notificacoes.reminderEnd')
     };
     return await this.criarNotificacao({
       userId,
-      titulo: t(language, 'notifications.reminderTitle'),
-      mensagem: mensagens[momento] || t(language, 'notifications.reminderDefault'),
+      titulo: t(idioma, 'notificacoes.reminderTitle'),
+      mensagem: mensagens[momento] || t(idioma, 'notificacoes.reminderDefault'),
       tipo: 'lembrete_ponto',
       metadata: {
         momento

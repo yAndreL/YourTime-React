@@ -21,7 +21,7 @@ vi.mock('../../hooks/useLanguage.jsx', () => ({
 }));
 
 vi.mock('../../utils/dateUtils', () => ({
-  getLocalDateString: () => '2026-03-25',
+  obterTextoDataLocal: () => '2026-03-25',
 }));
 
 describe('useTimeTracking — lógica de cálculo extraída', () => {
@@ -67,20 +67,20 @@ describe('useTimeTracking — lógica de cálculo extraída', () => {
   const verificarSeEstaTrabalhandoAgora = (timeRecords) => {
     const today = '2026-03-25';
     const registroHoje = timeRecords.find(r => r.data === today && r.status !== 'R');
-    if (!registroHoje) return { isWorking: false, status: 'dashboard.noRecord' };
+    if (!registroHoje) return { isWorking: false, status: 'painel.noRecord' };
     if (registroHoje.entrada1 && !registroHoje.saida1) {
-      return { isWorking: true, status: 'dashboard.working' };
+      return { isWorking: true, status: 'painel.working' };
     }
     if (registroHoje.saida1 && !registroHoje.entrada2) {
-      return { isWorking: false, status: 'dashboard.onBreak' };
+      return { isWorking: false, status: 'painel.onBreak' };
     }
     if (registroHoje.entrada2 && !registroHoje.saida2) {
-      return { isWorking: true, status: 'dashboard.working' };
+      return { isWorking: true, status: 'painel.working' };
     }
     if (registroHoje.saida2) {
-      return { isWorking: false, status: 'dashboard.dayCompleted' };
+      return { isWorking: false, status: 'painel.dayCompleted' };
     }
-    return { isWorking: false, status: 'dashboard.noRecord' };
+    return { isWorking: false, status: 'painel.noRecord' };
   };
 
   // ── calculateDailyWorkedMinutes ──
@@ -162,35 +162,35 @@ describe('useTimeTracking — lógica de cálculo extraída', () => {
     it('retorna "noRecord" quando não há registro hoje', () => {
       const resultado = verificarSeEstaTrabalhandoAgora([]);
       expect(resultado.isWorking).toBe(false);
-      expect(resultado.status).toBe('dashboard.noRecord');
+      expect(resultado.status).toBe('painel.noRecord');
     });
 
     it('retorna "working" quando tem entrada1 mas não saida1', () => {
       const records = [{ data: '2026-03-25', status: 'P', entrada1: '09:00', saida1: null }];
       const resultado = verificarSeEstaTrabalhandoAgora(records);
       expect(resultado.isWorking).toBe(true);
-      expect(resultado.status).toBe('dashboard.working');
+      expect(resultado.status).toBe('painel.working');
     });
 
     it('retorna "onBreak" quando tem saida1 mas não entrada2', () => {
       const records = [{ data: '2026-03-25', status: 'P', entrada1: '09:00', saida1: '12:00', entrada2: null }];
       const resultado = verificarSeEstaTrabalhandoAgora(records);
       expect(resultado.isWorking).toBe(false);
-      expect(resultado.status).toBe('dashboard.onBreak');
+      expect(resultado.status).toBe('painel.onBreak');
     });
 
     it('retorna "working" quando tem entrada2 mas não saida2', () => {
       const records = [{ data: '2026-03-25', status: 'P', entrada1: '09:00', saida1: '12:00', entrada2: '13:00', saida2: null }];
       const resultado = verificarSeEstaTrabalhandoAgora(records);
       expect(resultado.isWorking).toBe(true);
-      expect(resultado.status).toBe('dashboard.working');
+      expect(resultado.status).toBe('painel.working');
     });
 
     it('retorna "dayCompleted" quando tem saida2', () => {
       const records = [{ data: '2026-03-25', status: 'A', entrada1: '09:00', saida1: '12:00', entrada2: '13:00', saida2: '18:00' }];
       const resultado = verificarSeEstaTrabalhandoAgora(records);
       expect(resultado.isWorking).toBe(false);
-      expect(resultado.status).toBe('dashboard.dayCompleted');
+      expect(resultado.status).toBe('painel.dayCompleted');
     });
 
     it('ignora registros rejeitados do dia', () => {
@@ -199,7 +199,7 @@ describe('useTimeTracking — lógica de cálculo extraída', () => {
       ];
       const resultado = verificarSeEstaTrabalhandoAgora(records);
       expect(resultado.isWorking).toBe(false);
-      expect(resultado.status).toBe('dashboard.noRecord');
+      expect(resultado.status).toBe('painel.noRecord');
     });
   });
 });

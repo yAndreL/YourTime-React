@@ -13,13 +13,13 @@ const Modal = ({
   children
 }) => {
   useEffect(() => {
-    const handleEsc = e => {
+    const aoPressionarEscapeFecharModal = e => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', aoPressionarEscapeFecharModal);
+    return () => window.removeEventListener('keydown', aoPressionarEscapeFecharModal);
   }, [isOpen, onClose]);
   useEffect(() => {
     if (isOpen) {
@@ -32,7 +32,7 @@ const Modal = ({
     };
   }, [isOpen]);
   if (!isOpen) return null;
-  const typeConfig = {
+  const configuracaoVisualPorTipoModal = {
     success: {
       icon: FiCheckCircle,
       iconColor: 'text-green-500 dark:text-green-400',
@@ -70,15 +70,15 @@ const Modal = ({
       titleColor: 'text-red-900 dark:text-red-200'
     }
   };
-  const config = typeConfig[type];
+  const config = configuracaoVisualPorTipoModal[type];
   const Icon = config.icon;
-  const handleConfirm = () => {
+  const aoConfirmarModal = () => {
     if (onConfirm) {
       onConfirm();
     }
     onClose();
   };
-  return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={onClose}>
+  return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10050] p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full transform transition-all duration-300 scale-100" onClick={e => e.stopPropagation()}>
         <div className={`${config.bgColor} ${config.borderColor} border-b px-6 py-4 rounded-t-lg`}>
           <div className="flex items-center justify-between">
@@ -100,7 +100,7 @@ const Modal = ({
             {showCancel && <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
                 {cancelText}
               </button>}
-            <button type="button" onClick={handleConfirm} className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}>
+            <button type="button" onClick={aoConfirmarModal} className={`px-4 py-2 ${config.buttonColor} text-white rounded-lg transition-colors font-medium`}>
               {confirmText}
             </button>
           </div>}

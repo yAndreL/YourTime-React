@@ -138,6 +138,21 @@ describe('BatidaService — funções puras', () => {
   });
 
   // ── formatarMinutosDescritivo ──
+  describe('formatarHorariosQuatroSlotsEstiloApontamento e horas string', () => {
+    it('preenche quatro slots a partir de entradas e saídas', () => {
+      const lista = [
+        { tipo: 'entrada', timestamp_servidor: '2026-03-25T09:00:00Z' },
+        { tipo: 'saida', timestamp_servidor: '2026-03-25T12:00:00Z' },
+        { tipo: 'entrada', timestamp_servidor: '2026-03-25T13:00:00Z' },
+        { tipo: 'saida', timestamp_servidor: '2026-03-25T18:00:00Z' }
+      ];
+      const h = BatidaService.formatarHorariosQuatroSlotsEstiloApontamento(lista);
+      expect(h.entrada1).toMatch(/\d{2}:\d{2}/);
+      expect(h.saida1).toMatch(/\d{2}:\d{2}/);
+      expect(BatidaService.formatarHorasMinutosDecimalStringAPartirDasBatidas(lista)).toBe('08:00');
+    });
+  });
+
   describe('formatarMinutosDescritivo', () => {
     it('formata 0 como "0min"', () => {
       expect(BatidaService.formatarMinutosDescritivo(0)).toBe('0min');
@@ -159,4 +174,34 @@ describe('BatidaService — funções puras', () => {
       expect(BatidaService.formatarMinutosDescritivo(null)).toBe('0min');
     });
   });
+
+  describe('calcularHorasTrabalhadasPorProjetoAPartirDasBatidas', () => {
+    it('agrupa batidas noturnas no dia civil de São Paulo (não no corte UTC)', () => {
+      const linhas = [
+        { projeto_id: 'p1', tipo: 'entrada', timestamp_servidor: '2026-03-31T02:00:00.000Z' },
+        { projeto_id: 'p1', tipo: 'saida', timestamp_servidor: '2026-03-31T02:30:00.000Z' }
+      ];
+      const mapa = BatidaService.calcularHorasTrabalhadasPorProjetoAPartirDasBatidas(linhas, 'America/Sao_Paulo');
+      expect(mapa.p1).toBeCloseTo(0.5, 5);
+    });
+
+    it('jornada que cruza meia-noite mantém horas inteiras no mesmo segmento (dia oficial da entrada)', () => {
+      const linhas = [
+        { projeto_id: 'p1', tipo: 'entrada', timestamp_servidor: '2026-03-30T23:00:00.000Z' },
+        { projeto_id: 'p1', tipo: 'saida', timestamp_servidor: '2026-03-31T08:00:00.000Z' }
+      ];
+      const mapa = BatidaService.calcularHorasTrabalhadasPorProjetoAPartirDasBatidas(linhas, 'America/Sao_Paulo');
+      expect(mapa.p1).toBeCloseTo(9, 5);
+    });
+
+    it('23:50 → 00:10 no mesmo fuso: bloco único creditado ao dia da primeira batida', () => {
+      const linhas = [
+        { projeto_id: 'p1', tipo: 'entrada', timestamp_servidor: '2026-04-01T02:50:00.000Z' },
+        { projeto_id: 'p1', tipo: 'saida', timestamp_servidor: '2026-04-01T03:10:00.000Z' }
+      ];
+      const mapa = BatidaService.calcularHorasTrabalhadasPorProjetoAPartirDasBatidas(linhas, 'America/Sao_Paulo');
+      expect(mapa.p1).toBeCloseTo(20 / 60, 5);
+    });
+  });
 });
+

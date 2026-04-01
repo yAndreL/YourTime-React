@@ -9,59 +9,59 @@ import { salvarRecuperacaoCodigo } from '../utils/passwordRecoveryStorage';
 function EsqueciSenha() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
-  const [metodo, setMetodo] = useState('link');
-  const [linkEnviado, setLinkEnviado] = useState(false);
+  const [emailRecuperacao, setEmailRecuperacao] = useState('');
+  const [carregandoEnvio, setCarregandoEnvio] = useState(false);
+  const [mensagemErro, setMensagemErro] = useState('');
+  const [metodoRecuperacao, setMetodoRecuperacao] = useState('link');
+  const [linkRecuperacaoEnviado, setLinkRecuperacaoEnviado] = useState(false);
 
-  const gerarCodigo = () => Math.floor(100000 + Math.random() * 900000).toString();
+  const gerarCodigoNumericoSeisDigitos = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-  const handleSubmitLink = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setErro('');
-    setLinkEnviado(false);
-    const emailFormatado = email.trim().toLowerCase();
+  const processarEnvioLinkRecuperacaoPorEmail = async eventoEnvio => {
+    eventoEnvio.preventDefault();
+    setCarregandoEnvio(true);
+    setMensagemErro('');
+    setLinkRecuperacaoEnviado(false);
+    const emailFormatado = emailRecuperacao.trim().toLowerCase();
     try {
-      const redirectTo = `${window.location.origin}/resetar-senha`;
-      const { error } = await supabase.auth.resetPasswordForEmail(emailFormatado, { redirectTo });
+      const urlRedirecionamentoReset = `${window.location.origin}/resetar-senha`;
+      const { error } = await supabase.auth.resetPasswordForEmail(emailFormatado, { redirectTo: urlRedirecionamentoReset });
       if (error) {
-        setErro(error.message || t('validation.errorSendingEmail'));
+        setMensagemErro(error.message || t('validacao.errorSendingEmail'));
         return;
       }
-      setLinkEnviado(true);
-    } catch (err) {
-      console.error(err);
-      setErro(t('validation.errorSendingEmail'));
+      setLinkRecuperacaoEnviado(true);
+    } catch (erro) {
+      console.error(erro);
+      setMensagemErro(t('validacao.errorSendingEmail'));
     } finally {
-      setLoading(false);
+      setCarregandoEnvio(false);
     }
   };
 
-  const handleSubmitCodigo = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setErro('');
+  const processarEnvioCodigoRecuperacaoSeisDigitos = async eventoEnvio => {
+    eventoEnvio.preventDefault();
+    setCarregandoEnvio(true);
+    setMensagemErro('');
     try {
-      const emailFormatado = email.trim().toLowerCase();
-      const codigo = gerarCodigo();
-      await enviarCodigoRecuperacao(emailFormatado, codigo);
-      salvarRecuperacaoCodigo(emailFormatado, codigo);
+      const emailFormatado = emailRecuperacao.trim().toLowerCase();
+      const codigoGerado = gerarCodigoNumericoSeisDigitos();
+      await enviarCodigoRecuperacao(emailFormatado, codigoGerado);
+      salvarRecuperacaoCodigo(emailFormatado, codigoGerado);
       if (import.meta.env.DEV) {
-        console.info('[YourTime] Código de recuperação (ambiente local):', codigo);
+        console.info('[YourTime] Código de recuperação (ambiente local):', codigoGerado);
       }
       navigate('/verificar-codigo', {
         state: {
           email: emailFormatado,
-          codigo
+          codigo: codigoGerado
         }
       });
-    } catch (error) {
-      console.error('Erro ao enviar email:', error);
-      setErro(t('validation.errorSendingEmail'));
+    } catch (erroEnvio) {
+      console.error('Erro ao enviar email:', erroEnvio);
+      setMensagemErro(t('validacao.errorSendingEmail'));
     } finally {
-      setLoading(false);
+      setCarregandoEnvio(false);
     }
   };
 
@@ -80,12 +80,12 @@ function EsqueciSenha() {
             <button
               type="button"
               onClick={() => {
-                setMetodo('link');
-                setErro('');
-                setLinkEnviado(false);
+                setMetodoRecuperacao('link');
+                setMensagemErro('');
+                setLinkRecuperacaoEnviado(false);
               }}
               className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                metodo === 'link'
+                metodoRecuperacao === 'link'
                   ? 'bg-blue-600 text-white shadow'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
@@ -95,12 +95,12 @@ function EsqueciSenha() {
             <button
               type="button"
               onClick={() => {
-                setMetodo('codigo');
-                setErro('');
-                setLinkEnviado(false);
+                setMetodoRecuperacao('codigo');
+                setMensagemErro('');
+                setLinkRecuperacaoEnviado(false);
               }}
               className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors inline-flex items-center justify-center gap-1 ${
-                metodo === 'codigo'
+                metodoRecuperacao === 'codigo'
                   ? 'bg-blue-600 text-white shadow'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
@@ -110,7 +110,7 @@ function EsqueciSenha() {
             </button>
           </div>
 
-          {linkEnviado && metodo === 'link' && (
+          {linkRecuperacaoEnviado && metodoRecuperacao === 'link' && (
             <div className="mb-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-sm text-gray-700 dark:text-gray-300">
               Se existir uma conta para este e-mail, você receberá um link da <strong>Supabase</strong> para
               definir uma nova senha. Verifique também a pasta de spam. O link abre esta aplicação em{' '}
@@ -118,7 +118,7 @@ function EsqueciSenha() {
             </div>
           )}
 
-          <form onSubmit={metodo === 'link' ? handleSubmitLink : handleSubmitCodigo} className="space-y-6">
+          <form onSubmit={metodoRecuperacao === 'link' ? processarEnvioLinkRecuperacaoPorEmail : processarEnvioCodigoRecuperacaoSeisDigitos} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold yt-label mb-2">
                 E-mail
@@ -131,36 +131,36 @@ function EsqueciSenha() {
                   type="email"
                   id="email"
                   name="email"
-                  value={email}
-                  onChange={e => {
-                    setEmail(e.target.value);
-                    setErro('');
+                  value={emailRecuperacao}
+                  onChange={evento => {
+                    setEmailRecuperacao(evento.target.value);
+                    setMensagemErro('');
                   }}
-                  disabled={loading}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${erro ? '!border-red-500' : ''}`}
+                  disabled={carregandoEnvio}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${mensagemErro ? '!border-red-500' : ''}`}
                   placeholder="seu@email.com"
                   required
                 />
               </div>
-              {metodo === 'codigo' && import.meta.env.DEV && (
+              {metodoRecuperacao === 'codigo' && import.meta.env.DEV && (
                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
                   Modo desenvolvimento: o e-mail não é enviado; o código aparece no console (F12) e na próxima tela o fluxo segue normalmente.
                 </p>
               )}
-              {erro && <p className="mt-2 text-sm text-red-600 flex items-center gap-1">{erro}</p>}
+              {mensagemErro && <p className="mt-2 text-sm text-red-600 flex items-center gap-1">{mensagemErro}</p>}
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={carregandoEnvio}
               className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {carregandoEnvio ? (
                 <>
                   <FiLoader className="w-5 h-5 animate-spin" />
                   Enviando…
                 </>
-              ) : metodo === 'link' ? (
+              ) : metodoRecuperacao === 'link' ? (
                 'Enviar link de recuperação'
               ) : (
                 'Enviar código'

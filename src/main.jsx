@@ -6,7 +6,8 @@ import './index.css';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { ToastProvider } from './hooks/useToast.jsx';
 import { NotificationProvider } from './providers/NotificationProvider.jsx';
-import { LanguageProvider } from './hooks/useLanguage.jsx';
+import { LanguageProvider } from './providers/ProvedorIdioma.jsx';
+import { ProvedorFusoHorario } from './providers/ProvedorFusoHorario.jsx';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { useLanguage } from './hooks/useLanguage.jsx';
 
@@ -28,13 +29,16 @@ const Notificacoes = lazy(() => import('./views/Notificacoes.jsx'));
 const DashboardIrregularidades = lazy(() => import('./views/DashboardIrregularidades.jsx'));
 const EspelhoPonto = lazy(() => import('./views/EspelhoPonto.jsx'));
 const GestaoAusencias = lazy(() => import('./views/GestaoAusencias.jsx'));
+const AssociacaoProjetoBatidas = lazy(() => import('./views/AssociacaoProjetoBatidas.jsx'));
 
 if (typeof window !== 'undefined') {
   const path = window.location.pathname;
   if (path === '/' || path === '/home') {
     void import('./App_clean_new.jsx');
   }
-  OfflineService.registrarServiceWorker();
+  if (import.meta.env.PROD) {
+    OfflineService.registrarServiceWorker();
+  }
 }
 
 const LoadingFallback = () => {
@@ -43,7 +47,7 @@ const LoadingFallback = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">{t('comum.loading')}</p>
       </div>
     </div>
   );
@@ -52,6 +56,7 @@ const LoadingFallback = () => {
 createRoot(document.getElementById('root')).render(<StrictMode>
     <ThemeProvider>
     <LanguageProvider>
+      <ProvedorFusoHorario>
       <ToastProvider>
         <NotificationProvider>
           <Router>
@@ -77,6 +82,7 @@ createRoot(document.getElementById('root')).render(<StrictMode>
           <Route path="/painel-admin" element={<ProtectedRoute requireAdmin={true}><PainelAdmin /></ProtectedRoute>} />
           <Route path="/irregularidades" element={<ProtectedRoute requireAdmin={true}><DashboardIrregularidades /></ProtectedRoute>} />
           <Route path="/espelho-ponto" element={<ProtectedRoute><EspelhoPonto /></ProtectedRoute>} />
+          <Route path="/batidas-sem-projeto" element={<ProtectedRoute><AssociacaoProjetoBatidas /></ProtectedRoute>} />
           <Route path="/ausencias" element={<ProtectedRoute><GestaoAusencias /></ProtectedRoute>} />
 
           <Route path="/acesso-negado" element={<AcessoNegado />} />
@@ -85,6 +91,7 @@ createRoot(document.getElementById('root')).render(<StrictMode>
       </Router>
         </NotificationProvider>
       </ToastProvider>
+      </ProvedorFusoHorario>
     </LanguageProvider>
     </ThemeProvider>
   </StrictMode>);

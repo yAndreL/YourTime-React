@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../config/supabase';
 import { FiX, FiDownload, FiCalendar, FiUsers, FiAlertCircle, FiInfo, FiChevronDown } from 'react-icons/fi';
 import ConfigService from '../services/ConfigService';
+import BatidaService from '../services/BatidaService';
 import { useLanguage } from '../hooks/useLanguage';
+import { useFusoHorario } from '../hooks/useFusoHorario.jsx';
 import { useToast } from '../hooks/useToast';
-import { getLocalDateString } from '../utils/dateUtils';
+import Modal from './ui/Modal';
+import { montarCaminhoAssociacaoBatidasComPeriodo } from '../utils/intervaloUrlBatidasSemProjeto';
+import { registrarMetricaProdutoBatidas } from '../utils/metricaProdutoBatidas';
 function ExportPDFModal({
   isOpen,
   onClose,
@@ -14,20 +19,25 @@ function ExportPDFModal({
     t,
     currentLanguage
   } = useLanguage();
+  const { fusoHorario } = useFusoHorario();
   const { showSuccess } = useToast();
   const [funcionarios, setFuncionarios] = useState([]);
   const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [carregando, setCarregando] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [modalError, setModalError] = useState({
+  const [erroModal, setErroModal] = useState({
     isOpen: false,
     message: '',
     code: ''
   });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [infoExpanded, setInfoExpanded] = useState(false);
+  const [termoBusca, setTermoBusca] = useState('');
+  const [informacoesExpandidas, setInformacoesExpandidas] = useState(false);
+  const [avisoBatidasSemProjeto, setAvisoBatidasSemProjeto] = useState({
+    aberto: false,
+    quantidade: 0
+  });
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -56,7 +66,7 @@ function ExportPDFModal({
   }, [isOpen]);
   const carregarFuncionarios = async () => {
     try {
-      setLoading(true);
+      setCarregando(true);
       const {
         data: {
           user
@@ -67,33 +77,33 @@ function ExportPDFModal({
         return;
       }
       const {
-        data: userProfile
+        data: perfilUsuario
       } = await supabase.from('profiles').select('superior_empresa_id').eq('id', user.id).single();
-      let query = supabase.from('profiles').select('id, nome, email, cargo, departamento, superior_empresa_id').eq('is_active', true);
-      if (userProfile?.superior_empresa_id) {
-        query = query.eq('superior_empresa_id', userProfile.superior_empresa_id);
+      let consulta = supabase.from('profiles').select('id, nome, email, cargo, departamento, superior_empresa_id').eq('is_active', true);
+      if (perfilUsuario?.superior_empresa_id) {
+        consulta = consulta.eq('superior_empresa_id', perfilUsuario.superior_empresa_id);
       }
       if (!isAdmin) {
-        query = query.eq('id', user.id);
+        consulta = consulta.eq('id', user.id);
       }
-      query = query.order('nome');
+      consulta = consulta.order('nome');
       const {
         data,
         error
-      } = await query;
+      } = await consulta;
       if (error) throw error;
-      const funcionariosData = data || [];
-      setFuncionarios(funcionariosData);
-      if (!isAdmin && funcionariosData.length > 0) {
-        setFuncionariosSelecionados([funcionariosData[0].id]);
+      const dadosFuncionarios = data || [];
+      setFuncionarios(dadosFuncionarios);
+      if (!isAdmin && dadosFuncionarios.length > 0) {
+        setFuncionariosSelecionados([dadosFuncionarios[0].id]);
       }
     } catch (error) {
       console.error('Erro ao carregar funcionários:', error);
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
-  const toggleFuncionario = funcionarioId => {
+  const alternarFuncionario = funcionarioId => {
     setFuncionariosSelecionados(prev => {
       if (prev.includes(funcionarioId)) {
         return prev.filter(id => id !== funcionarioId);
@@ -119,30 +129,65 @@ function ExportPDFModal({
     const m = Math.round((Math.abs(horas) - h) * 60);
     return `${horas < 0 ? '-' : ''}${h}h ${m}m`;
   };
-  const gerarPDF = async () => {
+  const gerarPDF = async (opcoes = {}) => {
     if (funcionariosSelecionados.length === 0) {
-      setModalError({
+      setErroModal({
         isOpen: true,
-        message: t('export.noEmployees'),
+        message: t('exportacao.noEmployees'),
         code: 'EXP-001'
       });
       return;
     }
     if (!dataInicio || !dataFim) {
-      setModalError({
+      setErroModal({
         isOpen: true,
-        message: t('validation.periodRequired'),
+        message: t('validacao.periodRequired'),
         code: 'EXP-002'
       });
       return;
     }
     if (new Date(dataInicio) > new Date(dataFim)) {
-      setModalError({
+      setErroModal({
         isOpen: true,
         message: 'A data de início não pode ser posterior à data fim.',
         code: 'EXP-003'
       });
       return;
+    }
+    if (!opcoes.ignorarPreCheckBatidas) {
+      const verificacao = await BatidaService.verificarBatidasSemProjetoAntesExportacao(
+        funcionariosSelecionados,
+        dataInicio,
+        dataFim,
+        fusoHorario
+      );
+      if (!verificacao.success) {
+        setErroModal({
+          isOpen: true,
+          message: verificacao.error || t('comum.error'),
+          code: 'EXP-BAT'
+        });
+        return;
+      }
+      if (verificacao.deveBloquear) {
+        setErroModal({
+          isOpen: true,
+          message: t('batidaProjeto.exportTexto').replace('{count}', String(verificacao.quantidadePendencias)),
+          code: 'BAT-EXPORT'
+        });
+        return;
+      }
+      if (verificacao.possuiPendencias) {
+        registrarMetricaProdutoBatidas('export_aviso_batidas_sem_projeto', {
+          quantidade: verificacao.quantidadePendencias,
+          formato: 'pdf'
+        });
+        setAvisoBatidasSemProjeto({
+          aberto: true,
+          quantidade: verificacao.quantidadePendencias
+        });
+        return;
+      }
     }
     try {
       setGerando(true);
@@ -155,8 +200,8 @@ function ExportPDFModal({
           user
         }
       } = await supabase.auth.getUser();
-      const configResult = await ConfigService.buscarConfiguracoes(user.id);
-      const incluirGraficos = configResult?.data?.incluir_graficos_pdf ?? false;
+      const resultadoConfiguracao = await ConfigService.buscarConfiguracoes(user.id);
+      const incluirGraficos = resultadoConfiguracao?.data?.incluir_graficos_pdf ?? false;
       for (const funcionarioId of funcionariosSelecionados) {
         const funcionario = funcionarios.find(f => f.id === funcionarioId);
         const {
@@ -169,19 +214,19 @@ function ExportPDFModal({
         const doc = new jsPDF();
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
-        doc.text(t('export.reportTitle'), 105, 20, {
+        doc.text(t('exportacao.reportTitle'), 105, 20, {
           align: 'center'
         });
         doc.setFontSize(12);
         doc.setFont(undefined, 'normal');
-        doc.text(`${t('export.employee')} ${funcionario.nome}`, 20, 35);
-        doc.text(`${t('export.position')} ${funcionario.cargo || t('export.notDefined')}`, 20, 42);
-        doc.text(`${t('export.department')} ${funcionario.departamento || t('export.notDefined')}`, 20, 49);
-        doc.text(`${t('export.period')} ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56);
+        doc.text(`${t('exportacao.employee')} ${funcionario.nome}`, 20, 35);
+        doc.text(`${t('exportacao.position')} ${funcionario.cargo || t('exportacao.notDefined')}`, 20, 42);
+        doc.text(`${t('exportacao.department')} ${funcionario.departamento || t('exportacao.notDefined')}`, 20, 49);
+        doc.text(`${t('exportacao.period')} ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 20, 56);
         let totalHorasTrabalhadas = 0;
         let totalHorasExtras = 0;
         let diasUteis = 0;
-        const tableData = registros.map(reg => {
+        const dadosTabela = registros.map(reg => {
           const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1);
           const horasJornada2 = calcularHoras(reg.entrada2, reg.saida2);
           const totalDia = horasJornada1 + horasJornada2;
@@ -199,12 +244,12 @@ function ExportPDFModal({
             const duracaoMin = calcularHoras(reg.saida1, reg.entrada2) * 60;
             duracaoIntervalo = `${Math.floor(duracaoMin)}min`;
           }
-          return [formatarData(reg.data), reg.entrada1 || '--:--', reg.saida1 || '--:--', intervaloInicio, intervaloFim, duracaoIntervalo, reg.entrada2 || '--:--', reg.saida2 || '--:--', formatarHoras(totalDia), getStatusTexto(reg.status)];
+          return [formatarData(reg.data), reg.entrada1 || '--:--', reg.saida1 || '--:--', intervaloInicio, intervaloFim, duracaoIntervalo, reg.entrada2 || '--:--', reg.saida2 || '--:--', formatarHoras(totalDia), obterTextoStatus(reg.status)];
         });
         autoTable(doc, {
           startY: 65,
-          head: [[t('export.date'), t('export.entry1'), t('export.exit1'), t('export.breakStart'), t('export.breakEnd'), t('export.duration'), t('export.entry2'), t('export.exit2'), t('export.total'), t('export.status')]],
-          body: tableData,
+          head: [[t('exportacao.date'), t('exportacao.entry1'), t('exportacao.exit1'), t('exportacao.breakStart'), t('exportacao.breakEnd'), t('exportacao.duration'), t('exportacao.entry2'), t('exportacao.exit2'), t('exportacao.total'), t('exportacao.status')]],
+          body: dadosTabela,
           theme: 'grid',
           headStyles: {
             fillColor: [37, 99, 235],
@@ -261,7 +306,7 @@ function ExportPDFModal({
         if (incluirGraficos && registros.length > 0) {
           doc.setFontSize(12);
           doc.setFont(undefined, 'bold');
-          doc.text(t('export.workedHoursChart'), 20, finalY);
+          doc.text(t('exportacao.workedHoursChart'), 20, finalY);
           let maxHorasTrabalhadas = 0;
           registros.forEach(reg => {
             const horasJornada1 = calcularHoras(reg.entrada1, reg.saida1);
@@ -344,14 +389,14 @@ function ExportPDFModal({
         const saldoHoras = totalHorasTrabalhadas - horasEsperadas;
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
-        doc.text(t('export.summary').toUpperCase(), 20, finalY);
+        doc.text(t('exportacao.summary').toUpperCase(), 20, finalY);
         doc.setFont(undefined, 'normal');
         doc.setFontSize(10);
-        doc.text(`${t('export.workedDays')}: ${diasUteis}`, 20, finalY + 10);
-        doc.text(`${t('export.totalHours')}: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17);
-        doc.text(`${t('export.averagePerDay')}: ${formatarHoras(horasEsperadas)}`, 20, finalY + 24);
+        doc.text(`${t('exportacao.workedDays')}: ${diasUteis}`, 20, finalY + 10);
+        doc.text(`${t('exportacao.totalHours')}: ${formatarHoras(totalHorasTrabalhadas)}`, 20, finalY + 17);
+        doc.text(`${t('exportacao.averagePerDay')}: ${formatarHoras(horasEsperadas)}`, 20, finalY + 24);
         doc.setTextColor(255, 140, 0);
-        doc.text(`${t('export.overtimeHours')}: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31);
+        doc.text(`${t('exportacao.overtimeHours')}: ${formatarHoras(totalHorasExtras)}`, 20, finalY + 31);
         doc.setFont(undefined, 'bold');
         if (saldoHoras >= 0) {
           doc.setTextColor(0, 128, 0);
@@ -364,10 +409,10 @@ function ExportPDFModal({
         doc.setFontSize(8);
         doc.setFont(undefined, 'italic');
         const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US';
-        doc.text(`${t('export.generatedAt')}: ${new Date().toLocaleString(locale)}`, 105, 285, {
+        doc.text(`${t('exportacao.generatedAt')}: ${new Date().toLocaleString(locale)}`, 105, 285, {
           align: 'center'
         });
-        const nomeArquivo = `${t('export.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`;
+        const nomeArquivo = `${t('exportacao.fileName')}-${funcionario.nome.replace(/\s+/g, '-')}-${dataInicio}-${dataFim}.pdf`;
         doc.save(nomeArquivo);
       }
       showSuccess('Relatório em PDF gerado!');
@@ -376,18 +421,18 @@ function ExportPDFModal({
       }, 400);
     } catch (error) {
       let errorCode = 'EXP-004';
-      let errorMessage = t('export.errorGenerating');
+      let errorMessage = t('exportacao.errorGenerating');
       if (error.message.includes('registros')) {
         errorCode = 'EXP-005';
-        errorMessage = t('export.noRecords');
+        errorMessage = t('exportacao.noRecords');
       } else if (error.message.includes('autoTable') || error.message.includes('jspdf')) {
         errorCode = 'EXP-006';
-        errorMessage = t('validation.tryAgain');
+        errorMessage = t('validacao.tryAgain');
       } else if (error.code) {
         errorCode = 'DB-001';
-        errorMessage = `${t('validation.databaseError')}: ${error.message}`;
+        errorMessage = `${t('validacao.databaseError')}: ${error.message}`;
       }
-      setModalError({
+      setErroModal({
         isOpen: true,
         message: errorMessage,
         code: errorCode
@@ -400,20 +445,21 @@ function ExportPDFModal({
     const data = new Date(dataString + 'T00:00:00');
     return data.toLocaleDateString('pt-BR');
   };
-  const getStatusTexto = status => {
+  const obterTextoStatus = status => {
     switch (status) {
       case 'A':
-        return t('export.approved');
+        return t('exportacao.approved');
       case 'P':
-        return t('export.pending');
+        return t('exportacao.pending');
       case 'R':
-        return t('export.rejected');
+        return t('exportacao.rejected');
       default:
         return '-';
     }
   };
   if (!isOpen) return null;
-  return <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style={{
+  return <Fragment>
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" style={{
     margin: 0,
     padding: '1rem'
   }}>
@@ -424,7 +470,7 @@ function ExportPDFModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <FiDownload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('common.exportTitle')}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('comum.exportTitle')}</h2>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             <FiX className="w-6 h-6" />
@@ -435,15 +481,15 @@ function ExportPDFModal({
           <div className="mb-6">
             <label className="flex items-center gap-2 text-sm font-semibold yt-label mb-3">
               <FiCalendar className="w-4 h-4" />
-              {t('export.period')}
+              {t('exportacao.period')}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs yt-label mb-1">{t('export.startDate')}</label>
+                <label className="block text-xs yt-label mb-1">{t('exportacao.startDate')}</label>
                 <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>
               <div>
-                <label className="block text-xs yt-label mb-1">{t('export.endDate')}</label>
+                <label className="block text-xs yt-label mb-1">{t('exportacao.endDate')}</label>
                 <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>
             </div>
@@ -453,54 +499,54 @@ function ExportPDFModal({
             <div className="flex items-center justify-between mb-3">
               <label className="flex items-center gap-2 text-sm font-semibold yt-label">
                 <FiUsers className="w-4 h-4" />
-                {isAdmin ? `${t('export.selectEmployees')} (${funcionariosSelecionados.length})` : t('profile.myData')}
+                {isAdmin ? `${t('exportacao.selectEmployees')} (${funcionariosSelecionados.length})` : t('perfil.myData')}
               </label>
               {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
-                  {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAll') : t('export.selectAll')}
+                  {funcionariosSelecionados.length === funcionarios.length ? t('exportacao.deselectAll') : t('exportacao.selectAll')}
                 </button>}
             </div>
 
             {isAdmin && funcionarios.length > 0 && <div className="mb-3">
-                <input type="text" placeholder={t('admin.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
+                <input type="text" placeholder={t('administracao.searchPlaceholder')} value={termoBusca} onChange={e => setTermoBusca(e.target.value)} className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 yt-field" />
               </div>}
 
             <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-64 overflow-y-auto">
-              {loading ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('common.loading')}...</div> : funcionarios.length === 0 ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('export.noEmployees')}</div> : <div className="space-y-2">
-                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).map(func => <label key={func.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${!isAdmin ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 cursor-default' : 'hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer border-transparent hover:border-blue-200 dark:hover:border-blue-700'}`}>
-                      <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => isAdmin && toggleFuncionario(func.id)} disabled={!isAdmin} className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 disabled:opacity-50 bg-white dark:bg-gray-800" />
+              {carregando ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('comum.carregando')}...</div> : funcionarios.length === 0 ? <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('exportacao.noEmployees')}</div> : <div className="space-y-2">
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(termoBusca.toLowerCase())).map(func => <label key={func.id} className={`flex items-center gap-3 p-3 rounded-lg transition-colors border ${!isAdmin ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 cursor-default' : 'hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer border-transparent hover:border-blue-200 dark:hover:border-blue-700'}`}>
+                      <input type="checkbox" checked={funcionariosSelecionados.includes(func.id)} onChange={() => isAdmin && alternarFuncionario(func.id)} disabled={!isAdmin} className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 disabled:opacity-50 bg-white dark:bg-gray-800" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{func.nome}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {func.cargo || t('export.noPosition')} • {func.departamento || t('export.noDepartment')}
+                          {func.cargo || t('exportacao.noPosition')} • {func.departamento || t('exportacao.noDepartment')}
                         </p>
                       </div>
                     </label>)}
-                  {funcionarios.filter(f => f.nome.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="text-center py-4 text-gray-500 dark:text-gray-400">{t('export.noEmployeesFound')}</div>}
+                  {funcionarios.filter(f => f.nome.toLowerCase().includes(termoBusca.toLowerCase())).length === 0 && <div className="text-center py-4 text-gray-500 dark:text-gray-400">{t('exportacao.noEmployeesFound')}</div>}
                 </div>}
             </div>
           </div>
 
           <div className="mt-6 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-            <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
+            <button onClick={() => setInformacoesExpandidas(!informacoesExpandidas)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
               <span className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                 <FiInfo className="flex-shrink-0" />
-                {t('export.informationTitle')}
+                {t('exportacao.informationTitle')}
               </span>
-              <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+              <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${informacoesExpandidas ? 'rotate-180' : 'rotate-0'}`}>
                 <FiChevronDown />
               </div>
             </button>
-            <div className={`transition-all duration-300 ease-in-out ${infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className={`transition-all duration-300 ease-in-out ${informacoesExpandidas ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
               <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/40 border-t border-blue-200 dark:border-blue-800">
                 <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
                   {isAdmin ? <>
-                      <li>{t('export.infoPdfPerEmployee')}</li>
-                      <li>{t('export.infoAdminExport')}</li>
-                    </> : <li>{t('export.infoPdfMyRecords')}</li>}
-                  <li>{t('export.infoReportIncludes')}</li>
-                  <li>{t('export.infoGraphics')}</li>
-                  <li>{t('export.infoHoursBalance')}</li>
-                  <li>{t('export.infoAutoDownload')}</li>
+                      <li>{t('exportacao.infoPdfPerEmployee')}</li>
+                      <li>{t('exportacao.infoAdminExport')}</li>
+                    </> : <li>{t('exportacao.infoPdfMyRecords')}</li>}
+                  <li>{t('exportacao.infoReportIncludes')}</li>
+                  <li>{t('exportacao.infoGraphics')}</li>
+                  <li>{t('exportacao.infoHoursBalance')}</li>
+                  <li>{t('exportacao.infoAutoDownload')}</li>
                 </ul>
               </div>
             </div>
@@ -514,16 +560,16 @@ function ExportPDFModal({
           <button onClick={gerarPDF} disabled={gerando || funcionariosSelecionados.length === 0} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             {gerando ? <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                {t('export.generating')}...
+                {t('exportacao.generating')}...
               </> : <>
                 <FiDownload className="w-4 h-4" />
-                {t('export.generateReport')}
+                {t('exportacao.generateReport')}
               </>}
           </button>
         </div>
       </div>
 
-      {modalError.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+      {erroModal.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
           <div className="yt-modal-surface rounded-lg shadow-2xl max-w-md w-full overflow-hidden">
             <div className="p-6 border-b border-red-200 dark:border-red-900/50">
               <div className="flex items-center gap-3">
@@ -535,13 +581,13 @@ function ExportPDFModal({
                     Erro ao Exportar
                   </h3>
                   <p className="text-sm text-red-600 dark:text-red-400">
-                    Código: {modalError.code}
+                    Código: {erroModal.code}
                   </p>
                 </div>
               </div>
             </div>
             <div className="p-6">
-              <p className="text-gray-700 dark:text-gray-300 mb-4">{modalError.message}</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{erroModal.message}</p>
               <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   <strong>💡 Dica:</strong> Se o erro persistir, verifique sua conexão com a internet e tente novamente. 
@@ -550,7 +596,7 @@ function ExportPDFModal({
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80">
-              <button onClick={() => setModalError({
+              <button onClick={() => setErroModal({
             isOpen: false,
             message: '',
             code: ''
@@ -561,6 +607,46 @@ function ExportPDFModal({
           </div>
         </div>}
 
-    </div>;
+    </div>
+
+      <Modal
+        isOpen={avisoBatidasSemProjeto.aberto}
+        onClose={() => setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 })}
+        title={t('batidaProjeto.exportTitulo')}
+        type="warning"
+        showCancel
+        cancelText={t('comum.close')}
+        confirmText={t('batidaProjeto.exportContinuar')}
+        onConfirm={() => {
+          const quantidade = avisoBatidasSemProjeto.quantidade;
+          registrarMetricaProdutoBatidas('export_aviso_continuou_sem_corrigir', {
+            quantidade,
+            formato: 'pdf'
+          });
+          setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 });
+          void gerarPDF({ ignorarPreCheckBatidas: true });
+        }}
+      >
+        <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+          {t('batidaProjeto.exportModalDestaque').replace('{count}', String(avisoBatidasSemProjeto.quantidade))}
+        </p>
+        <p className="text-sm text-gray-700 dark:text-gray-200 mb-3">
+          {t('batidaProjeto.exportTexto').replace('{count}', String(avisoBatidasSemProjeto.quantidade))}
+        </p>
+        <Link
+          to={montarCaminhoAssociacaoBatidasComPeriodo(dataInicio, dataFim)}
+          onClick={() => {
+            registrarMetricaProdutoBatidas('export_aviso_escolheu_corrigir', {
+              quantidade: avisoBatidasSemProjeto.quantidade,
+              formato: 'pdf'
+            });
+            setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 });
+          }}
+          className="inline-flex text-sm font-semibold text-[#8231D3] dark:text-purple-300 hover:underline"
+        >
+          {t('batidaProjeto.exportIrResolver')}
+        </Link>
+      </Modal>
+    </Fragment>;
 }
 export default ExportPDFModal;

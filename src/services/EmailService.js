@@ -1,8 +1,8 @@
 import { supabase } from '../config/supabase';
 export const enviarCodigoRecuperacao = async (email, codigo) => {
   try {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isDev) {
+    const ehDesenvolvimento = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (ehDesenvolvimento) {
       return {
         success: true,
         dev: true,

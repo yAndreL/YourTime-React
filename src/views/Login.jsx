@@ -12,54 +12,54 @@ function Login() {
   const {
     showError
   } = useToast();
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [emailLogin, setEmailLogin] = useState('');
+  const [senhaLogin, setSenhaLogin] = useState('');
+  const [carregandoAutenticacao, setCarregandoAutenticacao] = useState(false);
   const navigate = useNavigate();
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
+  const processarAutenticacao = async eventoEnvio => {
+    eventoEnvio.preventDefault();
+    setCarregandoAutenticacao(true);
     try {
       const {
         data,
         error
       } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: senha
+        email: emailLogin,
+        password: senhaLogin
       });
       if (error) {
-        const msg = error.message || '';
-        const credenciaisInvalidas = /invalid login credentials|invalid email or password|wrong password|email not confirmed/i.test(msg);
-        showError(credenciaisInvalidas ? t('login.invalidCredentials') : msg || t('login.loginError'));
-        setLoading(false);
+        const mensagemErro = error.message || '';
+        const credenciaisInvalidas = /invalid login credentials|invalid email or password|wrong password|email not confirmed/i.test(mensagemErro);
+        showError(credenciaisInvalidas ? t('autenticacao.invalidCredentials') : mensagemErro || t('autenticacao.loginError'));
+        setCarregandoAutenticacao(false);
         return;
       }
       if (data?.user) {
         const {
-          data: profile,
-          error: profileError
+          data: perfilUsuario,
+          error: erroPerfil
         } = await supabase.from('profiles').select('role, is_active').eq('id', data.user.id).single();
-        if (profileError) {
-          showError(t('login.errorLoadingProfile'));
+        if (erroPerfil) {
+          showError(t('autenticacao.errorLoadingProfile'));
           await supabase.auth.signOut();
-          setLoading(false);
+          setCarregandoAutenticacao(false);
           return;
         }
-        if (profile && profile.is_active === false) {
-          showError(t('login.accountDeactivated'));
+        if (perfilUsuario && perfilUsuario.is_active === false) {
+          showError(t('autenticacao.accountDeactivated'));
           await supabase.auth.signOut();
-          setLoading(false);
+          setCarregandoAutenticacao(false);
           navigate('/acesso-negado');
           return;
         }
-        if (profile) {
-          sessionStorage.setItem('userRole', profile.role || 'usuario');
+        if (perfilUsuario) {
+          sessionStorage.setItem('userRole', perfilUsuario.role || 'usuario');
         }
         navigate('/');
       }
-    } catch (error) {
-      showError(t('login.loginError'));
-      setLoading(false);
+    } catch (erroDesconhecido) {
+      showError(t('autenticacao.loginError'));
+      setCarregandoAutenticacao(false);
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
@@ -71,42 +71,42 @@ function Login() {
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={processarAutenticacao} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                {t('login.email')}
+                {t('autenticacao.email')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiMail className="h-5 w-5 text-gray-400" />
                 </div>
-                <input type="email" id="email" name="email" value={email} onChange={e => setEmail(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('login.emailPlaceholder')} required />
+                <input type="email" id="email" name="email" value={emailLogin} onChange={evento => setEmailLogin(evento.target.value)} disabled={carregandoAutenticacao} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('autenticacao.emailPlaceholder')} required />
               </div>
             </div>
 
             <div>
               <label htmlFor="senha" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                {t('login.password')}
+                {t('autenticacao.password')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiLock className="h-5 w-5 text-gray-400" />
                 </div>
-                <input type="password" id="senha" name="senha" value={senha} onChange={e => setSenha(e.target.value)} disabled={loading} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('login.passwordPlaceholder')} required />
+                <input type="password" id="senha" name="senha" value={senhaLogin} onChange={evento => setSenhaLogin(evento.target.value)} disabled={carregandoAutenticacao} className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed" placeholder={t('autenticacao.passwordPlaceholder')} required />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2">
-              {loading ? <>
+            <button type="submit" disabled={carregandoAutenticacao} className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2">
+              {carregandoAutenticacao ? <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  {t('common.loading')}...
-                </> : t('login.loginButton')}
+                  {t('comum.loading')}...
+                </> : t('autenticacao.loginButton')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <Link to="/esqueci-senha" className="block text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium">
-              {t('login.forgotPassword')}
+              {t('autenticacao.forgotPassword')}
             </Link>
           </div>
         </div>

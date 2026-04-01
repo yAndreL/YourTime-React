@@ -50,7 +50,7 @@ export const MESSAGES = {
   SUCCESS: {
     LOGIN: 'Login realizado com sucesso!',
     LOGOUT: 'Logout realizado com sucesso!',
-    AGENDAMENTO_SAVED: 'timeRecordForm.saved',
+    AGENDAMENTO_SAVED: 'formularioPonto.saved',
     AGENDAMENTO_DELETED: 'Agendamento removido com sucesso!',
     PROFILE_UPDATED: 'Perfil atualizado com sucesso!',
     CONNECTION_OK: 'Conexão estabelecida com sucesso!'
@@ -71,7 +71,7 @@ export const MESSAGES = {
     DELETE_CONFIRMATION: 'Tem certeza que deseja excluir este item?'
   },
   INFO: {
-    LOADING: 'common.loading',
+    LOADING: 'comum.loading',
     NO_DATA: 'Nenhum dado encontrado.',
     CHOOSE_OPTION: 'Selecione uma opção...'
   }
@@ -110,6 +110,12 @@ export const WORKING_HOURS = {
   MAX_DAILY: 12,
   MIN_BREAK: 15,
   LUNCH_BREAK: 60
+};
+/** Regras de batida em tempo real sem projeto (associar depois / exportação). */
+export const BATIDA_PROJETO = {
+  DIAS_MAX_ASSOCIACAO_RETROATIVA: 30,
+  /** Se true, bloqueia exportação quando existir batida sem projeto no período; se false, apenas alerta com opção de continuar. */
+  BLOQUEAR_EXPORT_SE_BATIDAS_SEM_PROJETO: false
 };
 export const SIDEBAR_MENU = [{
   icon: '🏠',
@@ -156,5 +162,6 @@ export default {
   PAGINATION,
   FILE_TYPES,
   WORKING_HOURS,
+  BATIDA_PROJETO,
   SIDEBAR_MENU
 };

@@ -1,13 +1,12 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { supabase } from '../config/supabase';
 const NotificationContext = createContext({});
-export const useNotificationContext = () => useContext(NotificationContext);
 export const NotificationProvider = ({
   children
 }) => {
-  const [initialized, setInitialized] = useState(false);
+  const [inicializado, setInicializado] = useState(false);
   useEffect(() => {
-    let intervalId;
+    let idIntervalo;
     const verificarSeEhAdmin = async () => {
       try {
         const {
@@ -21,8 +20,12 @@ export const NotificationProvider = ({
           superiorEmpresaId: null
         };
         const {
-          data: profile
-        } = await supabase.from('profiles').select('role, superior_empresa_id').eq('id', user.id).single();
+          data: profile,
+          error: erroPerfil
+        } = await supabase.from('profiles').select('role, superior_empresa_id').eq('id', user.id).maybeSingle();
+        if (erroPerfil && import.meta.env.DEV) {
+          console.warn('[NotificationProvider] profiles:', erroPerfil.message);
+        }
         return {
           isAdmin: profile?.role === 'admin',
           superiorEmpresaId: profile?.superior_empresa_id
@@ -37,13 +40,18 @@ export const NotificationProvider = ({
     const limparNotificacoesAnteriorizadas = async () => {
       try {
         const {
-          data: notificacoesPendentes
+          data: notificacoesPendentes,
+          error: erroNotificacoes
         } = await supabase.from('notificacoes').select('id, agendamento_id').eq('tipo', 'aprovacao_pendente').eq('lida', false).not('agendamento_id', 'is', null);
+        if (erroNotificacoes) return;
         if (!notificacoesPendentes || notificacoesPendentes.length === 0) return;
-        const agendamentoIds = notificacoesPendentes.map(n => n.agendamento_id);
+        const agendamentoIds = notificacoesPendentes.map(n => n.agendamento_id).filter(Boolean);
+        if (agendamentoIds.length === 0) return;
         const {
-          data: agendamentos
+          data: agendamentos,
+          error: erroAgendamentos
         } = await supabase.from('agendamento').select('id, status').in('id', agendamentoIds);
+        if (erroAgendamentos) return;
         const notificacoesParaMarcar = notificacoesPendentes.filter(n => {
           const agendamento = agendamentos?.find(a => a.id === n.agendamento_id);
           return agendamento && agendamento.status !== 'P';
@@ -76,17 +84,17 @@ export const NotificationProvider = ({
       await deletarNotificacoesAntigas();
     };
     verificarELimparNotificacoes().then(() => {
-      setInitialized(true);
+      setInicializado(true);
     });
-    intervalId = setInterval(verificarELimparNotificacoes, 60000);
+    idIntervalo = setInterval(verificarELimparNotificacoes, 60000);
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      if (idIntervalo) {
+        clearInterval(idIntervalo);
       }
     };
   }, []);
   return <NotificationContext.Provider value={{
-    initialized
+    inicializado
   }}>
       {children}
     </NotificationContext.Provider>;

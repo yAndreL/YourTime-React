@@ -13,36 +13,36 @@ function textoErroCadastro(error, t) {
       msg
     )
   ) {
-    return t('employeeForm.errorOrphanedEmail');
+    return t('formularioColaborador.errorOrphanedEmail');
   }
   if (/profiles_email|duplicate key.*profiles.*email/i.test(lower)) {
-    return t('employeeForm.errorEmailInUse');
+    return t('formularioColaborador.errorEmailInUse');
   }
   if (
     /row level security|violates row-level security|\brls\b|42501|new row violates|policy|42p17|infinite recursion/i.test(lower)
   ) {
-    return t('employeeForm.errorRlsPermission');
+    return t('formularioColaborador.errorRlsPermission');
   }
   if (/erro ao criar perfil/i.test(msg)) {
-    return t('employeeForm.errorRlsPermission');
+    return t('formularioColaborador.errorRlsPermission');
   }
   if (/user_empresas/i.test(lower) && (/violat|policy|rls|permission|recursion/i.test(lower) || /duplicate/i.test(lower))) {
-    return t('employeeForm.errorCompanyLink');
+    return t('formularioColaborador.errorCompanyLink');
   }
   if (/erro ao vincular empresas/i.test(msg)) {
-    return t('employeeForm.errorCompanyLink');
+    return t('formularioColaborador.errorCompanyLink');
   }
   if (import.meta.env.DEV) {
     console.error('[Cadastro]', error);
     return msg.length > 500 ? `${msg.slice(0, 500)}…` : msg;
   }
-  return t('employeeForm.errorGeneric');
+  return t('formularioColaborador.errorGeneric');
 }
 
 function CadastroUser() {
   const { t } = useLanguage();
   const { showSuccess, showError } = useToast();
-  const [formData, setFormData] = useState({
+  const [dadosFormularioColaborador, setDadosFormularioColaborador] = useState({
     nome: '',
     email: '',
     telefone: '',
@@ -54,15 +54,15 @@ function CadastroUser() {
     senha: '',
     confirmarSenha: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [empresas, setEmpresas] = useState([]);
+  const [carregandoCadastro, setCarregandoCadastro] = useState(false);
+  const [listaEmpresasDisponiveis, setListaEmpresasDisponiveis] = useState([]);
   const [empresasSelecionadas, setEmpresasSelecionadas] = useState([]);
   const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null);
-  const [emailError, setEmailError] = useState('');
-  const [telefoneError, setTelefoneError] = useState('');
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [telefoneTouched, setTelefoneTouched] = useState(false);
-  const navigate = useNavigate();
+  const [mensagemValidacaoEmail, setMensagemValidacaoEmail] = useState('');
+  const [mensagemValidacaoTelefone, setMensagemValidacaoTelefone] = useState('');
+  const [campoEmailFoiTocado, setCampoEmailFoiTocado] = useState(false);
+  const [campoTelefoneFoiTocado, setCampoTelefoneFoiTocado] = useState(false);
+  const navegarRotas = useNavigate();
 
   useEffect(() => {
     const carregarEmpresas = async () => {
@@ -93,7 +93,7 @@ function CadastroUser() {
     carregarEmpresas();
   }, []);
 
-  const handleChange = e => {
+  const aoAlterarCampoFormulario = e => {
     const { name, value } = e.target;
     if (name === 'telefone') {
       const cleaned = value.replace(/\D/g, '');
@@ -109,13 +109,13 @@ function CadastroUser() {
           formatted = `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
         }
       }
-      setFormData(prev => ({ ...prev, [name]: formatted }));
-      if (telefoneTouched) {
+      setDadosFormularioColaborador(prev => ({ ...prev, [name]: formatted }));
+      if (campoTelefoneFoiTocado) {
         validarTelefone(formatted);
       }
       return;
     }
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setDadosFormularioColaborador(prev => ({ ...prev, [name]: value }));
   };
 
   const validarFormatoEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -133,47 +133,47 @@ function CadastroUser() {
 
   const validarEmail = async email => {
     if (!email) {
-      setEmailError('');
+      setMensagemValidacaoEmail('');
       return true;
     }
     if (!validarFormatoEmail(email)) {
-      setEmailError(t('validation.emailInvalid').toLowerCase());
+      setMensagemValidacaoEmail(t('validacao.emailInvalid').toLowerCase());
       return false;
     }
     const emailExiste = await verificarEmailExistente(email);
     if (emailExiste) {
-      setEmailError('E-mail já em uso');
+      setMensagemValidacaoEmail('E-mail já em uso');
       return false;
     }
-    setEmailError('');
+    setMensagemValidacaoEmail('');
     return true;
   };
 
   const validarTelefone = telefone => {
     if (!telefone) {
-      setTelefoneError('');
+      setMensagemValidacaoTelefone('');
       return true;
     }
     const cleaned = telefone.replace(/\D/g, '');
     if (cleaned.length !== 11 || cleaned.charAt(2) !== '9') {
-      setTelefoneError(t('validation.phoneInvalid').toLowerCase());
+      setMensagemValidacaoTelefone(t('validacao.phoneInvalid').toLowerCase());
       return false;
     }
-    setTelefoneError('');
+    setMensagemValidacaoTelefone('');
     return true;
   };
 
-  const handleEmailBlur = async () => {
-    setEmailTouched(true);
-    await validarEmail(formData.email);
+  const aoSairFocoCampoEmail = async () => {
+    setCampoEmailFoiTocado(true);
+    await validarEmail(dadosFormularioColaborador.email);
   };
 
-  const handleTelefoneBlur = () => {
-    setTelefoneTouched(true);
-    validarTelefone(formData.telefone);
+  const aoSairFocoCampoTelefone = () => {
+    setCampoTelefoneFoiTocado(true);
+    validarTelefone(dadosFormularioColaborador.telefone);
   };
 
-  const handleToggleEmpresa = empresaId => {
+  const alternarSelecaoEmpresaCheckbox = empresaId => {
     setEmpresasSelecionadas(prev =>
       prev.includes(empresaId) ? prev.filter(id => id !== empresaId) : [...prev, empresaId]
     );
@@ -181,54 +181,54 @@ function CadastroUser() {
 
   const legendaEmpresasSelecionadas = () => {
     const n = empresasSelecionadas.length;
-    if (n === 0) return t('employeeForm.selectCompanies');
-    if (n === 1) return t('employeeForm.companiesSelectedOne');
-    return t('employeeForm.companiesSelectedMany').replace('{{count}}', String(n));
+    if (n === 0) return t('formularioColaborador.selectCompanies');
+    if (n === 1) return t('formularioColaborador.companiesSelectedOne');
+    return t('formularioColaborador.companiesSelectedMany').replace('{{count}}', String(n));
   };
 
-  const handleSubmit = async e => {
+  const aoEnviarFormularioCadastro = async e => {
     e.preventDefault();
-    setLoading(true);
+    setCarregandoCadastro(true);
     const {
       data: { session: adminSession }
     } = await supabase.auth.getSession();
     try {
-      if (formData.senha !== formData.confirmarSenha) {
+      if (dadosFormularioColaborador.senha !== dadosFormularioColaborador.confirmarSenha) {
         showError('As senhas não conferem!');
-        setLoading(false);
+        setCarregandoCadastro(false);
         return;
       }
-      if (formData.senha.length < 6) {
+      if (dadosFormularioColaborador.senha.length < 6) {
         showError('A senha deve ter pelo menos 6 caracteres!');
-        setLoading(false);
+        setCarregandoCadastro(false);
         return;
       }
       if (empresasSelecionadas.length === 0) {
         showError('Selecione pelo menos uma empresa!');
-        setLoading(false);
+        setCarregandoCadastro(false);
         return;
       }
-      const emailValido = await validarEmail(formData.email);
+      const emailValido = await validarEmail(dadosFormularioColaborador.email);
       if (!emailValido) {
         showError('Corrija os erros no formulário antes de continuar');
-        setLoading(false);
+        setCarregandoCadastro(false);
         return;
       }
-      if (formData.telefone) {
-        const telefoneValido = validarTelefone(formData.telefone);
+      if (dadosFormularioColaborador.telefone) {
+        const telefoneValido = validarTelefone(dadosFormularioColaborador.telefone);
         if (!telefoneValido) {
           showError('Corrija os erros no formulário antes de continuar');
-          setLoading(false);
+          setCarregandoCadastro(false);
           return;
         }
       }
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email.trim().toLowerCase(),
-        password: formData.senha,
+        email: dadosFormularioColaborador.email.trim().toLowerCase(),
+        password: dadosFormularioColaborador.senha,
         options: {
           data: {
-            nome: formData.nome
+            nome: dadosFormularioColaborador.nome
           }
         }
       });
@@ -239,7 +239,7 @@ function CadastroUser() {
           authError.message.includes('duplicate') ||
           authError.message.includes('unique constraint')
         ) {
-          throw new Error(t('employeeForm.errorOrphanedEmail'));
+          throw new Error(t('formularioColaborador.errorOrphanedEmail'));
         }
         throw authError;
       }
@@ -258,23 +258,23 @@ function CadastroUser() {
         });
       }
 
-      const roleDb = formData.acesso === 'admin' ? 'admin' : 'usuario';
+      const papelBanco = dadosFormularioColaborador.acesso === 'admin' ? 'admin' : 'usuario';
 
-      const profileData = {
+      const dadosPerfilColaboradorParaUpsert = {
         id: newUserId,
         email: newUserEmail,
-        nome: formData.nome,
-        telefone: formData.telefone || null,
-        departamento: formData.departamento || null,
-        carga_horaria: parseInt(formData.carga_horaria, 10),
-        hora_entrada: `${formData.hora_entrada}:00`,
-        hora_saida: `${formData.hora_saida}:00`,
-        role: roleDb,
+        nome: dadosFormularioColaborador.nome,
+        telefone: dadosFormularioColaborador.telefone || null,
+        departamento: dadosFormularioColaborador.departamento || null,
+        carga_horaria: parseInt(dadosFormularioColaborador.carga_horaria, 10),
+        hora_entrada: `${dadosFormularioColaborador.hora_entrada}:00`,
+        hora_saida: `${dadosFormularioColaborador.hora_saida}:00`,
+        role: papelBanco,
         is_active: true,
         superior_empresa_id: superiorEmpresaId
       };
 
-      const { error: profileError } = await supabase.from('profiles').upsert(profileData, {
+      const { error: profileError } = await supabase.from('profiles').upsert(dadosPerfilColaboradorParaUpsert, {
         onConflict: 'id',
         ignoreDuplicates: false
       });
@@ -298,23 +298,23 @@ function CadastroUser() {
         throw new Error(`Erro ao vincular empresas: ${vinculoError.message}`);
       }
 
-      let successText = t('employeeForm.registerSuccess');
+      let textoSucesso = t('formularioColaborador.registerSuccess');
       if (!authData.session) {
-        successText += `. ${t('employeeForm.confirmEmailNotice')}`;
+        textoSucesso += `. ${t('formularioColaborador.confirmEmailNotice')}`;
       }
-      showSuccess(successText);
-      setTimeout(() => navigate('/painel-admin'), 500);
+      showSuccess(textoSucesso);
+      setTimeout(() => navegarRotas('/painel-admin'), 500);
     } catch (error) {
       showError(textoErroCadastro(error, t));
     } finally {
-      setLoading(false);
+      setCarregandoCadastro(false);
     }
   };
 
-  const inputClass =
+  const classeInput =
     'w-full pl-8 pr-2 py-1.5 border rounded-md text-sm yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow';
-  const labelClass = 'block text-xs font-medium yt-label mb-1';
-  const secTitle =
+  const classeLabel = 'block text-xs font-medium yt-label mb-1';
+  const classeTituloSecao =
     'text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400 flex items-center gap-1.5 mb-2';
 
   return (
@@ -326,94 +326,94 @@ function CadastroUser() {
               <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                 <FiUser className="w-4 h-4" />
               </span>
-              {t('employeeForm.title')}
+              {t('formularioColaborador.title')}
             </h1>
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={aoEnviarFormularioCadastro}
             className="bg-white dark:bg-gray-950/40"
           >
             <div className="px-4 py-3 sm:px-5 grid gap-3 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-6 lg:items-stretch">
               <section className="pb-3 border-b border-gray-200 dark:border-gray-800 lg:col-start-1 lg:row-start-1 lg:border-b-0 lg:pb-0">
-                <h2 className={secTitle}>
+                <h2 className={classeTituloSecao}>
                   <FiUser className="w-3.5 h-3.5" />
-                  {t('employeeForm.personalInfo')}
+                  {t('formularioColaborador.personalInfo')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <div className="sm:col-span-2">
-                    <label className={labelClass}>{t('employeeForm.fullName')}</label>
+                    <label className={classeLabel}>{t('formularioColaborador.fullName')}</label>
                     <div className="relative">
                       <FiUser className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="text"
                         name="nome"
-                        value={formData.nome}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.nome}
+                        onChange={aoAlterarCampoFormulario}
                         required
-                        className={inputClass}
-                        placeholder={t('employeeForm.fullNamePlaceholder')}
+                        className={classeInput}
+                        placeholder={t('formularioColaborador.fullNamePlaceholder')}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className={labelClass}>{t('employeeForm.email')}</label>
+                    <label className={classeLabel}>{t('formularioColaborador.email')}</label>
                     <div className="relative">
                       <FiMail className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="email"
                         name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onBlur={handleEmailBlur}
+                        value={dadosFormularioColaborador.email}
+                        onChange={aoAlterarCampoFormulario}
+                        onBlur={aoSairFocoCampoEmail}
                         required
-                        className={`${inputClass} ${emailError ? '!border-red-500 focus:ring-red-500' : ''}`}
-                        placeholder={t('employeeForm.emailPlaceholder')}
+                        className={`${classeInput} ${mensagemValidacaoEmail ? '!border-red-500 focus:ring-red-500' : ''}`}
+                        placeholder={t('formularioColaborador.emailPlaceholder')}
                       />
                     </div>
-                    {emailError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{emailError}</p>}
+                    {mensagemValidacaoEmail && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{mensagemValidacaoEmail}</p>}
                   </div>
                   <div>
-                    <label className={labelClass}>{t('employeeForm.phone')}</label>
+                    <label className={classeLabel}>{t('formularioColaborador.phone')}</label>
                     <div className="relative">
                       <FiPhone className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="tel"
                         name="telefone"
-                        value={formData.telefone}
-                        onChange={handleChange}
-                        onBlur={handleTelefoneBlur}
-                        className={`${inputClass} ${telefoneError ? '!border-red-500 focus:ring-red-500' : ''}`}
-                        placeholder={t('employeeForm.phonePlaceholder')}
+                        value={dadosFormularioColaborador.telefone}
+                        onChange={aoAlterarCampoFormulario}
+                        onBlur={aoSairFocoCampoTelefone}
+                        className={`${classeInput} ${mensagemValidacaoTelefone ? '!border-red-500 focus:ring-red-500' : ''}`}
+                        placeholder={t('formularioColaborador.phonePlaceholder')}
                         maxLength={15}
                       />
                     </div>
-                    {telefoneError && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{telefoneError}</p>}
+                    {mensagemValidacaoTelefone && <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">{mensagemValidacaoTelefone}</p>}
                   </div>
                 </div>
               </section>
 
               <section className="pb-3 border-b border-gray-200 dark:border-gray-800 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:border-b-0 lg:border-l lg:border-gray-200 lg:dark:border-gray-800 lg:pl-6">
-                <h2 className={secTitle}>
+                <h2 className={classeTituloSecao}>
                   <FiBriefcase className="w-3.5 h-3.5" />
-                  {t('employeeForm.professionalInfo')}
+                  {t('formularioColaborador.professionalInfo')}
                 </h2>
                 <div>
-                  <label className={labelClass}>
-                    {t('employeeForm.companies')} <span className="text-red-500">*</span>
+                  <label className={classeLabel}>
+                    {t('formularioColaborador.companies')} <span className="text-red-500">*</span>
                   </label>
                   <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-2 max-h-[7.5rem] sm:max-h-[min(28vh,9rem)] lg:max-h-[min(32vh,11rem)] overflow-y-auto">
-                    {empresas.length === 0 ? (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">{t('employeeForm.noCompaniesMessage')}</p>
+                    {listaEmpresasDisponiveis.length === 0 ? (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">{t('formularioColaborador.noCompaniesMessage')}</p>
                     ) : (
                       <ul className="space-y-1">
-                        {empresas.map(empresa => (
+                        {listaEmpresasDisponiveis.map(empresa => (
                           <li key={empresa.id}>
                             <label className="flex items-center gap-2 p-1.5 rounded-md border border-transparent hover:border-gray-200 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-900/40 cursor-pointer transition-colors">
                               <input
                                 type="checkbox"
                                 checked={empresasSelecionadas.includes(empresa.id)}
-                                onChange={() => handleToggleEmpresa(empresa.id)}
+                                onChange={() => alternarSelecaoEmpresaCheckbox(empresa.id)}
                                 className="w-3.5 h-3.5 text-blue-600 border-gray-300 dark:border-gray-600 rounded shrink-0"
                               />
                               <div className="flex-1 min-w-0">
@@ -435,9 +435,9 @@ function CadastroUser() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-2">
                   <div className="col-span-2 sm:col-span-1">
-                    <label className={labelClass}>{t('employeeForm.department')}</label>
-                    <select name="departamento" value={formData.departamento} onChange={handleChange} className={inputClass}>
-                      <option value="">{t('employeeForm.selectDepartment')}</option>
+                    <label className={classeLabel}>{t('formularioColaborador.department')}</label>
+                    <select name="departamento" value={dadosFormularioColaborador.departamento} onChange={aoAlterarCampoFormulario} className={classeInput}>
+                      <option value="">{t('formularioColaborador.selectDepartment')}</option>
                       <option value="Tecnologia">Tecnologia</option>
                       <option value="Recursos Humanos">Recursos Humanos</option>
                       <option value="Financeiro">Financeiro</option>
@@ -450,49 +450,49 @@ function CadastroUser() {
                     </select>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
-                    <label className={labelClass}>
-                      {t('employeeForm.weeklyHours')} <span className="text-gray-400 dark:text-gray-500 font-normal">(40)</span>
+                    <label className={classeLabel}>
+                      {t('formularioColaborador.weeklyHours')} <span className="text-gray-400 dark:text-gray-500 font-normal">(40)</span>
                     </label>
                     <div className="relative">
                       <FiClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="number"
                         name="carga_horaria"
-                        value={formData.carga_horaria}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.carga_horaria}
+                        onChange={aoAlterarCampoFormulario}
                         min={20}
                         max={60}
                         required
-                        className={inputClass}
+                        className={classeInput}
                         placeholder="40"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className={labelClass}>{t('employeeForm.shiftStart')}</label>
+                    <label className={classeLabel}>{t('formularioColaborador.shiftStart')}</label>
                     <div className="relative">
                       <FiClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="time"
                         name="hora_entrada"
-                        value={formData.hora_entrada}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.hora_entrada}
+                        onChange={aoAlterarCampoFormulario}
                         required
-                        className={inputClass}
+                        className={classeInput}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className={labelClass}>{t('employeeForm.shiftEnd')}</label>
+                    <label className={classeLabel}>{t('formularioColaborador.shiftEnd')}</label>
                     <div className="relative">
                       <FiClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="time"
                         name="hora_saida"
-                        value={formData.hora_saida}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.hora_saida}
+                        onChange={aoAlterarCampoFormulario}
                         required
-                        className={inputClass}
+                        className={classeInput}
                       />
                     </div>
                   </div>
@@ -500,52 +500,52 @@ function CadastroUser() {
               </section>
 
               <section className="lg:col-start-1 lg:row-start-2 lg:pr-4">
-                <h2 className={secTitle}>
+                <h2 className={classeTituloSecao}>
                   <FiLock className="w-3.5 h-3.5" />
-                  {t('employeeForm.accessInfo')}
+                  {t('formularioColaborador.accessInfo')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                   <div className="sm:col-span-3">
-                    <label className={labelClass}>
-                      {t('employeeForm.accessLevel')} <span className="text-red-500">*</span>
+                    <label className={classeLabel}>
+                      {t('formularioColaborador.accessLevel')} <span className="text-red-500">*</span>
                     </label>
-                    <select name="acesso" value={formData.acesso} onChange={handleChange} required className={inputClass}>
-                      <option value="user">{t('employeeForm.user')}</option>
+                    <select name="acesso" value={dadosFormularioColaborador.acesso} onChange={aoAlterarCampoFormulario} required className={classeInput}>
+                      <option value="user">{t('formularioColaborador.user')}</option>
                       <option value="admin">Administrador</option>
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>
-                      {t('employeeForm.password')} <span className="text-red-500">*</span>
+                    <label className={classeLabel}>
+                      {t('formularioColaborador.password')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <FiLock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="password"
                         name="senha"
-                        value={formData.senha}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.senha}
+                        onChange={aoAlterarCampoFormulario}
                         required
                         minLength={6}
-                        className={inputClass}
-                        placeholder={t('employeeForm.minCharacters')}
+                        className={classeInput}
+                        placeholder={t('formularioColaborador.minCharacters')}
                       />
                     </div>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className={labelClass}>
-                      {t('employeeForm.confirmPassword')} <span className="text-red-500">*</span>
+                    <label className={classeLabel}>
+                      {t('formularioColaborador.confirmPassword')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <FiLock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5 pointer-events-none" />
                       <input
                         type="password"
                         name="confirmarSenha"
-                        value={formData.confirmarSenha}
-                        onChange={handleChange}
+                        value={dadosFormularioColaborador.confirmarSenha}
+                        onChange={aoAlterarCampoFormulario}
                         required
-                        className={inputClass}
-                        placeholder={t('employeeForm.confirmPasswordPlaceholder')}
+                        className={classeInput}
+                        placeholder={t('formularioColaborador.confirmPasswordPlaceholder')}
                       />
                     </div>
                   </div>
@@ -559,22 +559,22 @@ function CadastroUser() {
                 className="flex-1 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <FiArrowLeft className="w-3.5 h-3.5" />
-                {t('employeeForm.backToPanel')}
+                {t('formularioColaborador.backToPanel')}
               </Link>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={carregandoCadastro}
                 className="flex-1 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm transition-colors"
               >
-                {loading ? (
+                {carregandoCadastro ? (
                   <>
                     <span className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent" />
-                    {t('common.loading')}
+                    {t('comum.loading')}
                   </>
                 ) : (
                   <>
                     <FiCheck className="w-3.5 h-3.5" />
-                    {t('employeeForm.registerEmployee')}
+                    {t('formularioColaborador.registerEmployee')}
                   </>
                 )}
               </button>

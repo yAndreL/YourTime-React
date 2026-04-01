@@ -3,50 +3,52 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../config/supabase';
 import BatidaService from '../../services/BatidaService';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useFusoHorario } from '../../hooks/useFusoHorario.jsx';
 import { FiClock, FiPlay, FiPause, FiSquare } from 'react-icons/fi';
 
 function StatusWidget() {
   const { t } = useLanguage();
+  const { fusoHorario } = useFusoHorario();
   const navigate = useNavigate();
-  const [estado, setEstado] = useState(null);
+  const [faseJornadaDoDiaHeader, setFaseJornadaDoDiaHeader] = useState(null);
   const [minutosTrabalhadosHoje, setMinutosTrabalhadosHoje] = useState(0);
   const [batidas, setBatidas] = useState([]);
-  const timerRef = useRef(null);
+  const refTimer = useRef(null);
 
   useEffect(() => {
     carregarStatus();
     const intervalo = setInterval(carregarStatus, 30000);
     return () => {
       clearInterval(intervalo);
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (refTimer.current) clearInterval(refTimer.current);
     };
-  }, []);
+  }, [fusoHorario]);
 
   useEffect(() => {
-    if (estado === 'trabalhando') {
-      timerRef.current = setInterval(() => {
+    if (faseJornadaDoDiaHeader === 'trabalhando') {
+      refTimer.current = setInterval(() => {
         if (batidas.length > 0) {
           setMinutosTrabalhadosHoje(BatidaService.calcularTempoTrabalhado(batidas));
         }
       }, 1000);
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (refTimer.current) clearInterval(refTimer.current);
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (refTimer.current) clearInterval(refTimer.current);
     };
-  }, [estado, batidas]);
+  }, [faseJornadaDoDiaHeader, batidas]);
 
   const carregarStatus = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const resultado = await BatidaService.buscarBatidasDoDia(session.user.id);
+      const resultado = await BatidaService.buscarBatidasDoDia(session.user.id, null, fusoHorario);
       if (resultado.success) {
         setBatidas(resultado.data);
         const estadoAtual = BatidaService.determinarEstadoJornada(resultado.data);
-        setEstado(estadoAtual.estado);
+        setFaseJornadaDoDiaHeader(estadoAtual.estado);
         setMinutosTrabalhadosHoje(BatidaService.calcularTempoTrabalhado(resultado.data));
       }
     } catch (error) {}
@@ -58,7 +60,7 @@ function StatusWidget() {
     return `${h}h${m.toString().padStart(2, '0')}`;
   };
 
-  if (!estado || estado === 'nao_iniciada') {
+  if (!faseJornadaDoDiaHeader || faseJornadaDoDiaHeader === 'nao_iniciada') {
     return (
       <button
         onClick={() => navigate('/batida-ponto')}
@@ -70,7 +72,7 @@ function StatusWidget() {
     );
   }
 
-  const configs = {
+  const configuracoesPorEstado = {
     trabalhando: {
       icon: FiPlay,
       cor: 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300',
@@ -88,7 +90,7 @@ function StatusWidget() {
     }
   };
 
-  const config = configs[estado] || configs.encerrada;
+  const config = configuracoesPorEstado[faseJornadaDoDiaHeader] || configuracoesPorEstado.encerrada;
   const Icon = config.icon;
 
   return (

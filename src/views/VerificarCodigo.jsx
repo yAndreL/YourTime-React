@@ -14,84 +14,84 @@ function VerificarCodigo() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const inicial = useMemo(() => {
-    const state = location.state;
-    let email = state?.email ? String(state.email).trim().toLowerCase() : '';
-    let codigo = state?.codigo != null ? String(state.codigo) : '';
-    if (!email || !codigo) {
-      const pendente = lerRecuperacaoPendente();
-      if (pendente) {
-        email = email || pendente.email;
-        codigo = codigo || pendente.code;
+  const dadosIniciaisVerificacao = useMemo(() => {
+    const estadoNavegacao = location.state;
+    let emailExtraido = estadoNavegacao?.email ? String(estadoNavegacao.email).trim().toLowerCase() : '';
+    let codigoExtraido = estadoNavegacao?.codigo != null ? String(estadoNavegacao.codigo) : '';
+    if (!emailExtraido || !codigoExtraido) {
+      const pendenteArmazenado = lerRecuperacaoPendente();
+      if (pendenteArmazenado) {
+        emailExtraido = emailExtraido || pendenteArmazenado.email;
+        codigoExtraido = codigoExtraido || pendenteArmazenado.code;
       }
     }
-    return { email, codigo };
+    return { email: emailExtraido, codigo: codigoExtraido };
   }, [location.state]);
 
-  const [emailAtual, setEmailAtual] = useState(inicial.email);
-  const [codigoEsperado, setCodigoEsperado] = useState(inicial.codigo);
-  const [codigo, setCodigo] = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
-  const [mostrarReenvio, setMostrarReenvio] = useState(false);
-  const [reenviando, setReenviando] = useState(false);
-  const [mensagemSucesso, setMensagemSucesso] = useState('');
-  const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
+  const [emailAtual, setEmailAtual] = useState(dadosIniciaisVerificacao.email);
+  const [codigoEsperadoServidor, setCodigoEsperadoServidor] = useState(dadosIniciaisVerificacao.codigo);
+  const [digitosCodigo, setDigitosCodigo] = useState(['', '', '', '', '', '']);
+  const [carregandoVerificacao, setCarregandoVerificacao] = useState(false);
+  const [mensagemErroValidacao, setMensagemErroValidacao] = useState('');
+  const [exibirOpcaoReenvio, setExibirOpcaoReenvio] = useState(false);
+  const [reenviandoCodigo, setReenviandoCodigo] = useState(false);
+  const [mensagemSucessoReenvio, setMensagemSucessoReenvio] = useState('');
+  const refsInputDigitosCodigo = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
   useEffect(() => {
-    setEmailAtual(inicial.email);
-    setCodigoEsperado(inicial.codigo);
-  }, [inicial.email, inicial.codigo]);
+    setEmailAtual(dadosIniciaisVerificacao.email);
+    setCodigoEsperadoServidor(dadosIniciaisVerificacao.codigo);
+  }, [dadosIniciaisVerificacao.email, dadosIniciaisVerificacao.codigo]);
 
   useEffect(() => {
-    if (!emailAtual || !codigoEsperado) {
+    if (!emailAtual || !codigoEsperadoServidor) {
       navigate('/esqueci-senha', { replace: true });
       return;
     }
-    salvarRecuperacaoCodigo(emailAtual, codigoEsperado);
-    const timer = setTimeout(() => setMostrarReenvio(true), 20000);
-    return () => clearTimeout(timer);
-  }, [emailAtual, codigoEsperado, navigate]);
+    salvarRecuperacaoCodigo(emailAtual, codigoEsperadoServidor);
+    const temporizadorReenvio = setTimeout(() => setExibirOpcaoReenvio(true), 20000);
+    return () => clearTimeout(temporizadorReenvio);
+  }, [emailAtual, codigoEsperadoServidor, navigate]);
 
-  const handleChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const newCodigo = [...codigo];
-    newCodigo[index] = value.slice(-1);
-    setCodigo(newCodigo);
-    setErro('');
-    if (value && index < 5) {
-      inputRefs[index + 1].current?.focus();
+  const atualizarDigitoCodigoVerificacao = (indiceDigito, valorDigitado) => {
+    if (!/^\d*$/.test(valorDigitado)) return;
+    const novosDigitos = [...digitosCodigo];
+    novosDigitos[indiceDigito] = valorDigitado.slice(-1);
+    setDigitosCodigo(novosDigitos);
+    setMensagemErroValidacao('');
+    if (valorDigitado && indiceDigito < 5) {
+      refsInputDigitosCodigo[indiceDigito + 1].current?.focus();
     }
   };
 
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !codigo[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
+  const aoTeclaPressionadaNoCampoCodigo = (indiceDigito, eventoTecla) => {
+    if (eventoTecla.key === 'Backspace' && !digitosCodigo[indiceDigito] && indiceDigito > 0) {
+      refsInputDigitosCodigo[indiceDigito - 1].current?.focus();
     }
   };
 
-  const handlePaste = e => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pastedData.length === 6) {
-      setCodigo(pastedData.split(''));
-      inputRefs[5].current?.focus();
-      setErro('');
+  const aoColarCodigoDeSeisDigitos = eventoColagem => {
+    eventoColagem.preventDefault();
+    const textoColado = eventoColagem.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (textoColado.length === 6) {
+      setDigitosCodigo(textoColado.split(''));
+      refsInputDigitosCodigo[5].current?.focus();
+      setMensagemErroValidacao('');
     }
   };
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setErro('');
-    const codigoDigitado = codigo.join('');
-    const esperado = String(codigoEsperado).trim();
-    if (codigoDigitado.length !== 6) {
-      setErro(t('validation.fillAllDigits'));
-      setLoading(false);
+  const processarConfirmacaoCodigoVerificacao = async eventoEnvio => {
+    eventoEnvio.preventDefault();
+    setCarregandoVerificacao(true);
+    setMensagemErroValidacao('');
+    const codigoDigitadoCompleto = digitosCodigo.join('');
+    const codigoEsperadoNormalizado = String(codigoEsperadoServidor).trim();
+    if (codigoDigitadoCompleto.length !== 6) {
+      setMensagemErroValidacao(t('validacao.fillAllDigits'));
+      setCarregandoVerificacao(false);
       return;
     }
-    if (codigoDigitado === esperado) {
+    if (codigoDigitadoCompleto === codigoEsperadoNormalizado) {
       marcarCodigoVerificado(emailAtual);
       navigate('/resetar-senha', {
         state: {
@@ -100,47 +100,47 @@ function VerificarCodigo() {
         }
       });
     } else {
-      setErro(t('validation.invalidCode'));
-      setCodigo(['', '', '', '', '', '']);
-      inputRefs[0].current?.focus();
+      setMensagemErroValidacao(t('validacao.invalidCode'));
+      setDigitosCodigo(['', '', '', '', '', '']);
+      refsInputDigitosCodigo[0].current?.focus();
     }
-    setLoading(false);
+    setCarregandoVerificacao(false);
   };
 
-  const handleReenviarCodigo = async () => {
-    setReenviando(true);
-    setMensagemSucesso('');
-    setErro('');
+  const processarReenvioCodigoRecuperacao = async () => {
+    setReenviandoCodigo(true);
+    setMensagemSucessoReenvio('');
+    setMensagemErroValidacao('');
     try {
-      const novoCodigo = Math.floor(100000 + Math.random() * 900000).toString();
-      await enviarCodigoRecuperacao(emailAtual, novoCodigo);
-      salvarRecuperacaoCodigo(emailAtual, novoCodigo);
+      const novoCodigoGerado = Math.floor(100000 + Math.random() * 900000).toString();
+      await enviarCodigoRecuperacao(emailAtual, novoCodigoGerado);
+      salvarRecuperacaoCodigo(emailAtual, novoCodigoGerado);
       if (import.meta.env.DEV) {
-        console.info('[YourTime] Novo código de recuperação (dev):', novoCodigo);
+        console.info('[YourTime] Novo código de recuperação (dev):', novoCodigoGerado);
       }
-      setCodigoEsperado(novoCodigo);
-      setCodigo(['', '', '', '', '', '']);
+      setCodigoEsperadoServidor(novoCodigoGerado);
+      setDigitosCodigo(['', '', '', '', '', '']);
       navigate('/verificar-codigo', {
         state: {
           email: emailAtual,
-          codigo: novoCodigo
+          codigo: novoCodigoGerado
         },
         replace: true
       });
-      setMensagemSucesso('Novo código enviado com sucesso!');
-      setMostrarReenvio(false);
+      setMensagemSucessoReenvio('Novo código enviado com sucesso!');
+      setExibirOpcaoReenvio(false);
       setTimeout(() => {
-        setMostrarReenvio(true);
-        setMensagemSucesso('');
+        setExibirOpcaoReenvio(true);
+        setMensagemSucessoReenvio('');
       }, 20000);
     } catch {
-      setErro(t('validation.errorResendingCode'));
+      setMensagemErroValidacao(t('validacao.errorResendingCode'));
     } finally {
-      setReenviando(false);
+      setReenviandoCodigo(false);
     }
   };
 
-  if (!emailAtual || !codigoEsperado) {
+  if (!emailAtual || !codigoEsperadoServidor) {
     return null;
   }
 
@@ -156,49 +156,49 @@ function VerificarCodigo() {
             <p className="text-blue-600 dark:text-blue-400 font-semibold text-sm mt-1 break-all">{emailAtual}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={processarConfirmacaoCodigoVerificacao} className="space-y-6">
             <div>
-              <div className="flex justify-center gap-2 mb-4" onPaste={handlePaste}>
-                {codigo.map((digit, index) => (
+              <div className="flex justify-center gap-2 mb-4" onPaste={aoColarCodigoDeSeisDigitos}>
+                {digitosCodigo.map((digito, indice) => (
                   <input
-                    key={index}
-                    ref={inputRefs[index]}
+                    key={indice}
+                    ref={refsInputDigitosCodigo[indice]}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
-                    value={digit}
-                    onChange={e => handleChange(index, e.target.value)}
-                    onKeyDown={e => handleKeyDown(index, e)}
-                    disabled={loading}
-                    className={`w-11 h-14 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${erro ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                    autoFocus={index === 0}
+                    value={digito}
+                    onChange={evento => atualizarDigitoCodigoVerificacao(indice, evento.target.value)}
+                    onKeyDown={evento => aoTeclaPressionadaNoCampoCodigo(indice, evento)}
+                    disabled={carregandoVerificacao}
+                    className={`w-11 h-14 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${mensagemErroValidacao ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                    autoFocus={indice === 0}
                     autoComplete="one-time-code"
                   />
                 ))}
               </div>
 
-              {erro && (
+              {mensagemErroValidacao && (
                 <p className="text-sm text-red-600 dark:text-red-400 text-center flex items-center justify-center gap-1">
-                  <FiAlertCircle className="w-4 h-4 shrink-0" /> {erro}
+                  <FiAlertCircle className="w-4 h-4 shrink-0" /> {mensagemErroValidacao}
                 </p>
               )}
 
-              {mensagemSucesso && (
+              {mensagemSucessoReenvio && (
                 <p className="text-sm text-green-600 dark:text-green-400 text-center flex items-center justify-center gap-1">
-                  <FiMail className="w-4 h-4 shrink-0" /> {mensagemSucesso}
+                  <FiMail className="w-4 h-4 shrink-0" /> {mensagemSucessoReenvio}
                 </p>
               )}
             </div>
 
             <button
               type="submit"
-              disabled={loading || codigo.some(d => !d)}
+              disabled={carregandoVerificacao || digitosCodigo.some(d => !d)}
               className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {carregandoVerificacao ? (
                 <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  {t('common.loading')}
+                  {t('comum.loading')}
                 </>
               ) : (
                 'Verificar código'
@@ -206,18 +206,18 @@ function VerificarCodigo() {
             </button>
           </form>
 
-          {mostrarReenvio && (
+          {exibirOpcaoReenvio && (
             <div className="mt-6 text-center">
               <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Não recebeu o código? Confira a caixa de spam ou{' '}
                   <button
                     type="button"
-                    onClick={handleReenviarCodigo}
-                    disabled={reenviando}
+                    onClick={processarReenvioCodigoRecuperacao}
+                    disabled={reenviandoCodigo}
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium underline disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
                   >
-                    {reenviando ? (
+                    {reenviandoCodigo ? (
                       <>
                         <FiLoader className="w-3 h-3 animate-spin" />
                         reenviando…

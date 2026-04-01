@@ -2,49 +2,58 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../config/supabase';
 import BatidaService from '../services/BatidaService';
 import OfflineService from '../services/OfflineService';
+import { salvarUltimoProjetoBatidaMinimoNoArmazenamento } from '../utils/batidaProjetoArmazenamento';
+import { useFusoHorario } from './useFusoHorario.jsx';
 
 export function useBatidaPonto() {
+  const { fusoHorario } = useFusoHorario();
   const [batidas, setBatidas] = useState([]);
-  const [estado, setEstado] = useState({ estado: 'nao_iniciada', proximaBatida: 'entrada' });
+  const [jornadaDoDia, setJornadaDoDia] = useState({ estado: 'nao_iniciada', proximaBatida: 'entrada' });
   const [minutosTrabalhadosHoje, setMinutosTrabalhadosHoje] = useState(0);
   const [minutosPausaHoje, setMinutosPausaHoje] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [registrando, setRegistrando] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [profileData, setProfileData] = useState(null);
-  const timerRef = useRef(null);
+  const [carregandoBatidas, setCarregandoBatidas] = useState(true);
+  const [enviandoRegistroBatida, setEnviandoRegistroBatida] = useState(false);
+  const [idUsuarioLogado, setIdUsuarioLogado] = useState(null);
+  const [perfilUsuario, setPerfilUsuario] = useState(null);
+  const referenciaTimer = useRef(null);
 
   useEffect(() => {
     carregarDadosIniciais();
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (referenciaTimer.current) clearInterval(referenciaTimer.current);
     };
   }, []);
 
   useEffect(() => {
-    if (estado.estado === 'trabalhando' || estado.estado === 'em_pausa') {
-      timerRef.current = setInterval(() => {
+    if (idUsuarioLogado) {
+      carregarBatidasDoDia(idUsuarioLogado);
+    }
+  }, [fusoHorario, idUsuarioLogado]);
+
+  useEffect(() => {
+    if (jornadaDoDia.estado === 'trabalhando' || jornadaDoDia.estado === 'em_pausa') {
+      referenciaTimer.current = setInterval(() => {
         if (batidas.length > 0) {
           setMinutosTrabalhadosHoje(BatidaService.calcularTempoTrabalhado(batidas));
           setMinutosPausaHoje(BatidaService.calcularTempoPausa(batidas));
         }
       }, 1000);
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (referenciaTimer.current) clearInterval(referenciaTimer.current);
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (referenciaTimer.current) clearInterval(referenciaTimer.current);
     };
-  }, [estado.estado, batidas]);
+  }, [jornadaDoDia.estado, batidas]);
 
   const carregarDadosIniciais = async () => {
     try {
-      setLoading(true);
+      setCarregandoBatidas(true);
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) return;
 
-      setUserId(user.id);
+      setIdUsuarioLogado(user.id);
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -52,33 +61,32 @@ export function useBatidaPonto() {
         .eq('id', user.id)
         .single();
 
-      setProfileData(profile);
-      await carregarBatidasDoDia(user.id);
+      setPerfilUsuario(profile);
     } catch (error) {
       console.error('Erro ao carregar dados iniciais:', error);
     } finally {
-      setLoading(false);
+      setCarregandoBatidas(false);
     }
   };
 
   const carregarBatidasDoDia = async (uid = null) => {
-    const id = uid || userId;
+    const id = uid || idUsuarioLogado;
     if (!id) return;
 
-    const resultado = await BatidaService.buscarBatidasDoDia(id);
+    const resultado = await BatidaService.buscarBatidasDoDia(id, null, fusoHorario);
     if (resultado.success) {
       setBatidas(resultado.data);
       const estadoAtual = BatidaService.determinarEstadoJornada(resultado.data);
-      setEstado(estadoAtual);
+      setJornadaDoDia(estadoAtual);
       setMinutosTrabalhadosHoje(BatidaService.calcularTempoTrabalhado(resultado.data));
       setMinutosPausaHoje(BatidaService.calcularTempoPausa(resultado.data));
     }
   };
 
   const registrarBatida = useCallback(async (tipo, { latitude, longitude, precisaoGps, fotoUrl = null, observacao } = {}) => {
-    if (!userId || registrando) return { success: false, error: 'Operação indisponível' };
+    if (!idUsuarioLogado || enviandoRegistroBatida) return { success: false, error: 'Operação indisponível' };
 
-    setRegistrando(true);
+    setEnviandoRegistroBatida(true);
     try {
       const projetoSalvo = localStorage.getItem('selectedProject');
       let projetoId = null;
@@ -94,7 +102,7 @@ export function useBatidaPonto() {
 
       if (!OfflineService.estaOnline()) {
         const batidaOffline = {
-          user_id: userId,
+          user_id: idUsuarioLogado,
           tipo,
           timestamp_servidor: new Date().toISOString(),
           timestamp_cliente: new Date().toISOString(),
@@ -104,16 +112,28 @@ export function useBatidaPonto() {
           foto_url: fotoUrl,
           projeto_id: projetoId,
           empresa_id: empresaId,
-          superior_empresa_id: profileData?.superior_empresa_id,
+          superior_empresa_id: perfilUsuario?.superior_empresa_id,
           observacao,
           retroativo: false
         };
         OfflineService.salvarBatidaOffline(batidaOffline);
+        if (projetoId) {
+          let nomeProjeto = '';
+          try {
+            const p = JSON.parse(projetoSalvo || '{}');
+            nomeProjeto = p.nome || '';
+          } catch (e) {}
+          salvarUltimoProjetoBatidaMinimoNoArmazenamento({
+            id: projetoId,
+            nome: nomeProjeto,
+            empresa_id: empresaId
+          });
+        }
         return { success: true, offline: true };
       }
 
       const resultado = await BatidaService.registrarBatida({
-        userId,
+        userId: idUsuarioLogado,
         tipo,
         latitude,
         longitude,
@@ -121,19 +141,31 @@ export function useBatidaPonto() {
         fotoUrl,
         projetoId,
         empresaId,
-        superiorEmpresaId: profileData?.superior_empresa_id,
+        superiorEmpresaId: perfilUsuario?.superior_empresa_id,
         observacao
       });
 
       if (resultado.success) {
+        if (projetoId) {
+          let nomeProjeto = '';
+          try {
+            const p = JSON.parse(projetoSalvo || '{}');
+            nomeProjeto = p.nome || '';
+          } catch (e) {}
+          salvarUltimoProjetoBatidaMinimoNoArmazenamento({
+            id: projetoId,
+            nome: nomeProjeto,
+            empresa_id: empresaId
+          });
+        }
         await carregarBatidasDoDia();
       }
 
       return resultado;
     } finally {
-      setRegistrando(false);
+      setEnviandoRegistroBatida(false);
     }
-  }, [userId, registrando, profileData]);
+  }, [idUsuarioLogado, enviandoRegistroBatida, perfilUsuario]);
 
   const baterEntrada = useCallback((opcoes = {}) => {
     return registrarBatida('entrada', opcoes);
@@ -153,17 +185,17 @@ export function useBatidaPonto() {
 
   return {
     batidas,
-    estado,
+    jornadaDoDia,
     minutosTrabalhadosHoje,
     minutosPausaHoje,
-    loading,
-    registrando,
-    profileData,
+    carregandoBatidas,
+    enviandoRegistroBatida,
+    perfilUsuario,
     baterEntrada,
     baterPausa,
     baterRetorno,
     baterSaida,
-    recarregar: carregarBatidasDoDia
+    recarregarBatidasDoDia: carregarBatidasDoDia
   };
 }
 

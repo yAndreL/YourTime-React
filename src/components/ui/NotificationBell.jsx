@@ -10,34 +10,34 @@ function NotificationBell({ showMenuLabel = false }) {
     t,
     currentLanguage
   } = useLanguage();
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const dropdownRef = useRef(null);
+  const [notificacoes, setNotificacoes] = useState([]);
+  const [contagemNaoLidas, setContagemNaoLidas] = useState(0);
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const refDropdown = useRef(null);
   const navigate = useNavigate();
-  const translateNotification = notification => {
+  const traduzirNotificacao = notificacao => {
     const {
       titulo,
       mensagem,
       metadata
-    } = notification;
+    } = notificacao;
     const tituloMap = {
-      'Ponto Aguardando Aprovação': 'notifications.pendingApprovalTitle',
-      'Ponto aguardando aprovação': 'notifications.pendingApprovalTitle',
-      'Ponto aprovado': 'notifications.approvedTitle',
-      'Ponto Aprovado': 'notifications.approvedTitle',
-      'Ponto rejeitado': 'notifications.rejectedTitle',
-      'Ponto Rejeitado': 'notifications.rejectedTitle',
-      'Lembrete de Ponto': 'notifications.reminderTitle',
-      'Lembrete de ponto': 'notifications.reminderTitle'
+      'Ponto Aguardando Aprovação': 'notificacoes.pendingApprovalTitle',
+      'Ponto aguardando aprovação': 'notificacoes.pendingApprovalTitle',
+      'Ponto aprovado': 'notificacoes.approvedTitle',
+      'Ponto Aprovado': 'notificacoes.approvedTitle',
+      'Ponto rejeitado': 'notificacoes.rejectedTitle',
+      'Ponto Rejeitado': 'notificacoes.rejectedTitle',
+      'Lembrete de Ponto': 'notificacoes.reminderTitle',
+      'Lembrete de ponto': 'notificacoes.reminderTitle'
     };
     const mensagemMap = {
-      'registrou um ponto e aguarda aprovação': 'notifications.pendingApprovalMessage',
-      'Não esqueça de registrar sua entrada!': 'notifications.reminderStart',
-      'Hora do intervalo! Registre sua saída e retorno.': 'notifications.reminderBreak',
-      'Fim do expediente chegando. Lembre-se de registrar sua saída!': 'notifications.reminderEnd',
-      'Lembre-se de registrar seu ponto.': 'notifications.reminderDefault'
+      'registrou um ponto e aguarda aprovação': 'notificacoes.pendingApprovalMessage',
+      'Não esqueça de registrar sua entrada!': 'notificacoes.reminderStart',
+      'Hora do intervalo! Registre sua saída e retorno.': 'notificacoes.reminderBreak',
+      'Fim do expediente chegando. Lembre-se de registrar sua saída!': 'notificacoes.reminderEnd',
+      'Lembre-se de registrar seu ponto.': 'notificacoes.reminderDefault'
     };
     let tituloTraduzido = titulo;
     let mensagemTraduzida = mensagem;
@@ -50,58 +50,58 @@ function NotificationBell({ showMenuLabel = false }) {
       const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/);
       const data = dataMatch ? dataMatch[0] : metadata?.data || metadata?.data_formatada;
       if (data) {
-        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', data);
+        mensagemTraduzida = t('notificacoes.approvedMessage').replace('{date}', data);
       }
     } else if (mensagem.includes('foi rejeitado') || mensagem.includes('has been rejected')) {
       const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/);
       const data = dataMatch ? dataMatch[0] : metadata?.data;
       const motivo = metadata?.motivo || 'Não especificado';
       if (data) {
-        mensagemTraduzida = t('notifications.rejectedMessage').replace('{date}', data).replace('{reason}', motivo);
+        mensagemTraduzida = t('notificacoes.rejectedMessage').replace('{date}', data).replace('{reason}', motivo);
       }
     } else if (mensagem.includes('Seu registro de ponto do dia')) {
       const dataMatch = mensagem.match(/\d{2}\/\d{2}\/\d{4}/) || mensagem.match(/\d{4}-\d{2}-\d{2}/);
       if (dataMatch) {
-        mensagemTraduzida = t('notifications.approvedMessage').replace('{date}', dataMatch[0]);
+        mensagemTraduzida = t('notificacoes.approvedMessage').replace('{date}', dataMatch[0]);
       }
     }
     return {
-      ...notification,
+      ...notificacao,
       titulo: tituloTraduzido,
       mensagem: mensagemTraduzida
     };
   };
   useEffect(() => {
-    const initNotifications = async () => {
+    const inicializarNotificacoes = async () => {
       await carregarNotificacoes();
-      const userId = await getCurrentUserId();
-      if (userId) {
-        const channel = NotificationService.subscribeToNotifications(userId, novaNotificacao => {
-          setNotifications(prev => [translateNotification(novaNotificacao), ...prev]);
-          setUnreadCount(prev => prev + 1);
+      const idUsuario = await getIdUsuarioAtual();
+      if (idUsuario) {
+        const channel = NotificationService.subscribeToNotifications(idUsuario, novaNotificacao => {
+          setNotificacoes(prev => [traduzirNotificacao(novaNotificacao), ...prev]);
+          setContagemNaoLidas(prev => prev + 1);
         });
         return () => {
           NotificationService.unsubscribeFromNotifications(channel);
         };
       }
     };
-    initNotifications();
+    inicializarNotificacoes();
   }, []);
   useEffect(() => {
     carregarNotificacoes();
   }, [currentLanguage]);
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
+    function handleCliqueFora(event) {
+      if (refDropdown.current && !refDropdown.current.contains(event.target)) {
+        setDropdownAberto(false);
       }
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (dropdownAberto) {
+      document.addEventListener('mousedown', handleCliqueFora);
+      return () => document.removeEventListener('mousedown', handleCliqueFora);
     }
-  }, [isOpen]);
-  const getCurrentUserId = async () => {
+  }, [dropdownAberto]);
+  const getIdUsuarioAtual = async () => {
     try {
       const {
         data: {
@@ -114,57 +114,57 @@ function NotificationBell({ showMenuLabel = false }) {
     }
   };
   const carregarNotificacoes = async () => {
-    setIsLoading(true);
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      setIsLoading(false);
+    setCarregando(true);
+    const idUsuario = await getIdUsuarioAtual();
+    if (!idUsuario) {
+      setCarregando(false);
       return;
     }
-    const result = await NotificationService.buscarNotificacoes(userId);
-    if (result.success) {
-      const notificacoesTraduzidas = (result.data || []).map(n => translateNotification(n));
-      setNotifications(notificacoesTraduzidas);
-      const countResult = await NotificationService.contarNaoLidas(userId);
-      if (countResult.success) {
-        setUnreadCount(countResult.count);
+    const resultado = await NotificationService.buscarNotificacoes(idUsuario);
+    if (resultado.success) {
+      const notificacoesTraduzidas = (resultado.data || []).map(n => traduzirNotificacao(n));
+      setNotificacoes(notificacoesTraduzidas);
+      const resultadoContagem = await NotificationService.contarNaoLidas(idUsuario);
+      if (resultadoContagem.success) {
+        setContagemNaoLidas(resultadoContagem.count);
       }
     }
-    setIsLoading(false);
+    setCarregando(false);
   };
-  const handleToggleDropdown = () => {
-    setIsOpen(!isOpen);
+  const handleAlternarDropdown = () => {
+    setDropdownAberto(!dropdownAberto);
   };
   const handleMarcarComoLida = async (notificacaoId, event) => {
     event.stopPropagation();
-    const result = await NotificationService.marcarComoLida(notificacaoId);
-    if (result.success) {
-      setNotifications(prev => prev.map(n => n.id === notificacaoId ? {
+    const resultado = await NotificationService.marcarComoLida(notificacaoId);
+    if (resultado.success) {
+      setNotificacoes(prev => prev.map(n => n.id === notificacaoId ? {
         ...n,
         lida: true
       } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setContagemNaoLidas(prev => Math.max(0, prev - 1));
     }
   };
   const handleMarcarTodasComoLidas = async () => {
-    const userId = await getCurrentUserId();
-    if (!userId) return;
-    const result = await NotificationService.marcarTodasComoLidas(userId);
-    if (result.success) {
-      setNotifications(prev => prev.map(n => ({
+    const idUsuario = await getIdUsuarioAtual();
+    if (!idUsuario) return;
+    const resultado = await NotificationService.marcarTodasComoLidas(idUsuario);
+    if (resultado.success) {
+      setNotificacoes(prev => prev.map(n => ({
         ...n,
         lida: true
       })));
-      setUnreadCount(0);
+      setContagemNaoLidas(0);
     }
   };
   const handleDeletarNotificacao = async (notificacaoId, event) => {
     event.stopPropagation();
-    const result = await NotificationService.deletarNotificacao(notificacaoId);
-    if (result.success) {
-      const notificacao = notifications.find(n => n.id === notificacaoId);
-      setNotifications(prev => prev.filter(n => n.id !== notificacaoId));
-      if (!notificacao?.lida) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+    const resultado = await NotificationService.deletarNotificacao(notificacaoId);
+    if (resultado.success) {
+      const notificacaoEncontrada = notificacoes.find(n => n.id === notificacaoId);
+      setNotificacoes(prev => prev.filter(n => n.id !== notificacaoId));
+      if (!notificacaoEncontrada?.lida) {
+        setContagemNaoLidas(prev => Math.max(0, prev - 1));
       }
     }
   };
@@ -183,7 +183,7 @@ function NotificationBell({ showMenuLabel = false }) {
     } else if (notificacao.agendamento_id) {
       navigate('/historico');
     }
-    setIsOpen(false);
+    setDropdownAberto(false);
   };
   const getIconeNotificacao = tipo => {
     const IconMap = {
@@ -211,31 +211,31 @@ function NotificationBell({ showMenuLabel = false }) {
     return cores[tipo] || 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600';
   };
   const formatarTempo = timestamp => {
-    if (!timestamp) return t('notifications.recent');
+    if (!timestamp) return t('notificacoes.recent');
     const data = new Date(timestamp);
     const agora = new Date();
     const diffMs = agora - data;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHoras = Math.floor(diffMins / 60);
     const diffDias = Math.floor(diffHoras / 24);
-    if (diffMins < 1) return t('notifications.now');
-    if (diffMins === 1) return t('notifications.minuteAgo');
-    if (diffMins < 60) return t('notifications.minutesAgo').replace('{minutes}', diffMins);
-    if (diffHoras === 1) return t('notifications.hourAgo');
-    if (diffHoras < 24) return t('notifications.hoursAgo').replace('{hours}', diffHoras);
-    if (diffDias === 1) return t('notifications.dayAgo');
-    if (diffDias < 7) return t('notifications.daysAgo').replace('{days}', diffDias);
+    if (diffMins < 1) return t('notificacoes.now');
+    if (diffMins === 1) return t('notificacoes.minuteAgo');
+    if (diffMins < 60) return t('notificacoes.minutesAgo').replace('{minutes}', diffMins);
+    if (diffHoras === 1) return t('notificacoes.hourAgo');
+    if (diffHoras < 24) return t('notificacoes.hoursAgo').replace('{hours}', diffHoras);
+    if (diffDias === 1) return t('notificacoes.dayAgo');
+    if (diffDias < 7) return t('notificacoes.daysAgo').replace('{days}', diffDias);
     const locale = currentLanguage === 'en-US' ? 'en-US' : 'pt-BR';
     return data.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit'
     });
   };
-  const labelNotificacoes = t('menu.notifications');
-  return <div className={showMenuLabel ? 'relative w-full' : 'relative'} ref={dropdownRef}>
+  const labelNotificacoes = t('menuPrincipal.notifications');
+  return <div className={showMenuLabel ? 'relative w-full' : 'relative'} ref={refDropdown}>
       <button
         type="button"
-        onClick={handleToggleDropdown}
+        onClick={handleAlternarDropdown}
         className={
           showMenuLabel
             ? 'flex w-full min-h-9 min-w-[11rem] items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-left'
@@ -247,9 +247,9 @@ function NotificationBell({ showMenuLabel = false }) {
           <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          {unreadCount > 0 && (
+          {contagemNaoLidas > 0 && (
             <span className="absolute -right-1 -top-1 inline-flex min-w-[1.125rem] items-center justify-center px-1 py-0.5 text-[10px] font-bold leading-none text-white bg-red-500 rounded-full">
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {contagemNaoLidas > 99 ? '99+' : contagemNaoLidas}
             </span>
           )}
         </span>
@@ -258,24 +258,24 @@ function NotificationBell({ showMenuLabel = false }) {
         )}
       </button>
 
-      {isOpen && <div className="absolute right-0 mt-2 w-96 max-[620px]:w-[min(calc(100vw-1rem),250px)] max-[620px]:right-0 max-[620px]:mr-0.5 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[70] max-h-[600px] flex flex-col">
+      {dropdownAberto && <div className="absolute right-0 mt-2 w-96 max-[620px]:w-[min(calc(100vw-1rem),250px)] max-[620px]:right-0 max-[620px]:mr-0.5 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[70] max-h-[600px] flex flex-col">
           <div className="px-3 max-[620px]:px-1.5 py-3 max-[620px]:py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800/80 rounded-t-lg gap-2">
-            <h3 className="text-base max-[620px]:text-xs font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">{t('notifications.title')}</h3>
-            {unreadCount > 0 && <button type="button" onClick={handleMarcarTodasComoLidas} className="text-[10px] max-[620px]:text-[8px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap flex-shrink-0">
-                {t('notifications.markAllRead')}
+            <h3 className="text-base max-[620px]:text-xs font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">{t('notificacoes.title')}</h3>
+            {contagemNaoLidas > 0 && <button type="button" onClick={handleMarcarTodasComoLidas} className="text-[10px] max-[620px]:text-[8px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap flex-shrink-0">
+                {t('notificacoes.markAllRead')}
               </button>}
           </div>
 
           <div className="overflow-y-auto flex-1">
-            {isLoading ? <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            {carregando ? <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
-                <p className="mt-2 text-sm">{t('notifications.loading')}</p>
-              </div> : notifications.length === 0 ? <div className="p-8 max-[620px]:p-4 text-center text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-sm">{t('notificacoes.loading')}</p>
+              </div> : notificacoes.length === 0 ? <div className="p-8 max-[620px]:p-4 text-center text-gray-500 dark:text-gray-400">
                 <svg className="w-16 h-16 max-[620px]:w-12 max-[620px]:h-12 mx-auto mb-4 max-[620px]:mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="text-sm max-[620px]:text-xs">{t('notifications.noNotifications')}</p>
-              </div> : notifications.map(notificacao => <div key={notificacao.id} onClick={() => handleNotificacaoClick(notificacao)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleNotificacaoClick(notificacao)} className={`px-4 max-[620px]:px-2 py-3 max-[620px]:py-2 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors ${!notificacao.lida ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
+                <p className="text-sm max-[620px]:text-xs">{t('notificacoes.noNotifications')}</p>
+              </div> : notificacoes.map(notificacao => <div key={notificacao.id} onClick={() => handleNotificacaoClick(notificacao)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleNotificacaoClick(notificacao)} className={`px-4 max-[620px]:px-2 py-3 max-[620px]:py-2 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors ${!notificacao.lida ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
                   <div className="flex items-start gap-3 max-[620px]:gap-2">
                     <div className={`flex-shrink-0 w-10 h-10 max-[620px]:w-8 max-[620px]:h-8 rounded-full flex items-center justify-center border ${getCorNotificacao(notificacao.tipo)}`}>
                       {getIconeNotificacao(notificacao.tipo)}
@@ -292,7 +292,7 @@ function NotificationBell({ showMenuLabel = false }) {
                             <span className="font-semibold text-gray-900 dark:text-gray-100">{notificacao.metadata.funcionario}</span> {notificacao.mensagem}
                           </> : notificacao.mensagem}
                       </p>
-                      {notificacao.metadata?.data_formatada && <p className="text-xs max-[620px]:text-[10px] text-gray-500 dark:text-gray-400 mt-1">{t('notifications.date')} {notificacao.metadata.data_formatada}</p>}
+                      {notificacao.metadata?.data_formatada && <p className="text-xs max-[620px]:text-[10px] text-gray-500 dark:text-gray-400 mt-1">{t('notificacoes.date')} {notificacao.metadata.data_formatada}</p>}
                       <p className="text-xs max-[620px]:text-[10px] text-gray-400 dark:text-gray-500 mt-1">{formatarTempo(notificacao.created_at)}</p>
                     </div>
 
@@ -312,12 +312,12 @@ function NotificationBell({ showMenuLabel = false }) {
                 </div>)}
           </div>
 
-          {notifications.length > 0 && <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-b-lg">
+          {notificacoes.length > 0 && <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 rounded-b-lg">
               <button type="button" onClick={() => {
           navigate('/notificacoes');
-          setIsOpen(false);
+          setDropdownAberto(false);
         }} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium w-full text-center">
-                {t('notifications.viewAll')}
+                {t('notificacoes.viewAll')}
               </button>
             </div>}
         </div>}

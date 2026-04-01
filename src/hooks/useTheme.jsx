@@ -6,7 +6,7 @@ const STORAGE_KEY = 'yourtime-theme';
 
 const ThemeContext = createContext(null);
 
-export function normalizarPreferenciaTema(raw) {
+function normalizarPreferenciaTema(raw) {
   if (raw == null || raw === '') return 'light';
   const s = String(raw).trim().toLowerCase();
   if (s === 'dark' || s === 'light' || s === 'system') return s;

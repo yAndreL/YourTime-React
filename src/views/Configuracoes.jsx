@@ -6,11 +6,12 @@ import ConfiguracoesSkeleton from '../components/ui/ConfiguracoesSkeleton';
 import CacheService from '../services/CacheService';
 import { supabase } from '../config/supabase';
 import { useLanguage } from '../hooks/useLanguage.jsx';
+import { useFusoHorario } from '../hooks/useFusoHorario.jsx';
 import { useTheme } from '../hooks/useTheme.jsx';
 import { useToast } from '../hooks/useToast.jsx';
 import { FiMail, FiBell, FiClock, FiBarChart2, FiSave, FiRotateCcw } from 'react-icons/fi';
 import { MdTranslate, MdLightMode } from 'react-icons/md';
-const defaultConfig = {
+const configuracaoPadraoUsuario = {
   email_relatorios: true,
   lembrete_registro: true,
   hora_entrada_padrao: '09:00',
@@ -21,11 +22,11 @@ const defaultConfig = {
   incluir_graficos_pdf: true,
   language: 'pt-BR'
 };
-function readConfigCacheSync() {
+function lerConfiguracaoEmCacheSincrono() {
   try {
-    const uid = sessionStorage.getItem('currentUserId');
-    if (!uid) return null;
-    return CacheService.get('configuracoes', uid);
+    const idUsuario = sessionStorage.getItem('currentUserId');
+    if (!idUsuario) return null;
+    return CacheService.get('configuracoes', idUsuario);
   } catch (e) {
     return null;
   }
@@ -34,22 +35,23 @@ function Configuracoes() {
   const {
     t
   } = useLanguage();
+  const { recarregarFusoHorario } = useFusoHorario();
   const { theme, setTheme } = useTheme();
   const { showSuccess, showError } = useToast();
-  const cachedOnMount = readConfigCacheSync();
-  const initialConfig = cachedOnMount ? {
-    ...defaultConfig,
-    ...cachedOnMount,
-    hora_entrada_padrao: cachedOnMount.hora_entrada_padrao?.substring(0, 5) || defaultConfig.hora_entrada_padrao,
-    hora_saida_padrao: cachedOnMount.hora_saida_padrao?.substring(0, 5) || defaultConfig.hora_saida_padrao
-  } : defaultConfig;
-  const [config, setConfig] = useState(initialConfig);
-  const [isLoading, setIsLoading] = useState(!cachedOnMount);
-  const [showSkeleton, setShowSkeleton] = useState(!cachedOnMount);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const configuracaoEmCacheNaMontagem = lerConfiguracaoEmCacheSincrono();
+  const configuracaoInicialFormulario = configuracaoEmCacheNaMontagem ? {
+    ...configuracaoPadraoUsuario,
+    ...configuracaoEmCacheNaMontagem,
+    hora_entrada_padrao: configuracaoEmCacheNaMontagem.hora_entrada_padrao?.substring(0, 5) || configuracaoPadraoUsuario.hora_entrada_padrao,
+    hora_saida_padrao: configuracaoEmCacheNaMontagem.hora_saida_padrao?.substring(0, 5) || configuracaoPadraoUsuario.hora_saida_padrao
+  } : configuracaoPadraoUsuario;
+  const [config, setConfig] = useState(configuracaoInicialFormulario);
+  const [carregandoConfiguracoes, setCarregandoConfiguracoes] = useState(!configuracaoEmCacheNaMontagem);
+  const [exibirSkeletonConfiguracoes, setExibirSkeletonConfiguracoes] = useState(!configuracaoEmCacheNaMontagem);
+  const [salvandoConfiguracoes, setSalvandoConfiguracoes] = useState(false);
+  const [modalConfirmacaoRestaurarVisivel, setModalConfirmacaoRestaurarVisivel] = useState(false);
   useEffect(() => {
-    if (showConfirmModal) {
+    if (modalConfirmacaoRestaurarVisivel) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -57,11 +59,11 @@ function Configuracoes() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showConfirmModal]);
+  }, [modalConfirmacaoRestaurarVisivel]);
   useEffect(() => {
     carregarConfiguracoes();
   }, []);
-  const getCurrentUserId = async () => {
+  const obterIdUsuarioAtual = async () => {
     const {
       data: {
         user
@@ -70,55 +72,55 @@ function Configuracoes() {
     return user?.id;
   };
   const carregarConfiguracoes = async () => {
-    const userId = await getCurrentUserId();
-    if (!userId) {
+    const idUsuario = await obterIdUsuarioAtual();
+    if (!idUsuario) {
       showError('Erro ao carregar usuário');
-      setIsLoading(false);
+      setCarregandoConfiguracoes(false);
       return;
     }
-    const cachedConfig = CacheService.get('configuracoes', userId);
-    if (cachedConfig) {
-      setConfig(cachedConfig);
-      setIsLoading(false);
-      setShowSkeleton(false);
-      carregarConfiguracoesFromDB(userId, true);
+    const configuracaoEmCache = CacheService.get('configuracoes', idUsuario);
+    if (configuracaoEmCache) {
+      setConfig(configuracaoEmCache);
+      setCarregandoConfiguracoes(false);
+      setExibirSkeletonConfiguracoes(false);
+      carregarConfiguracoesFromDB(idUsuario, true);
       return;
     }
-    setIsLoading(true);
-    setShowSkeleton(true);
-    await carregarConfiguracoesFromDB(userId, false);
+    setCarregandoConfiguracoes(true);
+    setExibirSkeletonConfiguracoes(true);
+    await carregarConfiguracoesFromDB(idUsuario, false);
   };
-  const carregarConfiguracoesFromDB = async (userId, isBackgroundUpdate = false) => {
-    const result = await ConfigService.buscarConfiguracoes(userId);
-    if (result.success && result.data) {
-      const configData = {
-        ...result.data,
-        hora_entrada_padrao: result.data.hora_entrada_padrao?.substring(0, 5) || '09:00',
-        hora_saida_padrao: result.data.hora_saida_padrao?.substring(0, 5) || '18:00'
+  const carregarConfiguracoesFromDB = async (idUsuario, atualizacaoEmSegundoPlano = false) => {
+    const resultado = await ConfigService.buscarConfiguracoes(idUsuario);
+    if (resultado.success && resultado.data) {
+      const dadosConfiguracao = {
+        ...resultado.data,
+        hora_entrada_padrao: resultado.data.hora_entrada_padrao?.substring(0, 5) || '09:00',
+        hora_saida_padrao: resultado.data.hora_saida_padrao?.substring(0, 5) || '18:00'
       };
-      setConfig(configData);
-      CacheService.set('configuracoes', configData, userId, 10 * 60 * 1000);
+      setConfig(dadosConfiguracao);
+      CacheService.set('configuracoes', dadosConfiguracao, idUsuario, 10 * 60 * 1000);
     }
-    if (!isBackgroundUpdate) {
-      setIsLoading(false);
-      setShowSkeleton(false);
+    if (!atualizacaoEmSegundoPlano) {
+      setCarregandoConfiguracoes(false);
+      setExibirSkeletonConfiguracoes(false);
     }
   };
-  const handleChange = (field, value) => {
+  const atualizarCampoConfiguracao = (campo, valor) => {
     setConfig(prev => ({
       ...prev,
-      [field]: value
+      [campo]: valor
     }));
   };
-  const handleSalvar = async () => {
-    setIsSaving(true);
-    const userId = await getCurrentUserId();
-    if (!userId) {
+  const processarSalvarConfiguracoes = async () => {
+    setSalvandoConfiguracoes(true);
+    const idUsuario = await obterIdUsuarioAtual();
+    if (!idUsuario) {
       showError('Erro ao salvar: usuário não encontrado');
-      setIsSaving(false);
+      setSalvandoConfiguracoes(false);
       return;
     }
-    const configParaSalvar = {
+    const payloadConfiguracaoParaPersistir = {
       email_relatorios: config.email_relatorios,
       lembrete_registro: config.lembrete_registro,
       hora_entrada_padrao: `${config.hora_entrada_padrao}:00`,
@@ -130,48 +132,50 @@ function Configuracoes() {
       language: config.language,
       preferencia_tema: theme
     };
-    const result = await ConfigService.atualizarConfiguracoes(userId, configParaSalvar);
-    if (result.success) {
+    const resultadoSalvar = await ConfigService.atualizarConfiguracoes(idUsuario, payloadConfiguracaoParaPersistir);
+    if (resultadoSalvar.success) {
       showSuccess('Configurações salvas com sucesso!');
-      CacheService.remove('configuracoes', userId);
+      CacheService.remove('configuracoes', idUsuario);
+      await recarregarFusoHorario();
     } else {
       showError('Erro ao salvar configurações');
     }
-    setIsSaving(false);
+    setSalvandoConfiguracoes(false);
   };
-  const handleRestaurar = async () => {
-    setShowConfirmModal(false);
-    setIsSaving(true);
-    const userId = await getCurrentUserId();
-    if (!userId) {
+  const processarRestaurarConfiguracoesPadrao = async () => {
+    setModalConfirmacaoRestaurarVisivel(false);
+    setSalvandoConfiguracoes(true);
+    const idUsuario = await obterIdUsuarioAtual();
+    if (!idUsuario) {
       showError('Erro: usuário não encontrado');
-      setIsSaving(false);
+      setSalvandoConfiguracoes(false);
       return;
     }
-    const result = await ConfigService.restaurarPadroes(userId);
-    if (result.success) {
-      CacheService.remove('configuracoes', userId);
+    const resultadoRestaurar = await ConfigService.restaurarPadroes(idUsuario);
+    if (resultadoRestaurar.success) {
+      CacheService.remove('configuracoes', idUsuario);
       await carregarConfiguracoes();
+      await recarregarFusoHorario();
       setTheme('light');
       showSuccess('Configurações restauradas para os padrões');
     } else {
       showError('Erro ao restaurar configurações');
     }
-    setIsSaving(false);
+    setSalvandoConfiguracoes(false);
   };
-  if (showSkeleton && isLoading) {
+  if (exibirSkeletonConfiguracoes && carregandoConfiguracoes) {
     return <MainLayout title="Configurações" subtitle="Personalize suas preferências">
         <ConfiguracoesSkeleton />
       </MainLayout>;
   }
-  return <MainLayout title={t('settings.title')} subtitle={t('settings.subtitle')}>
+  return <MainLayout title={t('configuracoes.title')} subtitle={t('configuracoes.subtitle')}>
       <div className="max-w-4xl mx-auto">
         <div className="yt-card shadow-md p-4 sm:p-6 lg:p-8">
           <div className="space-y-6 sm:space-y-8">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <FiBell className="w-5 h-5" />
-                {t('settings.notifications')}
+                {t('configuracoes.notifications')}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3 p-3 sm:p-4 yt-inset rounded-lg border border-gray-200/80 dark:border-gray-700/80">
@@ -180,12 +184,12 @@ function Configuracoes() {
                       <FiMail className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('settings.emailReports')}</p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('settings.emailReportsDesc')}</p>
+                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('configuracoes.emailReports')}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('configuracoes.emailReportsDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input type="checkbox" checked={config.email_relatorios} onChange={e => handleChange('email_relatorios', e.target.checked)} className="sr-only peer" />
+                    <input type="checkbox" checked={config.email_relatorios} onChange={e => atualizarCampoConfiguracao('email_relatorios', e.target.checked)} className="sr-only peer" />
                     <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
@@ -195,12 +199,12 @@ function Configuracoes() {
                       <FiClock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('settings.reminderRecord')}</p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('settings.reminderRecordDesc')}</p>
+                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('configuracoes.reminderRecord')}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('configuracoes.reminderRecordDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input type="checkbox" checked={config.lembrete_registro} onChange={e => handleChange('lembrete_registro', e.target.checked)} className="sr-only peer" />
+                    <input type="checkbox" checked={config.lembrete_registro} onChange={e => atualizarCampoConfiguracao('lembrete_registro', e.target.checked)} className="sr-only peer" />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
@@ -210,32 +214,32 @@ function Configuracoes() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <FiClock className="w-5 h-5" />
-                {t('settings.workSchedule')}
+                {t('configuracoes.workSchedule')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium yt-label mb-2">
-                    {t('settings.startTime')}
+                    {t('configuracoes.startTime')}
                   </label>
-                  <input type="time" value={config.hora_entrada_padrao} onChange={e => handleChange('hora_entrada_padrao', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
+                  <input type="time" value={config.hora_entrada_padrao} onChange={e => atualizarCampoConfiguracao('hora_entrada_padrao', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium yt-label mb-2">
-                    {t('settings.endTime')}
+                    {t('configuracoes.endTime')}
                   </label>
-                  <input type="time" value={config.hora_saida_padrao} onChange={e => handleChange('hora_saida_padrao', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
+                  <input type="time" value={config.hora_saida_padrao} onChange={e => atualizarCampoConfiguracao('hora_saida_padrao', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium yt-label mb-2">
-                    {t('settings.weeklyHours')}
+                    {t('configuracoes.weeklyHours')}
                   </label>
-                  <input type="number" value={config.horas_semanais} onChange={e => handleChange('horas_semanais', parseInt(e.target.value))} min="1" max="60" className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
+                  <input type="number" value={config.horas_semanais} onChange={e => atualizarCampoConfiguracao('horas_semanais', parseInt(e.target.value))} min="1" max="60" className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium yt-label mb-2">
-                    {t('settings.timezone')}
+                    {t('configuracoes.timezone')}
                   </label>
-                  <select value={config.fuso_horario} onChange={e => handleChange('fuso_horario', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2">
+                  <select value={config.fuso_horario} onChange={e => atualizarCampoConfiguracao('fuso_horario', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2">
                     <option value="America/Sao_Paulo">Brasília (GMT-3)</option>
                     <option value="America/Manaus">Manaus (GMT-4)</option>
                     <option value="America/Noronha">Fernando de Noronha (GMT-2)</option>
@@ -247,7 +251,7 @@ function Configuracoes() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <FiBarChart2 className="w-5 h-5" />
-                {t('settings.reports')}
+                {t('configuracoes.reports')}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3 p-3 sm:p-4 yt-inset rounded-lg border border-gray-200/80 dark:border-gray-700/80">
@@ -256,12 +260,12 @@ function Configuracoes() {
                       <FiBarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('settings.includeCharts')}</p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('settings.includeChartsDesc')}</p>
+                      <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{t('configuracoes.includeCharts')}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{t('configuracoes.includeChartsDesc')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input type="checkbox" checked={config.incluir_graficos_pdf} onChange={e => handleChange('incluir_graficos_pdf', e.target.checked)} className="sr-only peer" />
+                    <input type="checkbox" checked={config.incluir_graficos_pdf} onChange={e => atualizarCampoConfiguracao('incluir_graficos_pdf', e.target.checked)} className="sr-only peer" />
                     <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
@@ -271,21 +275,21 @@ function Configuracoes() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <MdLightMode className="w-5 h-5" />
-                {t('settings.appearance')}
+                {t('configuracoes.appearance')}
               </h2>
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <label className="block text-sm font-medium yt-label mb-2">{t('settings.themePreference')}</label>
+                  <label className="block text-sm font-medium yt-label mb-2">{t('configuracoes.themePreference')}</label>
                   <select
                     value={theme}
                     onChange={e => setTheme(e.target.value)}
                     className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2"
                   >
-                    <option value="light">{t('theme.light')}</option>
-                    <option value="dark">{t('theme.dark')}</option>
-                    <option value="system">{t('theme.system')}</option>
+                    <option value="light">{t('tema.light')}</option>
+                    <option value="dark">{t('tema.dark')}</option>
+                    <option value="system">{t('tema.system')}</option>
                   </select>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('settings.themePreferenceDesc')}</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('configuracoes.themePreferenceDesc')}</p>
                 </div>
               </div>
             </div>
@@ -293,21 +297,21 @@ function Configuracoes() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <MdTranslate className="w-5 h-5" />
-                {t('settings.language')}
+                {t('configuracoes.language')}
               </h2>
               <div className="grid grid-cols-1 gap-6">
                 <div>
                   <label className="block text-sm font-medium yt-label mb-2">
-                    {t('settings.interfaceLanguage')}
+                    {t('configuracoes.interfaceLanguage')}
                   </label>
-                  <select value={config.language} onChange={e => handleChange('language', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2">
+                  <select value={config.language} onChange={e => atualizarCampoConfiguracao('language', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2">
                     <option value="pt-BR">🇧🇷 Português (Brasil)</option>
                     <option value="en-US">🇺🇸 English (United States)</option>
                     <option value="es-ES">🇪🇸 Español (España)</option>
                     <option value="fr-FR">🇫🇷 Français (France)</option>
                   </select>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    {t('settings.languageDesc')}
+                    {t('configuracoes.languageDesc')}
                   </p>
                 </div>
               </div>
@@ -315,22 +319,22 @@ function Configuracoes() {
           </div>
 
           <div className="mt-6 sm:mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:justify-center">
-            <button type="button" onClick={handleSalvar} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
-              {isSaving ? <>
+            <button type="button" onClick={processarSalvarConfiguracoes} disabled={salvandoConfiguracoes} className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+              {salvandoConfiguracoes ? <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  {t('settings.saving')}
+                  {t('configuracoes.saving')}
                 </> : <>
-                  {t('common.save')}
+                  {t('comum.save')}
                 </>}
             </button>
-            <button type="button" onClick={() => setShowConfirmModal(true)} disabled={isSaving} className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 disabled:bg-gray-200 dark:disabled:bg-gray-700 text-gray-700 dark:text-gray-100 font-bold py-3 px-6 rounded-lg transition-colors text-center">
-              {t('settings.restoreDefaults')}
+            <button type="button" onClick={() => setModalConfirmacaoRestaurarVisivel(true)} disabled={salvandoConfiguracoes} className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 disabled:bg-gray-200 dark:disabled:bg-gray-700 text-gray-700 dark:text-gray-100 font-bold py-3 px-6 rounded-lg transition-colors text-center">
+              {t('configuracoes.restoreDefaults')}
             </button>
           </div>
         </div>
       </div>
 
-      {showConfirmModal && <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      {modalConfirmacaoRestaurarVisivel && <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
               Confirmar Restauração
@@ -339,10 +343,10 @@ function Configuracoes() {
               Tem certeza que deseja restaurar as configurações padrão?
             </p>
             <div className="flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowConfirmModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+              <button type="button" onClick={() => setModalConfirmacaoRestaurarVisivel(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 Cancelar
               </button>
-              <button type="button" onClick={handleRestaurar} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="button" onClick={processarRestaurarConfiguracoesPadrao} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Ok
               </button>
             </div>

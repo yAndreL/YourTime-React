@@ -4,13 +4,13 @@ import { supabase } from '../../config/supabase.js';
 import MainLayout from '../layout/MainLayout';
 import NotificationService from '../../services/NotificationService';
 import { useLanguage } from '../../hooks/useLanguage';
-import { getLocalDateString } from '../../utils/dateUtils';
+import { obterTextoDataLocal } from '../../utils/dateUtils';
 import { FiFileText, FiClock, FiSave, FiX, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 function FormularioPonto() {
   const {
     t
   } = useLanguage();
-  const [formData, setFormData] = useState({
+  const [dadosFormulario, setDadosFormulario] = useState({
     data: '',
     observacao: '',
     entrada1: '',
@@ -20,7 +20,7 @@ function FormularioPonto() {
   });
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [enviandoFormularioPonto, setEnviandoFormularioPonto] = useState(false);
   const [usuarioAtual, setUsuarioAtual] = useState(null);
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
   const navigate = useNavigate();
@@ -31,9 +31,9 @@ function FormularioPonto() {
   }, []);
   const carregarProjetoSelecionado = () => {
     try {
-      const savedProject = localStorage.getItem('selectedProject');
-      if (savedProject) {
-        const project = JSON.parse(savedProject);
+      const projetoSalvo = localStorage.getItem('selectedProject');
+      if (projetoSalvo) {
+        const project = JSON.parse(projetoSalvo);
         setProjetoSelecionado(project);
       }
     } catch (error) {}
@@ -46,7 +46,7 @@ function FormularioPonto() {
         }
       } = await supabase.auth.getUser();
       if (!user) {
-        setErro(t('validation.userNotAuthenticated'));
+        setErro(t('validacao.userNotAuthenticated'));
         return;
       }
       const {
@@ -58,17 +58,17 @@ function FormularioPonto() {
         setUsuarioAtual(profile);
       }
     } catch (error) {
-      setErro(t('validation.errorLoadingUser'));
+      setErro(t('validacao.errorLoadingUser'));
     }
   };
   const definirDataPadrao = () => {
-    const hoje = getLocalDateString();
-    setFormData(prev => ({
+    const hoje = obterTextoDataLocal();
+    setDadosFormulario(prev => ({
       ...prev,
       data: hoje
     }));
   };
-  const handleChange = e => {
+  const aoAlterarCampoFormularioPonto = e => {
     const {
       name,
       value
@@ -76,7 +76,7 @@ function FormularioPonto() {
     if (name.includes('entrada') || name.includes('saida')) {
       const sanitized = value.replace(/[^\d:]/g, '');
       if (sanitized.length === 2 && !sanitized.includes(':')) {
-        setFormData(prev => ({
+        setDadosFormulario(prev => ({
           ...prev,
           [name]: sanitized + ':'
         }));
@@ -90,14 +90,14 @@ function FormularioPonto() {
         if (parts[1] && parseInt(parts[1]) > 59) {
           parts[1] = '59';
         }
-        setFormData(prev => ({
+        setDadosFormulario(prev => ({
           ...prev,
           [name]: parts.join(':')
         }));
         return;
       }
     }
-    setFormData(prev => ({
+    setDadosFormulario(prev => ({
       ...prev,
       [name]: value
     }));
@@ -110,33 +110,33 @@ function FormularioPonto() {
       saida1,
       entrada2,
       saida2
-    } = formData;
+    } = dadosFormulario;
     if (!entrada1) {
-      setErro(t('validation.entry1Required'));
+      setErro(t('validacao.entry1Required'));
       return false;
     }
     if (!saida1) {
-      setErro(t('validation.exit1Required'));
+      setErro(t('validacao.exit1Required'));
       return false;
     }
     if (!entrada2) {
-      setErro(t('validation.entry2Required'));
+      setErro(t('validacao.entry2Required'));
       return false;
     }
     if (!saida2) {
-      setErro(t('validation.exit2Required'));
+      setErro(t('validacao.exit2Required'));
       return false;
     }
     if (entrada1 >= saida1) {
-      setErro(t('validation.exit1AfterEntry1'));
+      setErro(t('validacao.exit1AfterEntry1'));
       return false;
     }
     if (entrada2 <= saida1) {
-      setErro(t('validation.entry2AfterExit1'));
+      setErro(t('validacao.entry2AfterExit1'));
       return false;
     }
     if (saida2 <= entrada2) {
-      setErro(t('validation.exit2AfterEntry2'));
+      setErro(t('validacao.exit2AfterEntry2'));
       return false;
     }
     return true;
@@ -146,7 +146,7 @@ function FormularioPonto() {
       entrada1,
       saida1,
       entrada2
-    } = formData;
+    } = dadosFormulario;
     if (!saida1 || !entrada2) return 0;
     const saida1Time = new Date(`2000-01-01T${saida1}`);
     const entrada2Time = new Date(`2000-01-01T${entrada2}`);
@@ -163,7 +163,7 @@ function FormularioPonto() {
       saida1,
       entrada2,
       saida2
-    } = formData;
+    } = dadosFormulario;
     let totalMinutos = 0;
     if (entrada1 && saida1) {
       const entrada1Time = new Date(`2000-01-01T${entrada1}`);
@@ -187,33 +187,33 @@ function FormularioPonto() {
       return `${horas}h${minutos}min`;
     }
   };
-  const handleSubmit = async e => {
+  const processarEnvioFormularioPonto = async e => {
     e.preventDefault();
     if (!validarHorarios()) return;
     if (!usuarioAtual) {
       setErro('Usuário não identificado. Faça login novamente.');
       return;
     }
-    const hoje = getLocalDateString();
-    if (formData.data > hoje) {
-      setErro(t('validation.futureDate'));
+    const hoje = obterTextoDataLocal();
+    if (dadosFormulario.data > hoje) {
+      setErro(t('validacao.futureDate'));
       return;
     }
-    setLoading(true);
+    setEnviandoFormularioPonto(true);
     setErro('');
     setSucesso('');
     try {
       const {
         data: registrosExistentes,
         error: errVerificacao
-      } = await supabase.from('agendamento').select('id, entrada1, saida1, entrada2, saida2, data, created_at, status').eq('user_id', usuarioAtual.id).eq('data', formData.data);
+      } = await supabase.from('agendamento').select('id, entrada1, saida1, entrada2, saida2, data, created_at, status').eq('user_id', usuarioAtual.id).eq('data', dadosFormulario.data);
       if (errVerificacao) throw errVerificacao;
       if (registrosExistentes && registrosExistentes.length > 0) {
         const registro = registrosExistentes[0];
         const horarios = `${registro.entrada1 || '--'} - ${registro.saida1 || '--'}${registro.entrada2 ? ` | ${registro.entrada2} - ${registro.saida2 || '--'}` : ''}`;
-        const statusTexto = registro.status === 'P' ? t('history.pending') : registro.status === 'A' ? t('history.approved') : t('history.rejected');
-        setErro(t('validation.duplicateRecord').replace('{date}', formData.data).replace('{times}', horarios).replace('{status}', statusTexto));
-        setLoading(false);
+        const statusTexto = registro.status === 'P' ? t('historico.pending') : registro.status === 'A' ? t('historico.approved') : t('historico.rejected');
+        setErro(t('validacao.duplicateRecord').replace('{date}', dadosFormulario.data).replace('{times}', horarios).replace('{status}', statusTexto));
+        setEnviandoFormularioPonto(false);
         return;
       }
       const {
@@ -230,12 +230,12 @@ function FormularioPonto() {
       }
       const pontoData = {
         user_id: usuarioAtual.id,
-        data: formData.data,
-        entrada1: formData.entrada1,
-        saida1: formData.saida1 || null,
-        entrada2: formData.entrada2 || null,
-        saida2: formData.saida2 || null,
-        observacao: formData.observacao || null,
+        data: dadosFormulario.data,
+        entrada1: dadosFormulario.entrada1,
+        saida1: dadosFormulario.saida1 || null,
+        entrada2: dadosFormulario.entrada2 || null,
+        saida2: dadosFormulario.saida2 || null,
+        observacao: dadosFormulario.observacao || null,
         pausa_almoco: calcularPausaAlmoco(),
         pausas_extras: calcularPausasExtras(),
         status: 'P',
@@ -251,27 +251,27 @@ function FormularioPonto() {
         throw error;
       }
       if (data && data.length > 0) {
-        await NotificationService.notificarAdminsPontoPendente(data[0].id, usuarioAtual.nome, formData.data, usuarioAtual.id);
+        await NotificationService.notificarAdminsPontoPendente(data[0].id, usuarioAtual.nome, dadosFormulario.data, usuarioAtual.id);
       }
       sessionStorage.removeItem('cachedTimeRecords');
-      setSucesso(t('timeRecordForm.saved'));
+      setSucesso(t('formularioPonto.saved'));
       setTimeout(() => {
         navigate('/');
       }, 400);
     } catch (error) {
-      setErro(t('validation.errorSavingRecord').replace('{error}', error.message));
+      setErro(t('validacao.errorSavingRecord').replace('{error}', error.message));
     } finally {
-      setLoading(false);
+      setEnviandoFormularioPonto(false);
     }
   };
-  return <MainLayout title={t('timeRecordForm.title')} subtitle={usuarioAtual ? `${t('timeRecordForm.hello')}, ${usuarioAtual.nome}` : ''}>
+  return <MainLayout title={t('formularioPonto.title')} subtitle={usuarioAtual ? `${t('formularioPonto.hello')}, ${usuarioAtual.nome}` : ''}>
       {projetoSelecionado && <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 dark:border-blue-400 rounded-lg">
           <div className="flex items-center gap-3">
             <div className="w-4 h-4 rounded-full flex-shrink-0" style={{
           backgroundColor: projetoSelecionado.cor_identificacao
         }}></div>
             <div>
-              <div className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('timeRecordForm.title')}:</div>
+              <div className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('formularioPonto.title')}:</div>
               <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{projetoSelecionado.nome}</div>
             </div>
           </div>
@@ -280,46 +280,46 @@ function FormularioPonto() {
       {!projetoSelecionado && <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-yellow-400 dark:border-yellow-600 rounded-lg flex items-center gap-2">
           <FiAlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
           <div>
-            <div className="text-sm font-medium text-yellow-900 dark:text-yellow-100">{t('timeRecordForm.noProjectSelected')}</div>
-            <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">{t('timeRecordForm.selectProjectMsg')}</div>
+            <div className="text-sm font-medium text-yellow-900 dark:text-yellow-100">{t('formularioPonto.noProjectSelected')}</div>
+            <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">{t('formularioPonto.selectProjectMsg')}</div>
           </div>
         </div>}
 
       <div className="max-w-4xl mx-auto">
         <div className="yt-card p-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={processarEnvioFormularioPonto} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="data" className="block text-sm font-semibold yt-label mb-1">
-                    {t('timeRecordForm.date')} <span className="text-red-500">*</span>
+                    {t('formularioPonto.date')} <span className="text-red-500">*</span>
                   </label>
-                  <input type="date" id="data" name="data" value={formData.data} onChange={handleChange} max={getLocalDateString()} className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" required />
+                  <input type="date" id="data" name="data" value={dadosFormulario.data} onChange={aoAlterarCampoFormularioPonto} max={obterTextoDataLocal()} className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" required />
                 </div>
                 <div>
                   <label htmlFor="observacao" className="block text-sm font-semibold yt-label mb-1">
-                    {t('timeRecordForm.observation')}
+                    {t('formularioPonto.observation')}
                   </label>
-                  <input type="text" id="observacao" name="observacao" value={formData.observacao} onChange={handleChange} placeholder={t('timeRecordForm.observationPlaceholder')} className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" />
+                  <input type="text" id="observacao" name="observacao" value={dadosFormulario.observacao} onChange={aoAlterarCampoFormularioPonto} placeholder={t('formularioPonto.observationPlaceholder')} className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" />
                 </div>
               </div>
 
               <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2 text-sm">
                   <FiClock className="w-4 h-4" />
-                  {t('timeRecordForm.shift1')} <span className="text-red-500">*</span>
+                  {t('formularioPonto.shift1')} <span className="text-red-500">*</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="entrada1" className="block text-xs font-medium yt-label mb-1">
-                      {t('timeRecordForm.entry')} <span className="text-red-500">*</span>
+                      {t('formularioPonto.entry')} <span className="text-red-500">*</span>
                     </label>
-                    <input type="time" id="entrada1" name="entrada1" value={formData.entrada1} onChange={handleChange} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" required />
+                    <input type="time" id="entrada1" name="entrada1" value={dadosFormulario.entrada1} onChange={aoAlterarCampoFormularioPonto} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" required />
                   </div>
                   <div>
                     <label htmlFor="saida1" className="block text-xs font-medium yt-label mb-1">
-                      {t('timeRecordForm.exit')}
+                      {t('formularioPonto.exit')}
                     </label>
-                    <input type="time" id="saida1" name="saida1" value={formData.saida1} onChange={handleChange} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" />
+                    <input type="time" id="saida1" name="saida1" value={dadosFormulario.saida1} onChange={aoAlterarCampoFormularioPonto} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm" />
                   </div>
                 </div>
               </div>
@@ -327,20 +327,20 @@ function FormularioPonto() {
               <div className="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-3">
                 <h3 className="font-semibold text-green-900 dark:text-green-200 mb-3 flex items-center gap-2 text-sm">
                   <FiClock className="w-4 h-4" />
-                  {t('timeRecordForm.shift2')}
+                  {t('formularioPonto.shift2')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="entrada2" className="block text-xs font-medium yt-label mb-1">
-                      {t('timeRecordForm.entry')}
+                      {t('formularioPonto.entry')}
                     </label>
-                    <input type="time" id="entrada2" name="entrada2" value={formData.entrada2} onChange={handleChange} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm" />
+                    <input type="time" id="entrada2" name="entrada2" value={dadosFormulario.entrada2} onChange={aoAlterarCampoFormularioPonto} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm" />
                   </div>
                   <div>
                     <label htmlFor="saida2" className="block text-xs font-medium yt-label mb-1">
-                      {t('timeRecordForm.exit')}
+                      {t('formularioPonto.exit')}
                     </label>
-                    <input type="time" id="saida2" name="saida2" value={formData.saida2} onChange={handleChange} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm" />
+                    <input type="time" id="saida2" name="saida2" value={dadosFormulario.saida2} onChange={aoAlterarCampoFormularioPonto} placeholder="HH:MM" className="w-full px-3 py-2 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm text-sm" />
                   </div>
                 </div>
               </div>
@@ -348,17 +348,17 @@ function FormularioPonto() {
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-950/30 border border-blue-300 dark:border-blue-800 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2 text-sm">
                   <FiCheckCircle className="w-4 h-4" />
-                  {t('timeRecordForm.summary')}
+                  {t('formularioPonto.summary')}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white dark:bg-gray-800/80 rounded-lg p-2 shadow-sm border border-blue-100 dark:border-gray-700">
-                    <span className="text-xs text-gray-600 dark:text-gray-300">{t('timeRecordForm.lunchBreak')}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">{t('formularioPonto.lunchBreak')}</span>
                     <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                       {calcularPausaAlmoco()} min
                     </p>
                   </div>
                   <div className="bg-white dark:bg-gray-800/80 rounded-lg p-2 shadow-sm border border-blue-100 dark:border-gray-700">
-                    <span className="text-xs text-gray-600 dark:text-gray-300">{t('timeRecordForm.totalWorked')}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">{t('formularioPonto.totalWorked')}</span>
                     <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-0.5">
                       {calcularTotalTrabalhado()}
                     </p>
@@ -368,15 +368,15 @@ function FormularioPonto() {
                 <div className="mt-3 pt-3 border-t border-blue-300 dark:border-blue-800">
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{t('timeRecordForm.shift1')}:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{t('formularioPonto.shift1')}:</span>
                       <span className="text-blue-700 dark:text-blue-300">
-                        {formData.entrada1 && formData.saida1 ? `${formData.entrada1} - ${formData.saida1}` : t('timeRecordForm.notDefined')}
+                        {dadosFormulario.entrada1 && dadosFormulario.saida1 ? `${dadosFormulario.entrada1} - ${dadosFormulario.saida1}` : t('formularioPonto.notDefined')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{t('timeRecordForm.shift2')}:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{t('formularioPonto.shift2')}:</span>
                       <span className="text-green-700 dark:text-green-300">
-                        {formData.entrada2 && formData.saida2 ? `${formData.entrada2} - ${formData.saida2}` : t('timeRecordForm.notDefined')}
+                        {dadosFormulario.entrada2 && dadosFormulario.saida2 ? `${dadosFormulario.entrada2} - ${dadosFormulario.saida2}` : t('formularioPonto.notDefined')}
                       </span>
                     </div>
                   </div>
@@ -396,14 +396,14 @@ function FormularioPonto() {
               <div className="flex flex-col-reverse md:flex-row gap-2 pt-2">
                 <button type="button" onClick={() => navigate('/')} className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors flex items-center justify-center gap-2 text-sm">
                   <FiX className="w-4 h-4" />
-                  {t('timeRecordForm.cancel')}
+                  {t('formularioPonto.cancel')}
                 </button>
-                <button type="submit" disabled={loading || !usuarioAtual} className="flex-1 px-4 py-2.5 bg-blue-600 text-white border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-700 hover:border-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm">
-                  {loading ? <>
+                <button type="submit" disabled={enviandoFormularioPonto || !usuarioAtual} className="flex-1 px-4 py-2.5 bg-blue-600 text-white border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-700 hover:border-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm">
+                  {enviandoFormularioPonto ? <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       Salvando...
                     </> : <>
-                      {t('timeRecordForm.register')}
+                      {t('formularioPonto.register')}
                     </>}
                 </button>
               </div>

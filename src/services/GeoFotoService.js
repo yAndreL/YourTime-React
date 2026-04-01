@@ -9,9 +9,9 @@ class GeoFotoService {
       }
 
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } })
-        .then(stream => {
+        .then(fluxoMidia => {
           const video = document.createElement('video');
-          video.srcObject = stream;
+          video.srcObject = fluxoMidia;
           video.setAttribute('playsinline', 'true');
 
           video.onloadedmetadata = () => {
@@ -21,14 +21,14 @@ class GeoFotoService {
               const canvas = document.createElement('canvas');
               canvas.width = 480;
               canvas.height = 480;
-              const ctx = canvas.getContext('2d');
+              const contextoCanvas = canvas.getContext('2d');
 
               const size = Math.min(video.videoWidth, video.videoHeight);
               const sx = (video.videoWidth - size) / 2;
               const sy = (video.videoHeight - size) / 2;
-              ctx.drawImage(video, sx, sy, size, size, 0, 0, 480, 480);
+              contextoCanvas.drawImage(video, sx, sy, size, size, 0, 0, 480, 480);
 
-              stream.getTracks().forEach(track => track.stop());
+              fluxoMidia.getTracks().forEach(track => track.stop());
 
               canvas.toBlob(blob => {
                 resolve(blob);
@@ -85,7 +85,7 @@ class GeoFotoService {
     }
   }
 
-  static async capturarGeolocalizacao(timeoutMs = 10000) {
+  static async capturarGeolocalizacao(tempoLimiteMs = 10000) {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         resolve({ latitude: null, longitude: null, precisaoGps: null, erro: 'Geolocalização não suportada' });
@@ -104,7 +104,7 @@ class GeoFotoService {
         (error) => {
           resolve({ latitude: null, longitude: null, precisaoGps: null, erro: error.message });
         },
-        { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: tempoLimiteMs, maximumAge: 0 }
       );
     });
   }

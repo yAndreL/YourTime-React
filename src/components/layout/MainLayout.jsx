@@ -17,46 +17,45 @@ import {
 } from 'react-icons/md';
 
 function MainLayout({ children, title, subtitle }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profile, setProfile] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
-  const [toolbarExpanded, setToolbarExpanded] = useState(false);
-  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const quickActionsRef = useRef(null);
+  const [menuLateralAberto, setMenuLateralAberto] = useState(false);
+  const [perfilUsuario, setPerfilUsuario] = useState(null);
+  const [barraAcoesRapidasExpandida, setBarraAcoesRapidasExpandida] = useState(false);
+  const [menuIdiomaAberto, setMenuIdiomaAberto] = useState(false);
+  const [menuTemaAberto, setMenuTemaAberto] = useState(false);
+  const refAcoesRapidas = useRef(null);
   const navigate = useNavigate();
-  const { currentLanguage, changeLanguage, t } = useLanguage();
+  const { currentLanguage, alterarIdioma, t } = useLanguage();
   const { theme, setTheme } = useTheme();
 
   useSecureCache();
 
   useEffect(() => {
-    const cachedProfile = sessionStorage.getItem('userProfile');
-    if (cachedProfile) {
+    const perfilEmCache = sessionStorage.getItem('userProfile');
+    if (perfilEmCache) {
       try {
-        setProfile(JSON.parse(cachedProfile));
+        setPerfilUsuario(JSON.parse(perfilEmCache));
       } catch (e) {}
     }
     carregarPerfil();
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (quickActionsRef.current && !quickActionsRef.current.contains(event.target)) {
-        setLanguageDropdownOpen(false);
-        setThemeMenuOpen(false);
+    function aoDetectarCliqueForaMenuCabecalho(event) {
+      if (refAcoesRapidas.current && !refAcoesRapidas.current.contains(event.target)) {
+        setMenuIdiomaAberto(false);
+        setMenuTemaAberto(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', aoDetectarCliqueForaMenuCabecalho);
+    return () => document.removeEventListener('mousedown', aoDetectarCliqueForaMenuCabecalho);
   }, []);
 
-  const handleLanguageChange = async languageCode => {
-    setLanguageDropdownOpen(false);
-    await changeLanguage(languageCode);
+  const aoAlterarIdiomaPreferido = async codigoIdioma => {
+    setMenuIdiomaAberto(false);
+    await alterarIdioma(codigoIdioma);
   };
 
-  const languages = [
+  const idiomas = [
     { code: 'pt-BR', name: 'Português', flag: '🇧🇷' },
     { code: 'en-US', name: 'English', flag: '🇺🇸' },
     { code: 'es-ES', name: 'Español', flag: '🇪🇸' },
@@ -70,9 +69,9 @@ function MainLayout({ children, title, subtitle }) {
       } = await supabase.auth.getSession();
       const user = session?.user;
       if (user) {
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
         if (data) {
-          setProfile(data);
+          setPerfilUsuario(data);
           sessionStorage.setItem('userProfile', JSON.stringify(data));
         }
       }
@@ -84,7 +83,7 @@ function MainLayout({ children, title, subtitle }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar menuLateralAberto={menuLateralAberto} setMenuLateralAberto={setMenuLateralAberto} />
 
       <div className="flex-1 flex flex-col lg:ml-64 min-w-0 overflow-x-hidden">
         <div className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 transition-colors">
@@ -93,7 +92,7 @@ function MainLayout({ children, title, subtitle }) {
               <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 <button
                   type="button"
-                  onClick={() => setSidebarOpen(true)}
+                  onClick={() => setMenuLateralAberto(true)}
                   className="lg:hidden p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white shrink-0"
                 >
                   ☰
@@ -114,27 +113,27 @@ function MainLayout({ children, title, subtitle }) {
 
               <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 shrink">
                 <StatusWidget />
-                <div ref={quickActionsRef} className="relative flex-shrink-0">
+                <div ref={refAcoesRapidas} className="relative flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => {
-                      setToolbarExpanded(v => !v);
-                      setLanguageDropdownOpen(false);
-                      setThemeMenuOpen(false);
+                      setBarraAcoesRapidasExpandida(v => !v);
+                      setMenuIdiomaAberto(false);
+                      setMenuTemaAberto(false);
                     }}
                     className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
-                    title={toolbarExpanded ? t('header.collapseQuickActions') : t('header.expandQuickActions')}
-                    aria-expanded={toolbarExpanded}
-                    aria-label={toolbarExpanded ? t('header.collapseQuickActions') : t('header.expandQuickActions')}
+                    title={barraAcoesRapidasExpandida ? t('cabecalho.collapseQuickActions') : t('cabecalho.expandQuickActions')}
+                    aria-expanded={barraAcoesRapidasExpandida}
+                    aria-label={barraAcoesRapidasExpandida ? t('cabecalho.collapseQuickActions') : t('cabecalho.expandQuickActions')}
                   >
-                    {toolbarExpanded ? (
+                    {barraAcoesRapidasExpandida ? (
                       <MdExpandLess className="w-6 h-6" />
                     ) : (
                       <MdExpandMore className="w-6 h-6" />
                     )}
                   </button>
 
-                  {toolbarExpanded && (
+                  {barraAcoesRapidasExpandida && (
                     <div className="absolute top-full right-0 sm:left-0 sm:right-auto mt-1 z-50 flex flex-col gap-0.5 p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl animate-fadeIn min-w-[12rem]">
                       <NotificationBell showMenuLabel />
 
@@ -142,31 +141,31 @@ function MainLayout({ children, title, subtitle }) {
                         <button
                           type="button"
                           onClick={() => {
-                            setLanguageDropdownOpen(o => !o);
-                            setThemeMenuOpen(false);
+                            setMenuIdiomaAberto(o => !o);
+                            setMenuTemaAberto(false);
                           }}
                           className="flex w-full min-h-9 min-w-[11rem] items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-left"
-                          aria-label={t('header.languageLabel')}
-                          aria-expanded={languageDropdownOpen}
+                          aria-label={t('cabecalho.languageLabel')}
+                          aria-expanded={menuIdiomaAberto}
                         >
                           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center [&_svg]:block">
                             <MdTranslate className="h-6 w-6" />
                           </span>
-                          <span className="min-w-0 flex-1 truncate leading-none">{t('header.languageShort')}</span>
+                          <span className="min-w-0 flex-1 truncate leading-none">{t('cabecalho.languageShort')}</span>
                         </button>
 
-                        {languageDropdownOpen && (
+                        {menuIdiomaAberto && (
                           <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[60] animate-fadeIn">
                             <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                                {t('header.languageLabel')}
+                                {t('cabecalho.languageLabel')}
                               </p>
                             </div>
-                            {languages.map(language => (
+                            {idiomas.map(language => (
                               <button
                                 key={language.code}
                                 type="button"
-                                onClick={() => handleLanguageChange(language.code)}
+                                onClick={() => aoAlterarIdiomaPreferido(language.code)}
                                 className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-3 ${
                                   currentLanguage === language.code
                                     ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-medium'
@@ -188,37 +187,37 @@ function MainLayout({ children, title, subtitle }) {
                         <button
                           type="button"
                           onClick={() => {
-                            setThemeMenuOpen(o => !o);
-                            setLanguageDropdownOpen(false);
+                            setMenuTemaAberto(o => !o);
+                            setMenuIdiomaAberto(false);
                           }}
                           className="flex w-full min-h-9 min-w-[11rem] items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-left"
-                          aria-label={t('theme.title')}
-                          aria-expanded={themeMenuOpen}
+                          aria-label={t('tema.title')}
+                          aria-expanded={menuTemaAberto}
                         >
                           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center [&_svg]:block">
                             <IconeTemaAtual className="h-6 w-6" />
                           </span>
-                          <span className="min-w-0 flex-1 truncate leading-none">{t('theme.title')}</span>
+                          <span className="min-w-0 flex-1 truncate leading-none">{t('tema.title')}</span>
                         </button>
 
-                        {themeMenuOpen && (
+                        {menuTemaAberto && (
                           <div className="absolute left-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[60] animate-fadeIn">
                             <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                                {t('theme.title')}
+                                {t('tema.title')}
                               </p>
                             </div>
                             {[
-                              { id: 'light', label: t('theme.light'), Icon: MdLightMode },
-                              { id: 'dark', label: t('theme.dark'), Icon: MdDarkMode },
-                              { id: 'system', label: t('theme.system'), Icon: MdBrightnessAuto }
+                              { id: 'light', label: t('tema.light'), Icon: MdLightMode },
+                              { id: 'dark', label: t('tema.dark'), Icon: MdDarkMode },
+                              { id: 'system', label: t('tema.system'), Icon: MdBrightnessAuto }
                             ].map(({ id, label, Icon }) => (
                               <button
                                 key={id}
                                 type="button"
                                 onClick={() => {
                                   setTheme(id);
-                                  setThemeMenuOpen(false);
+                                  setMenuTemaAberto(false);
                                 }}
                                 className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-3 ${
                                   theme === id
@@ -238,7 +237,7 @@ function MainLayout({ children, title, subtitle }) {
                   )}
                 </div>
 
-                {profile && (
+                {perfilUsuario && (
                   <>
                     <button
                       type="button"
@@ -246,10 +245,10 @@ function MainLayout({ children, title, subtitle }) {
                       className="hidden sm:block min-w-0 text-left rounded-lg py-1 px-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-[180px]">
-                        {profile.nome}
+                        {perfilUsuario.nome}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px] md:max-w-[180px]">
-                        {profile.cargo || 'Cargo não definido'}
+                        {perfilUsuario.cargo || 'Cargo não definido'}
                       </p>
                     </button>
 
@@ -257,19 +256,19 @@ function MainLayout({ children, title, subtitle }) {
                       type="button"
                       onClick={() => navigate('/perfil')}
                       className="flex-shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                      aria-label={t('profile.title')}
+                      aria-label={t('perfil.title')}
                     >
-                      {profile.avatar_url ? (
+                      {perfilUsuario.avatar_url ? (
                         <img
-                          src={profile.avatar_url}
+                          src={perfilUsuario.avatar_url}
                           alt=""
                           className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-blue-600 dark:border-blue-500"
                         />
                       ) : (
                         <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs sm:text-base shadow-md">
                           {(() => {
-                            if (!profile.nome) return 'YT';
-                            const parts = profile.nome.split(' ');
+                            if (!perfilUsuario.nome) return 'YT';
+                            const parts = perfilUsuario.nome.split(' ');
                             if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
                             return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
                           })()}

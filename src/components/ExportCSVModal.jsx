@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FiX, FiDownload, FiCheck, FiChevronDown, FiInfo } from 'react-icons/fi';
 import { supabase } from '../config/supabase';
 import { useLanguage } from '../hooks/useLanguage';
+import { useFusoHorario } from '../hooks/useFusoHorario.jsx';
 import { useToast } from '../hooks/useToast';
+import { formatarData } from '../utils/dateUtils';
+import BatidaService from '../services/BatidaService';
+import Modal from './ui/Modal';
+import { montarCaminhoAssociacaoBatidasComPeriodo } from '../utils/intervaloUrlBatidasSemProjeto';
+import { registrarMetricaProdutoBatidas } from '../utils/metricaProdutoBatidas';
 function ExportCSVModal({
   isOpen,
   onClose,
@@ -12,8 +19,9 @@ function ExportCSVModal({
     t,
     currentLanguage
   } = useLanguage();
+  const { fusoHorario } = useFusoHorario();
   const { showSuccess } = useToast();
-  const getWeekRange = () => {
+  const obterIntervaloSemana = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
     const monday = new Date(today);
@@ -21,30 +29,28 @@ function ExportCSVModal({
     monday.setDate(today.getDate() + diff);
     const friday = new Date(monday);
     friday.setDate(monday.getDate() + 4);
-    const formatDate = date => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
     return {
-      inicio: formatDate(monday),
-      fim: formatDate(friday)
+      inicio: formatarData(monday, 'YYYY-MM-DD'),
+      fim: formatarData(friday, 'YYYY-MM-DD')
     };
   };
-  const weekRange = getWeekRange();
+  const intervaloSemana = obterIntervaloSemana();
   const [funcionarios, setFuncionarios] = useState([]);
   const [funcionariosSelecionados, setFuncionariosSelecionados] = useState([]);
-  const [dataInicio, setDataInicio] = useState(weekRange.inicio);
-  const [dataFim, setDataFim] = useState(weekRange.fim);
-  const [loading, setLoading] = useState(false);
+  const [dataInicio, setDataInicio] = useState(intervaloSemana.inicio);
+  const [dataFim, setDataFim] = useState(intervaloSemana.fim);
+  const [carregando, setCarregando] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [modalError, setModalError] = useState({
+  const [erroModal, setErroModal] = useState({
     isOpen: false,
     message: '',
     code: ''
   });
-  const [infoExpanded, setInfoExpanded] = useState(false);
+  const [informacoesExpandidas, setInformacoesExpandidas] = useState(false);
+  const [avisoBatidasSemProjeto, setAvisoBatidasSemProjeto] = useState({
+    aberto: false,
+    quantidade: 0
+  });
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -58,7 +64,7 @@ function ExportCSVModal({
   useEffect(() => {
     const carregarFuncionarios = async () => {
       try {
-        setLoading(true);
+        setCarregando(true);
         const {
           data: {
             user
@@ -66,40 +72,40 @@ function ExportCSVModal({
         } = await supabase.auth.getUser();
         if (!user) throw new Error('Usuário não autenticado');
         const {
-          data: userProfile
+          data: perfilUsuario
         } = await supabase.from('profiles').select('superior_empresa_id').eq('id', user.id).single();
-        let query = supabase.from('profiles').select('id, nome, email, cargo, departamento, superior_empresa_id').order('nome');
-        if (userProfile?.superior_empresa_id) {
-          query = query.eq('superior_empresa_id', userProfile.superior_empresa_id);
+        let consulta = supabase.from('profiles').select('id, nome, email, cargo, departamento, superior_empresa_id').order('nome');
+        if (perfilUsuario?.superior_empresa_id) {
+          consulta = consulta.eq('superior_empresa_id', perfilUsuario.superior_empresa_id);
         }
         if (!isAdmin) {
-          query = query.eq('id', user.id);
+          consulta = consulta.eq('id', user.id);
         }
         const {
-          data: funcionariosData,
+          data: dadosFuncionarios,
           error
-        } = await query;
+        } = await consulta;
         if (error) throw error;
-        setFuncionarios(funcionariosData || []);
-        if (!isAdmin && funcionariosData.length > 0) {
-          setFuncionariosSelecionados([funcionariosData[0].id]);
+        setFuncionarios(dadosFuncionarios || []);
+        if (!isAdmin && dadosFuncionarios.length > 0) {
+          setFuncionariosSelecionados([dadosFuncionarios[0].id]);
         }
       } catch (error) {
         console.error('Erro ao carregar funcionários:', error);
-        setModalError({
+        setErroModal({
           isOpen: true,
-          message: t('export.errorLoadingEmployees'),
+          message: t('exportacao.errorLoadingEmployees'),
           code: error.message
         });
       } finally {
-        setLoading(false);
+        setCarregando(false);
       }
     };
     if (isOpen) {
       carregarFuncionarios();
     }
   }, [isOpen, isAdmin]);
-  const toggleFuncionario = id => {
+  const alternarFuncionario = id => {
     setFuncionariosSelecionados(prev => prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]);
   };
   const selecionarTodos = () => {
@@ -120,17 +126,17 @@ function ExportCSVModal({
     const m = Math.round((horas - h) * 60);
     return `${h}h ${m.toString().padStart(2, '0')}min`;
   };
-  const formatarData = data => {
+  const formatarStringIsoParaExibicao = data => {
     const d = new Date(data + 'T12:00:00');
     return d.toLocaleDateString('pt-BR');
   };
-  const getStatusTexto = status => {
-    const statusMap = {
-      'A': t('export.approved'),
-      'P': t('export.pending'),
-      'R': t('export.rejected')
+  const obterTextoStatus = status => {
+    const mapaStatus = {
+      'A': t('exportacao.approved'),
+      'P': t('exportacao.pending'),
+      'R': t('exportacao.rejected')
     };
-    return statusMap[status] || '-';
+    return mapaStatus[status] || '-';
   };
   const escaparCSV = valor => {
     if (valor === null || valor === undefined) return '';
@@ -140,31 +146,66 @@ function ExportCSVModal({
     }
     return str;
   };
-  const gerarCSV = async () => {
+  const gerarCSV = async (opcoes = {}) => {
     if (funcionariosSelecionados.length === 0) {
-      setModalError({
+      setErroModal({
         isOpen: true,
-        message: t('export.selectAtLeastOne'),
+        message: t('exportacao.selectAtLeastOne'),
         code: ''
       });
       return;
     }
     if (!dataInicio || !dataFim) {
-      setModalError({
+      setErroModal({
         isOpen: true,
-        message: t('export.selectPeriod'),
+        message: t('exportacao.selectPeriod'),
         code: ''
       });
       return;
+    }
+    if (!opcoes.ignorarPreCheckBatidas) {
+      const verificacao = await BatidaService.verificarBatidasSemProjetoAntesExportacao(
+        funcionariosSelecionados,
+        dataInicio,
+        dataFim,
+        fusoHorario
+      );
+      if (!verificacao.success) {
+        setErroModal({
+          isOpen: true,
+          message: verificacao.error || t('comum.error'),
+          code: ''
+        });
+        return;
+      }
+      if (verificacao.deveBloquear) {
+        setErroModal({
+          isOpen: true,
+          message: t('batidaProjeto.exportTexto').replace('{count}', String(verificacao.quantidadePendencias)),
+          code: 'BAT-EXPORT'
+        });
+        return;
+      }
+      if (verificacao.possuiPendencias) {
+        registrarMetricaProdutoBatidas('export_aviso_batidas_sem_projeto', {
+          quantidade: verificacao.quantidadePendencias,
+          formato: 'csv_modal'
+        });
+        setAvisoBatidasSemProjeto({
+          aberto: true,
+          quantidade: verificacao.quantidadePendencias
+        });
+        return;
+      }
     }
     try {
       setGerando(true);
       const csvLines = [];
       const BOM = '\uFEFF';
       const locale = currentLanguage === 'pt-BR' ? 'pt-BR' : 'en-US';
-      csvLines.push(`,,,,,,,,,,,,${t('export.timeRecordsReport')}`);
-      csvLines.push(`,,,,,,,,,,,,${t('export.period')} ${formatarData(dataInicio)} - ${formatarData(dataFim)}`);
-      csvLines.push(`,,,,,,,,,,,,${t('export.generatedAt')} ${new Date().toLocaleString(locale)}`);
+      csvLines.push(`,,,,,,,,,,,,${t('exportacao.timeRecordsReport')}`);
+      csvLines.push(`,,,,,,,,,,,,${t('exportacao.period')} ${formatarStringIsoParaExibicao(dataInicio)} - ${formatarStringIsoParaExibicao(dataFim)}`);
+      csvLines.push(`,,,,,,,,,,,,${t('exportacao.generatedAt')} ${new Date().toLocaleString(locale)}`);
       csvLines.push('');
       csvLines.push('');
       for (const funcionarioId of funcionariosSelecionados) {
@@ -178,19 +219,19 @@ function ExportCSVModal({
         });
         if (error) throw error;
         if (registros.length === 0) {
-          csvLines.push(`${t('export.employee')} ${funcionario.nome}`);
-          csvLines.push(t('export.noRecords'));
+          csvLines.push(`${t('exportacao.employee')} ${funcionario.nome}`);
+          csvLines.push(t('exportacao.noRecords'));
           csvLines.push('');
           csvLines.push('---');
           csvLines.push('');
           continue;
         }
-        csvLines.push(`,,${t('common.employee').toUpperCase()}`);
-        csvLines.push(`,,${t('common.field')},${t('common.value')}`);
-        csvLines.push(`,,${t('profile.name')},${escaparCSV(funcionario.nome)}`);
-        csvLines.push(`,,${t('profile.email')},${escaparCSV(funcionario.email)}`);
-        csvLines.push(`,,${t('profile.position')},${escaparCSV(funcionario.cargo || t('export.notDefined'))}`);
-        csvLines.push(`,,${t('profile.department')},${escaparCSV(funcionario.departamento || t('export.notDefined'))}`);
+        csvLines.push(`,,${t('comum.employee').toUpperCase()}`);
+        csvLines.push(`,,${t('comum.field')},${t('comum.value')}`);
+        csvLines.push(`,,${t('perfil.name')},${escaparCSV(funcionario.nome)}`);
+        csvLines.push(`,,${t('perfil.email')},${escaparCSV(funcionario.email)}`);
+        csvLines.push(`,,${t('perfil.position')},${escaparCSV(funcionario.cargo || t('exportacao.notDefined'))}`);
+        csvLines.push(`,,${t('perfil.department')},${escaparCSV(funcionario.departamento || t('exportacao.notDefined'))}`);
         csvLines.push('');
         csvLines.push('');
         let totalHorasTrabalhadas = 0;
@@ -219,7 +260,7 @@ function ExportCSVModal({
             duracaoIntervalo = `${Math.floor(duracaoMin)}min`;
           }
           return {
-            data: formatarData(reg.data),
+            data: formatarStringIsoParaExibicao(reg.data),
             entrada1: reg.entrada1 || '--:--',
             saida1: reg.saida1 || '--:--',
             intervaloInicio,
@@ -228,7 +269,7 @@ function ExportCSVModal({
             entrada2: reg.entrada2 || '--:--',
             saida2: reg.saida2 || '--:--',
             totalHoras: formatarHoras(totalDia),
-            status: getStatusTexto(reg.status),
+            status: obterTextoStatus(reg.status),
             projeto: reg.projeto_nome || 'Não definido',
             observacoes: reg.observacoes || ''
           };
@@ -242,8 +283,8 @@ function ExportCSVModal({
         csvLines.push('');
         csvLines.push(',,💡 Dica: Selecione as colunas Status e Quantidade acima e crie um Gráfico de Pizza!');
         csvLines.push('');
-        csvLines.push(`,,${t('export.workedHoursPerDay').toUpperCase()} (${t('export.barChartTip').replace('💡 ', '')})`);
-        csvLines.push(`,,${t('export.date')},${t('export.normalHoursUpTo8')},${t('export.extraHoursAbove8')},${t('export.total')},${t('export.status')}`);
+        csvLines.push(`,,${t('exportacao.workedHoursPerDay').toUpperCase()} (${t('exportacao.barChartTip').replace('💡 ', '')})`);
+        csvLines.push(`,,${t('exportacao.date')},${t('exportacao.normalHoursUpTo8')},${t('exportacao.extraHoursAbove8')},${t('exportacao.total')},${t('exportacao.status')}`);
         dadosDetalhados.forEach(dia => {
           const match = dia.totalHoras.match(/(\d+)h\s*(\d+)min/);
           const horas = match ? parseInt(match[1]) : 0;
@@ -254,10 +295,10 @@ function ExportCSVModal({
           csvLines.push(`,,${dia.data},${horasNormais.toFixed(2)},${horasExtras.toFixed(2)},${totalHoras.toFixed(2)},${dia.status}`);
         });
         csvLines.push('');
-        csvLines.push(`,,${t('export.barChartTip')}`);
+        csvLines.push(`,,${t('exportacao.barChartTip')}`);
         csvLines.push('');
-        csvLines.push(`,,${t('export.timeRecordsReport')}`);
-        csvLines.push(['', '', t('export.date'), t('export.entry1'), t('export.exit1'), t('export.breakStart'), t('export.breakEnd'), t('export.duration'), t('export.entry2'), t('export.exit2'), t('export.total'), t('export.status'), t('notifications.project'), t('export.observations')].map(escaparCSV).join(','));
+        csvLines.push(`,,${t('exportacao.timeRecordsReport')}`);
+        csvLines.push(['', '', t('exportacao.date'), t('exportacao.entry1'), t('exportacao.exit1'), t('exportacao.breakStart'), t('exportacao.breakEnd'), t('exportacao.duration'), t('exportacao.entry2'), t('exportacao.exit2'), t('exportacao.total'), t('exportacao.status'), t('notificacoes.project'), t('exportacao.observations')].map(escaparCSV).join(','));
         dadosDetalhados.forEach(dia => {
           csvLines.push(['', '', dia.data, dia.entrada1, dia.saida1, dia.intervaloInicio, dia.intervaloFim, dia.duracaoIntervalo, dia.entrada2, dia.saida2, dia.totalHoras, dia.status, dia.projeto, dia.observacoes].map(escaparCSV).join(','));
         });
@@ -274,21 +315,21 @@ function ExportCSVModal({
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      const nomeArquivo = funcionariosSelecionados.length === 1 ? `${t('export.fileName')}_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome.replace(/\s+/g, '_')}_${dataInicio}_${dataFim}.csv` : `${t('export.fileName')}_multiple_${dataInicio}_${dataFim}.csv`;
+      const nomeArquivo = funcionariosSelecionados.length === 1 ? `${t('exportacao.fileName')}_${funcionarios.find(f => f.id === funcionariosSelecionados[0])?.nome.replace(/\s+/g, '_')}_${dataInicio}_${dataFim}.csv` : `${t('exportacao.fileName')}_multiple_${dataInicio}_${dataFim}.csv`;
       link.setAttribute('download', nomeArquivo);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      showSuccess(t('export.csvGenerated'));
+      showSuccess(t('exportacao.csvGenerated'));
       setTimeout(() => {
         onClose();
       }, 400);
     } catch (error) {
-      setModalError({
+      setErroModal({
         isOpen: true,
-        message: t('export.errorGeneratingCSV'),
+        message: t('exportacao.errorGeneratingCSV'),
         code: error.message
       });
     } finally {
@@ -315,9 +356,9 @@ function ExportCSVModal({
         }}>
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('common.exportToCSV')}</h2>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('comum.exportToCSV')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t('export.selectEmployees')}
+                {t('exportacao.selectEmployees')}
               </p>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" disabled={gerando}>
@@ -328,24 +369,24 @@ function ExportCSVModal({
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium yt-label mb-2">
-                {isAdmin ? t('export.selectEmployees') : t('common.employee')}
+                {isAdmin ? t('exportacao.selectEmployees') : t('comum.employee')}
               </label>
               
-              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="mb-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium" disabled={loading || gerando}>
-                  {funcionariosSelecionados.length === funcionarios.length ? t('export.deselectAllEmployees') : t('export.selectAllEmployees')}
+              {isAdmin && funcionarios.length > 1 && <button onClick={selecionarTodos} className="mb-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium" disabled={carregando || gerando}>
+                  {funcionariosSelecionados.length === funcionarios.length ? t('exportacao.deselectAllEmployees') : t('exportacao.selectAllEmployees')}
                 </button>}
 
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg max-h-60 overflow-y-auto yt-inset">
-                {loading ? <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    {t('export.loadingEmployees')}
+                {carregando ? <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    {t('exportacao.carregandoEmployees')}
                   </div> : funcionarios.length === 0 ? <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                    {t('export.noEmployeesFound')}
+                    {t('exportacao.noEmployeesFound')}
                   </div> : funcionarios.map(funcionario => <label key={funcionario.id} className={`flex items-center p-3 hover:bg-gray-100 dark:hover:bg-gray-800/80 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${!isAdmin ? 'cursor-default' : ''}`}>
-                      <input type="checkbox" checked={funcionariosSelecionados.includes(funcionario.id)} onChange={() => isAdmin && toggleFuncionario(funcionario.id)} disabled={!isAdmin} className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800" />
+                      <input type="checkbox" checked={funcionariosSelecionados.includes(funcionario.id)} onChange={() => isAdmin && alternarFuncionario(funcionario.id)} disabled={!isAdmin} className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800" />
                       <div className="flex-1">
                         <div className="font-medium text-gray-900 dark:text-gray-100">{funcionario.nome}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {funcionario.cargo || t('export.positionNotDefined')} • {funcionario.email}
+                          {funcionario.cargo || t('exportacao.positionNotDefined')} • {funcionario.email}
                         </div>
                       </div>
                       {funcionariosSelecionados.includes(funcionario.id) && <FiCheck className="text-green-500 ml-2" size={20} />}
@@ -356,36 +397,36 @@ function ExportCSVModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium yt-label mb-2">
-                  {t('export.startDate')}
+                  {t('exportacao.startDate')}
                 </label>
                 <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field" />
               </div>
               <div>
                 <label className="block text-sm font-medium yt-label mb-2">
-                  {t('export.endDate')}
+                  {t('exportacao.endDate')}
                 </label>
                 <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} disabled={gerando} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field" />
               </div>
             </div>
 
             <div className="border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-              <button onClick={() => setInfoExpanded(!infoExpanded)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
+              <button onClick={() => setInformacoesExpandidas(!informacoesExpandidas)} className="w-full px-4 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors flex items-center justify-between text-left" type="button">
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                   <FiInfo className="flex-shrink-0" />
-                  {t('export.csvIncludes')}
+                  {t('exportacao.csvIncludes')}
                 </span>
-                <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${infoExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                <div className={`text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${informacoesExpandidas ? 'rotate-180' : 'rotate-0'}`}>
                   <FiChevronDown />
                 </div>
               </button>
-              <div className={`transition-all duration-300 ease-in-out ${infoExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className={`transition-all duration-300 ease-in-out ${informacoesExpandidas ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/40 border-t border-blue-200 dark:border-blue-800">
                   <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4 list-disc">
-                    <li>{t('export.csvIncludeEmployeeData')}</li>
-                    <li>{t('export.csvIncludeStats')}</li>
-                    <li>{t('export.csvIncludeGraphData')}</li>
-                    <li>{t('export.csvIncludeDetailedTable')}</li>
-                    <li>{t('export.csvIncludeIntervalProjects')}</li>
+                    <li>{t('exportacao.csvIncludeEmployeeData')}</li>
+                    <li>{t('exportacao.csvIncludeStats')}</li>
+                    <li>{t('exportacao.csvIncludeGraphData')}</li>
+                    <li>{t('exportacao.csvIncludeDetailedTable')}</li>
+                    <li>{t('exportacao.csvIncludeIntervalProjects')}</li>
                   </ul>
                 </div>
               </div>
@@ -394,15 +435,15 @@ function ExportCSVModal({
 
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 flex justify-end gap-3">
             <button onClick={onClose} disabled={gerando} className="px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {t('export.cancel')}
+              {t('exportacao.cancel')}
             </button>
             <button onClick={gerarCSV} disabled={gerando || funcionariosSelecionados.length === 0 || !dataInicio || !dataFim} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
               {gerando ? <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  {t('export.generating')}...
+                  {t('exportacao.generating')}...
                 </> : <>
                   <FiDownload size={20} />
-                  {t('common.exportToCSV')}
+                  {t('comum.exportToCSV')}
                 </>}
             </button>
           </div>
@@ -410,7 +451,7 @@ function ExportCSVModal({
         </div>
       </div>
 
-      {modalError.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" style={{
+      {erroModal.isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" style={{
       top: 0,
       left: 0,
       right: 0,
@@ -421,19 +462,58 @@ function ExportCSVModal({
     }}>
           <div className="p-4 w-full h-full flex items-center justify-center">
             <div className="yt-modal-surface rounded-lg shadow-xl max-w-md w-full p-6 relative z-[10001]">
-            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">{t('export.errorMessage')}</h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">{modalError.message}</p>
-            {modalError.code && <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Código: {modalError.code}</p>}
-            <button onClick={() => setModalError({
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">{t('exportacao.errorMessage')}</h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-2">{erroModal.message}</p>
+            {erroModal.code && <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Código: {erroModal.code}</p>}
+            <button onClick={() => setErroModal({
             isOpen: false,
             message: '',
             code: ''
           })} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              {t('export.closeButton')}
+              {t('exportacao.closeButton')}
             </button>
             </div>
           </div>
         </div>}
+
+      <Modal
+        isOpen={avisoBatidasSemProjeto.aberto}
+        onClose={() => setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 })}
+        title={t('batidaProjeto.exportTitulo')}
+        type="warning"
+        showCancel
+        cancelText={t('comum.close')}
+        confirmText={t('batidaProjeto.exportContinuar')}
+        onConfirm={() => {
+          const quantidade = avisoBatidasSemProjeto.quantidade;
+          registrarMetricaProdutoBatidas('export_aviso_continuou_sem_corrigir', {
+            quantidade,
+            formato: 'csv'
+          });
+          setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 });
+          void gerarCSV({ ignorarPreCheckBatidas: true });
+        }}
+      >
+        <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+          {t('batidaProjeto.exportModalDestaque').replace('{count}', String(avisoBatidasSemProjeto.quantidade))}
+        </p>
+        <p className="text-sm text-gray-700 dark:text-gray-200 mb-3">
+          {t('batidaProjeto.exportTexto').replace('{count}', String(avisoBatidasSemProjeto.quantidade))}
+        </p>
+        <Link
+          to={montarCaminhoAssociacaoBatidasComPeriodo(dataInicio, dataFim)}
+          onClick={() => {
+            registrarMetricaProdutoBatidas('export_aviso_escolheu_corrigir', {
+              quantidade: avisoBatidasSemProjeto.quantidade,
+              formato: 'csv'
+            });
+            setAvisoBatidasSemProjeto({ aberto: false, quantidade: 0 });
+          }}
+          className="inline-flex text-sm font-semibold text-[#8231D3] dark:text-purple-300 hover:underline"
+        >
+          {t('batidaProjeto.exportIrResolver')}
+        </Link>
+      </Modal>
 
     </>;
 }

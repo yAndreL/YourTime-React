@@ -7,11 +7,11 @@ function ProtectedRoute({
   requireAdmin = false
 }) {
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [autorizado, setAutorizado] = useState(false);
   useEffect(() => {
     let cancelado = false;
-    const checkAccess = async () => {
+    const verificarAcesso = async () => {
       try {
         const {
           data: { session },
@@ -19,8 +19,8 @@ function ProtectedRoute({
         } = await supabase.auth.getSession();
         if (sessionError || !session?.user) {
           if (!cancelado) {
-            setIsAuthorized(false);
-            setLoading(false);
+            setAutorizado(false);
+            setCarregando(false);
           }
           return;
         }
@@ -28,8 +28,8 @@ function ProtectedRoute({
 
         if (!requireAdmin) {
           if (!cancelado) {
-            setIsAuthorized(true);
-            setLoading(false);
+            setAutorizado(true);
+            setCarregando(false);
           }
           void supabase.auth.getUser();
           return;
@@ -37,42 +37,42 @@ function ProtectedRoute({
         const {
           data: profile,
           error
-        } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
         if (cancelado) return;
         if (error) {
-          setIsAuthorized(false);
-          setLoading(false);
+          setAutorizado(false);
+          setCarregando(false);
           return;
         }
-        const isAdmin = profile?.role === 'admin';
+        const ehAdministrador = profile?.role === 'admin';
         if (!cancelado) {
-          setIsAuthorized(isAdmin);
-          setLoading(false);
+          setAutorizado(ehAdministrador);
+          setCarregando(false);
         }
-        if (isAdmin) {
+        if (ehAdministrador) {
           void supabase.auth.getUser();
         }
       } catch (error) {
         if (!cancelado) {
-          setIsAuthorized(false);
-          setLoading(false);
+          setAutorizado(false);
+          setCarregando(false);
         }
       }
     };
-    checkAccess();
+    verificarAcesso();
     return () => {
       cancelado = true;
     };
   }, [requireAdmin]);
-  if (loading) {
+  if (carregando) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('comum.carregando')}</p>
         </div>
       </div>;
   }
-  if (!isAuthorized) {
+  if (!autorizado) {
     if (requireAdmin) {
       return <Navigate to="/acesso-negado" replace />;
     }

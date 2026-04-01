@@ -1,6 +1,6 @@
 export const translations = {
   'pt-BR': {
-    common: {
+    comum: {
       save: 'Salvar',
       cancel: 'Cancelar',
       confirm: 'Confirmar',
@@ -25,7 +25,7 @@ export const translations = {
       break: 'intervalo',
       refresh: 'Atualizar'
     },
-    menu: {
+    menuPrincipal: {
       dashboard: 'Dashboard',
       timeRecord: 'Registrar Ponto',
       history: 'Histórico',
@@ -37,22 +37,27 @@ export const translations = {
       irregularidades: 'Irregularidades',
       espelhoPonto: 'Espelho de Ponto',
       ausencias: 'Ausências',
+      batidasSemProjeto: 'Batidas sem projeto',
       logout: 'Sair',
       personal: 'Pessoal'
     },
-    header: {
+    cabecalho: {
       expandQuickActions: 'Mostrar notificações, idioma e tema',
       collapseQuickActions: 'Ocultar atalhos',
       languageLabel: 'Idioma / Language',
       languageShort: 'Idioma'
     },
-    theme: {
+    tema: {
       title: 'Tema',
       light: 'Claro',
       dark: 'Escuro',
       system: 'Sistema'
     },
-    dashboard: {
+    espelho: {
+      titulo: 'Espelho de Ponto',
+      subtitulo: 'Relatório mensal detalhado'
+    },
+    painel: {
       title: 'Dashboard',
       subtitle: 'Gerenciamento do Sistema',
       hoursBalance: 'Saldo de Horas',
@@ -103,6 +108,8 @@ export const translations = {
       sunday: 'Domingo',
       hoursProgress: 'Progresso das Horas',
       approvedHours: 'aprovadas',
+      hoursCountedTowardGoal: 'contabilizadas',
+      hoursCountedLegend: 'Contabilizadas',
       approved_plural: 'Aprovadas',
       remaining: 'Restante',
       ofTotal: 'do total',
@@ -134,7 +141,7 @@ export const translations = {
       registerFirstEntry: 'Registre seu primeiro ponto para ver o gráfico',
       noTimeRecords: 'Nenhum registro de ponto encontrado para esta semana'
     },
-    settings: {
+    configuracoes: {
       title: 'Configurações',
       subtitle: 'Personalize suas preferências',
       notifications: 'Notificações',
@@ -166,7 +173,7 @@ export const translations = {
       errorSaving: 'Erro ao salvar configurações',
       errorRestoring: 'Erro ao restaurar configurações'
     },
-    notifications: {
+    notificacoes: {
       title: 'Notificações',
       markAllRead: 'Marcar todas como lidas',
       noNotifications: 'Nenhuma notificação',
@@ -220,7 +227,7 @@ export const translations = {
       exportToPDF: 'Exportar para PDF',
       exportToExcel: 'Exportar para Excel'
     },
-    projects: {
+    projetos: {
       title: 'Gerenciamento de Projetos',
       subtitle: 'Gerencie seus projetos',
       createProject: 'Criar Projeto',
@@ -299,7 +306,7 @@ export const translations = {
       errorSaveProject: 'Não foi possível salvar o projeto. Tente novamente.',
       errorDeleteProject: 'Não foi possível excluir o projeto. Tente novamente.'
     },
-    login: {
+    autenticacao: {
       title: 'Bem-vindo de volta',
       subtitle: 'Faça login para continuar',
       email: 'Email',
@@ -318,7 +325,7 @@ export const translations = {
       accessDenied: 'Acesso Negado',
       loginError: 'Ocorreu um erro ao tentar fazer login. Tente novamente.'
     },
-    validation: {
+    validacao: {
       requiredField: 'Campo obrigatório',
       nameRequired: 'Nome é obrigatório',
       emailRequired: 'Email é obrigatório',
@@ -366,7 +373,7 @@ export const translations = {
       tryAgain: 'Erro ao formatar. Por favor, tente novamente.',
       databaseError: 'Erro de conexão com o banco de dados'
     },
-    history: {
+    historico: {
       title: 'Histórico de Apontamentos',
       subtitle: 'Visualize e gerencie seus registros',
       date: 'Data',
@@ -401,7 +408,11 @@ export const translations = {
       noStatus: 'Sem Status',
       notes: 'Anotações:',
       loadingRecords: 'Carregando apontamentos...',
-      noRecordsForFilters: 'Nenhum apontamento encontrado para os filtros selecionados.'
+      noRecordsForFilters: 'Nenhum apontamento encontrado para os filtros selecionados.',
+      recordSourceForm: 'Formulário / retroativo',
+      recordSourceApp: 'Batida de ponto',
+      retroactiveNote: 'Inclui registro retroativo pelo formulário.',
+      noProjectLabel: 'Sem Projeto'
     },
     irregularidades: {
       titulo: 'Dashboard de Irregularidades',
@@ -420,7 +431,7 @@ export const translations = {
       semAtrasos: 'Nenhum atraso no período',
       semRegistro: 'Sem registro'
     },
-    admin: {
+    administracao: {
       employees: 'Funcionários',
       removed: 'Removidos',
       companies: 'Empresas',
@@ -475,9 +486,12 @@ export const translations = {
       otherPendingDates: 'Outras datas com pontos pendentes:',
       moreDates: 'outros',
       filterByDate: 'Filtrar pontos do dia',
-      pendingInOtherDates: 'Há pontos pendentes em outras datas'
+      pendingInOtherDates: 'Há pontos pendentes em outras datas',
+      electronicPunchClosed: 'Jornada fechada (app)',
+      electronicPunchOpen: 'Em andamento (app)',
+      electronicPunchActionsHint: 'Registrado no batida de ponto — aprovação só no formulário.'
     },
-    companies: {
+    empresas: {
       companyUpdated: 'Empresa atualizada com sucesso!',
       companyRegistered: 'Empresa cadastrada com sucesso!',
       companyDeactivated: 'Empresa desativada com sucesso!',
@@ -505,7 +519,7 @@ export const translations = {
       firstCompanyPrompt: 'Comece cadastrando sua primeira empresa',
       registerFirstCompany: 'Cadastrar Primeira Empresa'
     },
-    employeeForm: {
+    formularioColaborador: {
       title: 'Cadastro de Funcionário',
       personalInfo: 'Informações Pessoais',
       fullName: 'Nome Completo',
@@ -544,7 +558,7 @@ export const translations = {
       confirmEmailNotice: 'Pode ser necessário confirmar o e-mail antes do primeiro login (configuração do Supabase → Authentication).',
       registerSuccess: 'Usuário cadastrado com sucesso'
     },
-    timeRecordForm: {
+    formularioPonto: {
       title: 'Registro de Ponto',
       hello: 'Olá',
       noProjectSelected: 'Nenhum projeto selecionado',
@@ -564,7 +578,7 @@ export const translations = {
       register: 'Salvar registro',
       saved: 'Ponto registrado com sucesso!'
     },
-    profile: {
+    perfil: {
       title: 'Perfil',
       subtitle: 'Informações do usuário',
       personalInfo: 'Informações Pessoais',
@@ -605,7 +619,7 @@ export const translations = {
       workShift: 'Jornada de trabalho',
       shiftSeparator: 'às'
     },
-    export: {
+    exportacao: {
       title: 'Exportar Relatório de Ponto',
       reportTitle: 'RELATÓRIO DE PONTO',
       timeRecordsReport: 'RELATÓRIO DE REGISTROS DE PONTO',
@@ -728,10 +742,51 @@ export const translations = {
       localizacaoCapturada: 'Localização capturada',
       comLocalizacao: 'Com localização',
       registroRetroativo: 'Registrar ponto retroativo (formulário)'
+    },
+    batidaProjeto: {
+      modalTitulo: 'Nenhum projeto selecionado',
+      modalTexto: 'Você pode continuar sem projeto e associar depois, ou escolher um projeto agora.',
+      ultimoProjetoSugerido: 'Último projeto usado',
+      usarSugestao: 'Usar este projeto',
+      continuarSemProjeto: 'Continuar sem projeto',
+      escolherDaLista: 'Escolher projeto',
+      carregandoProjetos: 'Carregando projetos...',
+      nenhumaSugestao: 'Nenhum projeto recente. Escolha na lista ou continue sem projeto.',
+      tituloPagina: 'Batidas sem projeto',
+      subtituloPagina: 'Associe projeto às batidas em tempo real sem projeto vinculado.',
+      periodoMes: 'Mês de referência',
+      colunaDataHora: 'Data e hora',
+      colunaTipo: 'Tipo',
+      associarProjeto: 'Associar projeto',
+      salvarAssociacao: 'Salvar',
+      listaVazia: 'Nenhuma batida sem projeto neste período.',
+      sucessoAssociacao: 'Projeto associado com sucesso.',
+      selecioneProjeto: 'Selecione um projeto',
+      painelBanner: 'Você tem {count} batida(s) em tempo real sem projeto neste mês.',
+      painelCta: 'Associar projetos',
+      espelhoAlerta: 'Este mês há {count} batida(s) em tempo real sem projeto. Associe em Batidas sem projeto.',
+      exportTitulo: 'Batidas sem projeto no período',
+      exportTexto: 'Existem {count} batida(s) em tempo real (tabela batidas) sem projeto entre as datas selecionadas. Relatórios de apontamento manual podem estar completos.',
+      exportContinuar: 'Continuar exportação',
+      exportIrResolver: 'Ir associar projetos',
+      exportModalDestaque: 'Você tem {count} batida(s) sem projeto neste período.',
+      periodoPersonalizadoLabel: 'Período do export',
+      listagemPeriodoEntre: 'Batidas de {dataInicio} a {dataFim}.',
+      sucessoAssociacaoVarias: 'Projeto associado em {count} batida(s) do mesmo período (entrada/saída).',
+      modalDicaSegmento:
+        'O projeto será aplicado a todas as batidas do mesmo bloco (entre a entrada e a saída) que ainda estiverem sem projeto.',
+      conflitoParcialAssociacao: 'Algumas batidas já foram atualizadas. Recarregue a lista.',
+      modalResumoLoteTitulo: 'Resumo antes de confirmar',
+      modalResumoQuantidade: '{count} batida(s) elegível(is) receberão este projeto neste bloco.',
+      modalResumoIntervalo: 'Período do bloco: de {inicio} a {fim}.',
+      avisoBlocoJornadaSemSaida:
+        'Atenção: este bloco ainda não tem saída registrada. Confira se o projeto vale para todo o período.',
+      previewCarregando: 'Carregando resumo do bloco…',
+      aplicarProjetoERegistrar: 'Registrar com o projeto selecionado'
     }
   },
   'en-US': {
-    common: {
+    comum: {
       save: 'Save',
       cancel: 'Cancel',
       confirm: 'Confirm',
@@ -756,7 +811,7 @@ export const translations = {
       break: 'break',
       refresh: 'Refresh'
     },
-    menu: {
+    menuPrincipal: {
       dashboard: 'Dashboard',
       timeRecord: 'Clock in',
       history: 'History',
@@ -769,21 +824,26 @@ export const translations = {
       irregularidades: 'Irregularities',
       espelhoPonto: 'Time Sheet',
       ausencias: 'Absences',
+      batidasSemProjeto: 'Punches without project',
       logout: 'Logout'
     },
-    header: {
+    cabecalho: {
       expandQuickActions: 'Show notifications, language and theme',
       collapseQuickActions: 'Hide shortcuts',
       languageLabel: 'Language',
       languageShort: 'Language'
     },
-    theme: {
+    tema: {
       title: 'Theme',
       light: 'Light',
       dark: 'Dark',
       system: 'System'
     },
-    dashboard: {
+    espelho: {
+      titulo: 'Time Sheet',
+      subtitulo: 'Detailed monthly report'
+    },
+    painel: {
       title: 'Dashboard',
       subtitle: 'System Management',
       hoursBalance: 'Hours Balance',
@@ -834,6 +894,8 @@ export const translations = {
       sunday: 'Sunday',
       hoursProgress: 'Hours Progress',
       approvedHours: 'approved',
+      hoursCountedTowardGoal: 'counted',
+      hoursCountedLegend: 'Counted',
       approved_plural: 'Approved',
       remaining: 'Remaining',
       ofTotal: 'of total',
@@ -865,7 +927,7 @@ export const translations = {
       registerFirstEntry: 'Register your first time entry to see the chart',
       noTimeRecords: 'No time records found for this week'
     },
-    settings: {
+    configuracoes: {
       title: 'Settings',
       subtitle: 'Customize your preferences',
       notifications: 'Notifications',
@@ -896,7 +958,7 @@ export const translations = {
       errorSaving: 'Error saving settings',
       errorRestoring: 'Error restoring settings'
     },
-    notifications: {
+    notificacoes: {
       title: 'Notifications',
       markAllRead: 'Mark all as read',
       noNotifications: 'No notifications',
@@ -950,7 +1012,7 @@ export const translations = {
       exportToPDF: 'Export to PDF',
       exportToExcel: 'Export to Excel'
     },
-    projects: {
+    projetos: {
       title: 'Project Management',
       subtitle: 'Manage your projects',
       createProject: 'Create Project',
@@ -1029,7 +1091,7 @@ export const translations = {
       errorSaveProject: 'Could not save the project. Please try again.',
       errorDeleteProject: 'Could not delete the project. Please try again.'
     },
-    login: {
+    autenticacao: {
       title: 'Welcome back',
       subtitle: 'Login to continue',
       email: 'Email',
@@ -1048,7 +1110,7 @@ export const translations = {
       accessDenied: 'Access Denied',
       loginError: 'An error occurred while trying to log in. Please try again.'
     },
-    validation: {
+    validacao: {
       requiredField: 'Required field',
       nameRequired: 'Name is required',
       emailRequired: 'Email is required',
@@ -1096,7 +1158,7 @@ export const translations = {
       tryAgain: 'Formatting error. Please try again.',
       databaseError: 'Database connection error'
     },
-    history: {
+    historico: {
       title: 'Time Records History',
       subtitle: 'View and manage your records',
       date: 'Date',
@@ -1131,7 +1193,11 @@ export const translations = {
       noStatus: 'No Status',
       notes: 'Notes:',
       loadingRecords: 'Loading records...',
-      noRecordsForFilters: 'No records found for the selected filters.'
+      noRecordsForFilters: 'No records found for the selected filters.',
+      recordSourceForm: 'Form / retroactive',
+      recordSourceApp: 'Clock-in app',
+      retroactiveNote: 'Includes retroactive entry from the form.',
+      noProjectLabel: 'No project'
     },
     irregularidades: {
       titulo: 'Irregularities Dashboard',
@@ -1150,7 +1216,7 @@ export const translations = {
       semAtrasos: 'No tardiness in the period',
       semRegistro: 'No record'
     },
-    admin: {
+    administracao: {
       employees: 'Employees',
       removed: 'Removed',
       companies: 'Companies',
@@ -1205,9 +1271,12 @@ export const translations = {
       otherPendingDates: 'Other dates with pending entries:',
       moreDates: 'more',
       filterByDate: 'Filter entries for',
-      pendingInOtherDates: 'There are pending entries on other dates'
+      pendingInOtherDates: 'There are pending entries on other dates',
+      electronicPunchClosed: 'Shift closed (app)',
+      electronicPunchOpen: 'In progress (app)',
+      electronicPunchActionsHint: 'Recorded in clock-in app — approval only on form entries.'
     },
-    companies: {
+    empresas: {
       companyUpdated: 'Company updated successfully!',
       companyRegistered: 'Company registered successfully!',
       companyDeactivated: 'Company deactivated successfully!',
@@ -1235,7 +1304,7 @@ export const translations = {
       firstCompanyPrompt: 'Start by registering your first company',
       registerFirstCompany: 'Register First Company'
     },
-    employeeForm: {
+    formularioColaborador: {
       title: 'Employee Registration',
       personalInfo: 'Personal Information',
       fullName: 'Full Name',
@@ -1274,7 +1343,7 @@ export const translations = {
       confirmEmailNotice: 'Email confirmation may be required before first login (Supabase → Authentication settings).',
       registerSuccess: 'User registered successfully'
     },
-    timeRecordForm: {
+    formularioPonto: {
       title: 'Time entry',
       hello: 'Hello',
       noProjectSelected: 'No project selected',
@@ -1294,7 +1363,7 @@ export const translations = {
       register: 'Save time entry',
       saved: 'Time entry saved successfully!'
     },
-    profile: {
+    perfil: {
       title: 'Profile',
       subtitle: 'User information',
       personalInfo: 'Personal information',
@@ -1335,7 +1404,7 @@ export const translations = {
       workShift: 'Work shift',
       shiftSeparator: 'to'
     },
-    export: {
+    exportacao: {
       title: 'Export Time Record Report',
       reportTitle: 'TIME RECORD REPORT',
       timeRecordsReport: 'TIME RECORDS REPORT',
@@ -1458,10 +1527,51 @@ export const translations = {
       localizacaoCapturada: 'Location captured',
       comLocalizacao: 'With location',
       registroRetroativo: 'Retroactive time entry (form)'
+    },
+    batidaProjeto: {
+      modalTitulo: 'No project selected',
+      modalTexto: 'You can continue without a project and link it later, or choose a project now.',
+      ultimoProjetoSugerido: 'Last project used',
+      usarSugestao: 'Use this project',
+      continuarSemProjeto: 'Continue without project',
+      escolherDaLista: 'Choose project',
+      carregandoProjetos: 'Loading projects...',
+      nenhumaSugestao: 'No recent project. Pick from the list or continue without one.',
+      tituloPagina: 'Punches without project',
+      subtituloPagina: 'Link a project to real-time punches that have no project.',
+      periodoMes: 'Reference month',
+      colunaDataHora: 'Date and time',
+      colunaTipo: 'Type',
+      associarProjeto: 'Link project',
+      salvarAssociacao: 'Save',
+      listaVazia: 'No punches without project in this period.',
+      sucessoAssociacao: 'Project linked successfully.',
+      selecioneProjeto: 'Select a project',
+      painelBanner: 'You have {count} real-time punch(es) without project this month.',
+      painelCta: 'Link projects',
+      espelhoAlerta: 'This month has {count} real-time punch(es) without project. Link them under Punches without project.',
+      exportTitulo: 'Punches without project in period',
+      exportTexto: 'There are {count} real-time punch(es) (batidas table) without project in the selected range. Manual time entries may still be complete.',
+      exportContinuar: 'Continue export',
+      exportIrResolver: 'Go link projects',
+      exportModalDestaque: 'You have {count} punch(es) without project in this period.',
+      periodoPersonalizadoLabel: 'Export period',
+      listagemPeriodoEntre: 'Punches from {dataInicio} to {dataFim}.',
+      sucessoAssociacaoVarias: 'Project linked on {count} punch(es) in the same entry/exit block.',
+      modalDicaSegmento:
+        'The project will apply to all punches in the same block (from entry to exit) that still have no project.',
+      conflitoParcialAssociacao: 'Some punches were already updated. Refresh the list.',
+      modalResumoLoteTitulo: 'Summary before you confirm',
+      modalResumoQuantidade: '{count} eligible punch(es) in this block will get this project.',
+      modalResumoIntervalo: 'Block period: from {inicio} to {fim}.',
+      avisoBlocoJornadaSemSaida:
+        'Warning: this block has no clock-out yet. Make sure the project applies to the whole period.',
+      previewCarregando: 'Loading block summary…',
+      aplicarProjetoERegistrar: 'Record with selected project'
     }
   },
   'es-ES': {
-    common: {
+    comum: {
       save: 'Guardar',
       cancel: 'Cancelar',
       confirm: 'Confirmar',
@@ -1486,7 +1596,7 @@ export const translations = {
       break: 'descanso',
       refresh: 'Actualizar'
     },
-    menu: {
+    menuPrincipal: {
       dashboard: 'Panel',
       timeRecord: 'Registrar Hora',
       history: 'Historial',
@@ -1498,22 +1608,27 @@ export const translations = {
       irregularidades: 'Irregularidades',
       espelhoPonto: 'Espejo de Punto',
       ausencias: 'Ausencias',
+      batidasSemProjeto: 'Fichajes sin proyecto',
       logout: 'Salir',
       personal: 'Personal'
     },
-    header: {
+    cabecalho: {
       expandQuickActions: 'Mostrar notificaciones, idioma y tema',
       collapseQuickActions: 'Ocultar atajos',
       languageLabel: 'Idioma / Language',
       languageShort: 'Idioma'
     },
-    theme: {
+    tema: {
       title: 'Tema',
       light: 'Claro',
       dark: 'Oscuro',
       system: 'Sistema'
     },
-    dashboard: {
+    espelho: {
+      titulo: 'Espejo de Punto',
+      subtitulo: 'Informe mensual detallado'
+    },
+    painel: {
       title: 'Panel',
       subtitle: 'Gestión del Sistema',
       hoursBalance: 'Balance de Horas',
@@ -1564,6 +1679,8 @@ export const translations = {
       sunday: 'Domingo',
       hoursProgress: 'Progreso de Horas',
       approvedHours: 'aprobadas',
+      hoursCountedTowardGoal: 'contabilizadas',
+      hoursCountedLegend: 'Contabilizadas',
       approved_plural: 'Aprobadas',
       remaining: 'Restante',
       ofTotal: 'del total',
@@ -1592,7 +1709,7 @@ export const translations = {
       registerFirstEntry: 'Registre su primera entrada para ver el gráfico',
       noTimeRecords: 'No se encontraron registros para esta semana'
     },
-    settings: {
+    configuracoes: {
       title: 'Configuración',
       subtitle: 'Personalice sus preferencias',
       notifications: 'Notificaciones',
@@ -1623,7 +1740,7 @@ export const translations = {
       errorSaving: 'Error al guardar configuración',
       errorRestoring: 'Error al restaurar configuración'
     },
-    notifications: {
+    notificacoes: {
       title: 'Notificaciones',
       markAllRead: 'Marcar todas como leídas',
       noNotifications: 'Sin notificaciones',
@@ -1677,7 +1794,7 @@ export const translations = {
       exportToPDF: 'Exportar a PDF',
       exportToExcel: 'Exportar a Excel'
     },
-    projects: {
+    projetos: {
       title: 'Gestión de Proyectos',
       subtitle: 'Gestione sus proyectos',
       createProject: 'Crear Proyecto',
@@ -1756,7 +1873,7 @@ export const translations = {
       errorSaveProject: 'No se pudo guardar el proyecto. Inténtelo de nuevo.',
       errorDeleteProject: 'No se pudo eliminar el proyecto. Inténtelo de nuevo.'
     },
-    login: {
+    autenticacao: {
       title: 'Bienvenido de nuevo',
       subtitle: 'Inicie sesión para continuar',
       email: 'Email',
@@ -1775,7 +1892,7 @@ export const translations = {
       accessDenied: 'Acceso Denegado',
       loginError: 'Ocurrió un error al intentar iniciar sesión. Inténtelo nuevamente.'
     },
-    validation: {
+    validacao: {
       requiredField: 'Campo obligatorio',
       nameRequired: 'El nombre es obligatorio',
       emailRequired: 'El email es obligatorio',
@@ -1823,7 +1940,7 @@ export const translations = {
       tryAgain: 'Error al formatear. Por favor, intente nuevamente.',
       databaseError: 'Error de conexión con la base de datos'
     },
-    history: {
+    historico: {
       title: 'Historial de Registros',
       subtitle: 'Visualice y gestione sus registros',
       date: 'Fecha',
@@ -1858,7 +1975,11 @@ export const translations = {
       noStatus: 'Sin Estado',
       notes: 'Notas:',
       loadingRecords: 'Cargando registros...',
-      noRecordsForFilters: 'No se encontraron registros para los filtros seleccionados.'
+      noRecordsForFilters: 'No se encontraron registros para los filtros seleccionados.',
+      recordSourceForm: 'Formulario / retroactivo',
+      recordSourceApp: 'Registro en app',
+      retroactiveNote: 'Incluye registro retroactivo desde el formulario.',
+      noProjectLabel: 'Sin proyecto'
     },
     irregularidades: {
       titulo: 'Panel de Irregularidades',
@@ -1877,7 +1998,7 @@ export const translations = {
       semAtrasos: 'Ningún retraso en el período',
       semRegistro: 'Sin registro'
     },
-    admin: {
+    administracao: {
       employees: 'Empleados',
       removed: 'Eliminados',
       companies: 'Empresas',
@@ -1932,9 +2053,12 @@ export const translations = {
       otherPendingDates: 'Otras fechas con registros pendientes:',
       moreDates: 'otros',
       filterByDate: 'Filtrar registros del día',
-      pendingInOtherDates: 'Hay registros pendientes en otras fechas'
+      pendingInOtherDates: 'Hay registros pendientes en otras fechas',
+      electronicPunchClosed: 'Jornada cerrada (app)',
+      electronicPunchOpen: 'En curso (app)',
+      electronicPunchActionsHint: 'Registrado en la app de fichaje — la aprobación es solo en el formulario.'
     },
-    companies: {
+    empresas: {
       companyUpdated: '¡Empresa actualizada con éxito!',
       companyRegistered: '¡Empresa registrada con éxito!',
       companyDeactivated: '¡Empresa desactivada con éxito!',
@@ -1962,7 +2086,7 @@ export const translations = {
       firstCompanyPrompt: 'Comience registrando su primera empresa',
       registerFirstCompany: 'Registrar Primera Empresa'
     },
-    employeeForm: {
+    formularioColaborador: {
       title: 'Registro de Empleado',
       personalInfo: 'Información Personal',
       fullName: 'Nombre Completo',
@@ -2001,7 +2125,7 @@ export const translations = {
       confirmEmailNotice: 'Puede ser necesario confirmar el correo antes del primer acceso (Supabase → Authentication).',
       registerSuccess: 'Usuario registrado con éxito'
     },
-    timeRecordForm: {
+    formularioPonto: {
       title: 'Registro de Hora',
       hello: 'Hola',
       noProjectSelected: 'Ningún proyecto seleccionado',
@@ -2021,7 +2145,7 @@ export const translations = {
       register: 'Guardar registro',
       saved: '¡Registro guardado con éxito!'
     },
-    profile: {
+    perfil: {
       title: 'Perfil',
       subtitle: 'Información del usuario',
       personalInfo: 'Información Personal',
@@ -2062,7 +2186,7 @@ export const translations = {
       workShift: 'Jornada laboral',
       shiftSeparator: 'a'
     },
-    export: {
+    exportacao: {
       title: 'Exportar Informe de Registro',
       reportTitle: 'INFORME DE REGISTRO',
       timeRecordsReport: 'INFORME DE REGISTROS DE HORA',
@@ -2185,10 +2309,51 @@ export const translations = {
       localizacaoCapturada: 'Ubicación capturada',
       comLocalizacao: 'Con ubicación',
       registroRetroativo: 'Registro retroactivo (formulario)'
+    },
+    batidaProjeto: {
+      modalTitulo: 'Sin proyecto seleccionado',
+      modalTexto: 'Puede continuar sin proyecto y asociarlo después, o elegir uno ahora.',
+      ultimoProjetoSugerido: 'Último proyecto usado',
+      usarSugestao: 'Usar este proyecto',
+      continuarSemProjeto: 'Continuar sin proyecto',
+      escolherDaLista: 'Elegir proyecto',
+      carregandoProjetos: 'Cargando proyectos...',
+      nenhumaSugestao: 'Sin proyecto reciente. Elija de la lista o continúe sin proyecto.',
+      tituloPagina: 'Fichajes sin proyecto',
+      subtituloPagina: 'Asocie un proyecto a los fichajes en tiempo real sin proyecto.',
+      periodoMes: 'Mes de referencia',
+      colunaDataHora: 'Fecha y hora',
+      colunaTipo: 'Tipo',
+      associarProjeto: 'Asociar proyecto',
+      salvarAssociacao: 'Guardar',
+      listaVazia: 'No hay fichajes sin proyecto en este período.',
+      sucessoAssociacao: 'Proyecto asociado correctamente.',
+      selecioneProjeto: 'Seleccione un proyecto',
+      painelBanner: 'Tiene {count} fichaje(s) en tiempo real sin proyecto este mes.',
+      painelCta: 'Asociar proyectos',
+      espelhoAlerta: 'Este mes hay {count} fichaje(s) sin proyecto. Asócielos en Fichajes sin proyecto.',
+      exportTitulo: 'Fichajes sin proyecto en el período',
+      exportTexto: 'Hay {count} fichaje(s) en tiempo real sin proyecto en las fechas seleccionadas.',
+      exportContinuar: 'Continuar exportación',
+      exportIrResolver: 'Ir a asociar proyectos',
+      exportModalDestaque: 'Tiene {count} fichaje(s) sin proyecto en este período.',
+      periodoPersonalizadoLabel: 'Período del export',
+      listagemPeriodoEntre: 'Fichajes del {dataInicio} al {dataFim}.',
+      sucessoAssociacaoVarias: 'Proyecto asociado en {count} fichaje(s) del mismo período (entrada/salida).',
+      modalDicaSegmento:
+        'El proyecto se aplicará a todos los fichajes del mismo bloque (de la entrada a la salida) que sigan sin proyecto.',
+      conflitoParcialAssociacao: 'Algunos fichajes ya fueron actualizados. Actualice la lista.',
+      modalResumoLoteTitulo: 'Resumen antes de confirmar',
+      modalResumoQuantidade: '{count} fichaje(s) elegible(s) recibirán este proyecto en este bloque.',
+      modalResumoIntervalo: 'Período del bloque: de {inicio} a {fim}.',
+      avisoBlocoJornadaSemSaida:
+        'Atención: este bloque aún no tiene salida registrada. Compruebe que el proyecto aplica a todo el período.',
+      previewCarregando: 'Cargando resumen del bloque…',
+      aplicarProjetoERegistrar: 'Registrar con el proyecto seleccionado'
     }
   },
   'fr-FR': {
-    common: {
+    comum: {
       save: 'Enregistrer',
       cancel: 'Annuler',
       confirm: 'Confirmer',
@@ -2213,7 +2378,7 @@ export const translations = {
       break: 'pause',
       refresh: 'Actualiser'
     },
-    menu: {
+    menuPrincipal: {
       dashboard: 'Tableau de bord',
       timeRecord: 'Pointer',
       history: 'Historique',
@@ -2225,22 +2390,27 @@ export const translations = {
       irregularidades: 'Irrégularités',
       espelhoPonto: 'Miroir de Pointage',
       ausencias: 'Absences',
+      batidasSemProjeto: 'Pointages sans projet',
       logout: 'Déconnexion',
       personal: 'Personnel'
     },
-    header: {
+    cabecalho: {
       expandQuickActions: 'Afficher notifications, langue et thème',
       collapseQuickActions: 'Masquer les raccourcis',
       languageLabel: 'Langue / Language',
       languageShort: 'Langue'
     },
-    theme: {
+    tema: {
       title: 'Thème',
       light: 'Clair',
       dark: 'Sombre',
       system: 'Système'
     },
-    dashboard: {
+    espelho: {
+      titulo: 'Miroir de Pointage',
+      subtitulo: 'Rapport mensuel détaillé'
+    },
+    painel: {
       title: 'Tableau de bord',
       subtitle: 'Gestion du Système',
       hoursBalance: 'Solde d\'Heures',
@@ -2291,6 +2461,8 @@ export const translations = {
       sunday: 'Dimanche',
       hoursProgress: 'Progression des Heures',
       approvedHours: 'approuvées',
+      hoursCountedTowardGoal: 'comptabilisées',
+      hoursCountedLegend: 'Comptabilisées',
       approved_plural: 'Approuvées',
       remaining: 'Restant',
       ofTotal: 'du total',
@@ -2319,7 +2491,7 @@ export const translations = {
       registerFirstEntry: 'Enregistrez votre première entrée pour voir le graphique',
       noTimeRecords: 'Aucun enregistrement trouvé pour cette semaine'
     },
-    settings: {
+    configuracoes: {
       title: 'Paramètres',
       subtitle: 'Personnalisez vos préférences',
       notifications: 'Notifications',
@@ -2350,7 +2522,7 @@ export const translations = {
       errorSaving: 'Erreur lors de l\'enregistrement des paramètres',
       errorRestoring: 'Erreur lors de la restauration des paramètres'
     },
-    notifications: {
+    notificacoes: {
       title: 'Notifications',
       markAllRead: 'Marquer toutes comme lues',
       noNotifications: 'Aucune notification',
@@ -2404,7 +2576,7 @@ export const translations = {
       exportToPDF: 'Exporter en PDF',
       exportToExcel: 'Exporter en Excel'
     },
-    projects: {
+    projetos: {
       title: 'Gestion des Projets',
       subtitle: 'Gérez vos projets',
       createProject: 'Créer un Projet',
@@ -2483,7 +2655,7 @@ export const translations = {
       errorSaveProject: 'Impossible d’enregistrer le projet. Veuillez réessayer.',
       errorDeleteProject: 'Impossible de supprimer le projet. Veuillez réessayer.'
     },
-    login: {
+    autenticacao: {
       title: 'Bienvenue',
       subtitle: 'Connectez-vous pour continuer',
       email: 'Email',
@@ -2502,7 +2674,7 @@ export const translations = {
       accessDenied: 'Accès Refusé',
       loginError: 'Une erreur s\'est produite lors de la tentative de connexion. Veuillez réessayer.'
     },
-    validation: {
+    validacao: {
       requiredField: 'Champ obligatoire',
       nameRequired: 'Le nom est obligatoire',
       emailRequired: 'L\'email est obligatoire',
@@ -2550,7 +2722,7 @@ export const translations = {
       tryAgain: 'Erreur de formatage. Veuillez réessayer.',
       databaseError: 'Erreur de connexion à la base de données'
     },
-    history: {
+    historico: {
       title: 'Historique des Enregistrements',
       subtitle: 'Visualisez et gérez vos enregistrements',
       date: 'Date',
@@ -2585,7 +2757,11 @@ export const translations = {
       noStatus: 'Sans Statut',
       notes: 'Notes :',
       loadingRecords: 'Chargement des enregistrements...',
-      noRecordsForFilters: 'Aucun enregistrement trouvé pour les filtres sélectionnés.'
+      noRecordsForFilters: 'Aucun enregistrement trouvé pour les filtres sélectionnés.',
+      recordSourceForm: 'Formulaire / rétroactif',
+      recordSourceApp: 'Pointage application',
+      retroactiveNote: 'Comprend un enregistrement rétroactif via le formulaire.',
+      noProjectLabel: 'Sans projet'
     },
     irregularidades: {
       titulo: 'Tableau de Bord des Irrégularités',
@@ -2604,7 +2780,7 @@ export const translations = {
       semAtrasos: 'Aucun retard sur la période',
       semRegistro: 'Pas de pointage'
     },
-    admin: {
+    administracao: {
       employees: 'Employés',
       removed: 'Supprimés',
       companies: 'Entreprises',
@@ -2659,9 +2835,12 @@ export const translations = {
       otherPendingDates: 'Autres dates avec des enregistrements en attente :',
       moreDates: 'autres',
       filterByDate: 'Filtrer les enregistrements du jour',
-      pendingInOtherDates: 'Il y a des enregistrements en attente à d\'autres dates'
+      pendingInOtherDates: 'Il y a des enregistrements en attente à d\'autres dates',
+      electronicPunchClosed: 'Journée clôturée (app)',
+      electronicPunchOpen: 'En cours (app)',
+      electronicPunchActionsHint: 'Enregistré dans l\'app de pointage — validation uniquement sur le formulaire.'
     },
-    companies: {
+    empresas: {
       companyUpdated: 'Entreprise mise à jour avec succès !',
       companyRegistered: 'Entreprise enregistrée avec succès !',
       companyDeactivated: 'Entreprise désactivée avec succès !',
@@ -2689,7 +2868,7 @@ export const translations = {
       firstCompanyPrompt: 'Commencez par enregistrer votre première entreprise',
       registerFirstCompany: 'Enregistrer la Première Entreprise'
     },
-    employeeForm: {
+    formularioColaborador: {
       title: 'Enregistrement d\'Employé',
       personalInfo: 'Informations Personnelles',
       fullName: 'Nom Complet',
@@ -2728,7 +2907,7 @@ export const translations = {
       confirmEmailNotice: 'Une confirmation par e-mail peut être requise avant la première connexion (Supabase → Authentication).',
       registerSuccess: 'Utilisateur enregistré avec succès'
     },
-    timeRecordForm: {
+    formularioPonto: {
       title: 'Enregistrement d\'Heure',
       hello: 'Bonjour',
       noProjectSelected: 'Aucun projet sélectionné',
@@ -2748,7 +2927,7 @@ export const translations = {
       register: 'Enregistrer',
       saved: 'Enregistrement sauvegardé avec succès !'
     },
-    profile: {
+    perfil: {
       title: 'Profil',
       subtitle: 'Informations de l\'utilisateur',
       personalInfo: 'Informations Personnelles',
@@ -2789,7 +2968,7 @@ export const translations = {
       workShift: 'Horaire de travail',
       shiftSeparator: 'à'
     },
-    export: {
+    exportacao: {
       title: 'Exporter le Rapport d\'Enregistrement',
       reportTitle: 'RAPPORT D\'ENREGISTREMENT',
       timeRecordsReport: 'RAPPORT DES ENREGISTREMENTS D\'HEURES',
@@ -2912,6 +3091,47 @@ export const translations = {
       localizacaoCapturada: 'Localisation capturée',
       comLocalizacao: 'Avec localisation',
       registroRetroativo: 'Pointage rétroactif (formulaire)'
+    },
+    batidaProjeto: {
+      modalTitulo: 'Aucun projet sélectionné',
+      modalTexto: 'Vous pouvez continuer sans projet et l’associer plus tard, ou en choisir un maintenant.',
+      ultimoProjetoSugerido: 'Dernier projet utilisé',
+      usarSugestao: 'Utiliser ce projet',
+      continuarSemProjeto: 'Continuer sans projet',
+      escolherDaLista: 'Choisir un projet',
+      carregandoProjetos: 'Chargement des projets...',
+      nenhumaSugestao: 'Aucun projet récent. Choisissez dans la liste ou continuez sans projet.',
+      tituloPagina: 'Pointages sans projet',
+      subtituloPagina: 'Associez un projet aux pointages temps réel sans projet.',
+      periodoMes: 'Mois de référence',
+      colunaDataHora: 'Date et heure',
+      colunaTipo: 'Type',
+      associarProjeto: 'Associer un projet',
+      salvarAssociacao: 'Enregistrer',
+      listaVazia: 'Aucun pointage sans projet sur cette période.',
+      sucessoAssociacao: 'Projet associé avec succès.',
+      selecioneProjeto: 'Sélectionnez un projet',
+      painelBanner: 'Vous avez {count} pointage(s) temps réel sans projet ce mois-ci.',
+      painelCta: 'Associer des projets',
+      espelhoAlerta: 'Ce mois compte {count} pointage(s) sans projet. Associez-les dans Pointages sans projet.',
+      exportTitulo: 'Pointages sans projet sur la période',
+      exportTexto: 'Il y a {count} pointage(s) temps réel sans projet sur les dates sélectionnées.',
+      exportContinuar: 'Continuer l’export',
+      exportIrResolver: 'Associer des projets',
+      exportModalDestaque: 'Vous avez {count} pointage(s) sans projet sur cette période.',
+      periodoPersonalizadoLabel: 'Période d’export',
+      listagemPeriodoEntre: 'Pointages du {dataInicio} au {dataFim}.',
+      sucessoAssociacaoVarias: 'Projet associé sur {count} pointage(s) du même bloc entrée/sortie.',
+      modalDicaSegmento:
+        'Le projet s’appliquera à tous les pointages du même bloc (de l’entrée à la sortie) encore sans projet.',
+      conflitoParcialAssociacao: 'Certains pointages ont déjà été mis à jour. Actualisez la liste.',
+      modalResumoLoteTitulo: 'Résumé avant confirmation',
+      modalResumoQuantidade: '{count} pointage(s) éligible(s) recevront ce projet dans ce bloc.',
+      modalResumoIntervalo: 'Période du bloc : de {inicio} à {fim}.',
+      avisoBlocoJornadaSemSaida:
+        'Attention : ce bloc n’a pas encore de sortie enregistrée. Vérifiez que le projet couvre toute la période.',
+      previewCarregando: 'Chargement du résumé du bloc…',
+      aplicarProjetoERegistrar: 'Enregistrer avec le projet sélectionné'
     }
   }
 };

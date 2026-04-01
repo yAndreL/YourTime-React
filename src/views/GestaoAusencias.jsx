@@ -5,17 +5,17 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useToast } from '../hooks/useToast';
 import { supabase } from '../config/supabase';
 import AusenciaService from '../services/AusenciaService';
-import { formatDate } from '../utils/dateUtils';
+import { formatarData } from '../utils/dateUtils';
 import { FiPlus, FiCheck, FiX, FiPaperclip, FiCalendar, FiFilter, FiFileText } from 'react-icons/fi';
 
 function GestaoAusencias() {
   const { t } = useLanguage();
   const { showSuccess, showError } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [carregandoGestaoAusencias, setCarregandoGestaoAusencias] = useState(true);
   const [ausencias, setAusencias] = useState([]);
   const [feriados, setFeriados] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const [ehAdministrador, setEhAdministrador] = useState(false);
+  const [idUsuario, setIdUsuario] = useState(null);
   const [superiorEmpresaId, setSuperiorEmpresaId] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('');
   const [abaAtiva, setAbaAtiva] = useState('ausencias');
@@ -31,57 +31,73 @@ function GestaoAusencias() {
   }, []);
 
   useEffect(() => {
-    if (userId) carregarAusencias();
+    if (idUsuario) carregarAusencias();
   }, [filtroStatus]);
 
   const carregarDados = async () => {
+    let idSuperiorParaGeracaoAutomatica = null;
     try {
-      setLoading(true);
+      setCarregandoGestaoAusencias(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+      if (!session?.user) {
+        setCarregandoGestaoAusencias(false);
+        return;
+      }
 
-      setUserId(session.user.id);
+      setIdUsuario(session.user.id);
 
-      const { data: profile } = await supabase
+      const { data: perfil } = await supabase
         .from('profiles')
         .select('role, superior_empresa_id')
         .eq('id', session.user.id)
         .single();
 
-      const admin = profile?.role === 'admin';
-      setIsAdmin(admin);
-      setSuperiorEmpresaId(profile?.superior_empresa_id);
+      const admin = perfil?.role === 'admin';
+      setEhAdministrador(admin);
+      setSuperiorEmpresaId(perfil?.superior_empresa_id);
 
-      if (admin && profile?.superior_empresa_id) {
-        await AusenciaService.gerarAusenciasAutomaticas(profile.superior_empresa_id);
-        const resultado = await AusenciaService.buscarAusenciasAdmin(profile.superior_empresa_id, { status: filtroStatus || undefined });
+      if (admin && perfil?.superior_empresa_id) {
+        const resultado = await AusenciaService.buscarAusenciasAdmin(perfil.superior_empresa_id, { status: filtroStatus || undefined });
         setAusencias(resultado.data);
+        idSuperiorParaGeracaoAutomatica = perfil.superior_empresa_id;
       } else {
         const resultado = await AusenciaService.buscarAusencias(session.user.id, { status: filtroStatus || undefined });
         setAusencias(resultado.data);
       }
 
       const ano = new Date().getFullYear();
-      const feriadosResult = await AusenciaService.buscarFeriados(ano, profile?.superior_empresa_id);
+      const feriadosResult = await AusenciaService.buscarFeriados(ano, perfil?.superior_empresa_id);
       setFeriados(feriadosResult.data);
     } catch (error) {
       showError('Erro ao carregar dados');
     } finally {
-      setLoading(false);
+      setCarregandoGestaoAusencias(false);
+    }
+
+    if (idSuperiorParaGeracaoAutomatica) {
+      try {
+        const resultadoGeracao = await AusenciaService.gerarAusenciasAutomaticas(idSuperiorParaGeracaoAutomatica);
+        if (resultadoGeracao.success && resultadoGeracao.geradas > 0) {
+          const listaAtualizada = await AusenciaService.buscarAusenciasAdmin(idSuperiorParaGeracaoAutomatica, { status: filtroStatus || undefined });
+          setAusencias(listaAtualizada.data);
+        }
+      } catch {
+        /* geração automática é opcional; falhas de RLS não devem travar a tela */
+      }
     }
   };
 
   const carregarAusencias = async () => {
-    if (isAdmin && superiorEmpresaId) {
+    if (ehAdministrador && superiorEmpresaId) {
       const resultado = await AusenciaService.buscarAusenciasAdmin(superiorEmpresaId, { status: filtroStatus || undefined });
       setAusencias(resultado.data);
-    } else if (userId) {
-      const resultado = await AusenciaService.buscarAusencias(userId, { status: filtroStatus || undefined });
+    } else if (idUsuario) {
+      const resultado = await AusenciaService.buscarAusencias(idUsuario, { status: filtroStatus || undefined });
       setAusencias(resultado.data);
     }
   };
 
-  const handleSubmitAusencia = async (e) => {
+  const processarEnvioFormularioAusencia = async (e) => {
     e.preventDefault();
     if (!formAusencia.dataInicio || !formAusencia.dataFim || !formAusencia.tipo) {
       showError('Preencha todos os campos obrigatórios');
@@ -89,7 +105,7 @@ function GestaoAusencias() {
     }
 
     const resultado = await AusenciaService.criarAusencia({
-      userId,
+      userId: idUsuario,
       dataInicio: formAusencia.dataInicio,
       dataFim: formAusencia.dataFim,
       tipo: formAusencia.tipo,
@@ -108,8 +124,8 @@ function GestaoAusencias() {
     }
   };
 
-  const handleAprovar = async (ausenciaId) => {
-    const resultado = await AusenciaService.aprovarAusencia(ausenciaId, userId);
+  const processarAprovacaoAusencia = async (ausenciaId) => {
+    const resultado = await AusenciaService.aprovarAusencia(ausenciaId, idUsuario);
     if (resultado.success) {
       showSuccess('Ausência aprovada');
       carregarAusencias();
@@ -118,13 +134,13 @@ function GestaoAusencias() {
     }
   };
 
-  const handleRejeitar = async () => {
+  const processarRejeicaoAusencia = async () => {
     if (!motivoRejeicao.trim()) {
       showError('Informe o motivo da rejeição');
       return;
     }
 
-    const resultado = await AusenciaService.rejeitarAusencia(modalRejeicao.ausenciaId, userId, motivoRejeicao);
+    const resultado = await AusenciaService.rejeitarAusencia(modalRejeicao.ausenciaId, idUsuario, motivoRejeicao);
     if (resultado.success) {
       showSuccess('Ausência rejeitada');
       setModalRejeicao({ isOpen: false, ausenciaId: null });
@@ -137,14 +153,14 @@ function GestaoAusencias() {
 
   const tiposAusencia = AusenciaService.getTiposAusencia();
 
-  const getStatusBadge = (status) => {
-    const configs = {
+  const obterSeloStatus = (status) => {
+    const configuracoesPorStatus = {
       pendente: 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300',
       aprovada: 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300',
       rejeitada: 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
     };
     const labels = { pendente: 'Pendente', aprovada: 'Aprovada', rejeitada: 'Rejeitada' };
-    return <span className={`px-2 py-0.5 rounded text-xs font-semibold ${configs[status]}`}>{labels[status]}</span>;
+    return <span className={`px-2 py-0.5 rounded text-xs font-semibold ${configuracoesPorStatus[status]}`}>{labels[status]}</span>;
   };
 
   return (
@@ -187,7 +203,7 @@ function GestaoAusencias() {
                 </div>
 
                 {/* Lista */}
-                {loading ? (
+                {carregandoGestaoAusencias ? (
                   <div className="text-center py-8"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div></div>
                 ) : ausencias.length === 0 ? (
                   <p className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">Nenhuma ausência encontrada</p>
@@ -201,15 +217,15 @@ function GestaoAusencias() {
                               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {tiposAusencia[ausencia.tipo]?.label || ausencia.tipo}
                               </span>
-                              {getStatusBadge(ausencia.status)}
+                              {obterSeloStatus(ausencia.status)}
                             </div>
-                            {isAdmin && ausencia.profiles && (
+                            {ehAdministrador && ausencia.profiles && (
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                                 {ausencia.profiles.nome} {ausencia.profiles.departamento ? `• ${ausencia.profiles.departamento}` : ''}
                               </p>
                             )}
                             <p className="text-xs text-gray-600 dark:text-gray-300">
-                              {formatDate(ausencia.data_inicio, 'DD/MM/YYYY')} a {formatDate(ausencia.data_fim, 'DD/MM/YYYY')}
+                              {formatarData(ausencia.data_inicio, 'DD/MM/YYYY')} a {formatarData(ausencia.data_fim, 'DD/MM/YYYY')}
                               <span className="ml-2 text-gray-400">
                                 ({AusenciaService.calcularDiasAusencia(ausencia.data_inicio, ausencia.data_fim)} dias úteis)
                               </span>
@@ -227,9 +243,9 @@ function GestaoAusencias() {
                               <p className="text-xs text-red-600 dark:text-red-400 mt-1">Motivo: {ausencia.motivo_rejeicao}</p>
                             )}
                           </div>
-                          {isAdmin && ausencia.status === 'pendente' && (
+                          {ehAdministrador && ausencia.status === 'pendente' && (
                             <div className="flex items-start gap-2">
-                              <button onClick={() => handleAprovar(ausencia.id)}
+                              <button onClick={() => processarAprovacaoAusencia(ausencia.id)}
                                 className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 flex items-center gap-1">
                                 <FiCheck className="w-3 h-3" /> Aprovar
                               </button>
@@ -257,7 +273,7 @@ function GestaoAusencias() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="text-sm font-medium text-gray-900 dark:text-white">{feriado.nome}</span>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(feriado.data, 'DD/MM/YYYY')}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatarData(feriado.data, 'DD/MM/YYYY')}</p>
                           </div>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                             feriado.tipo === 'nacional' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' :
@@ -280,7 +296,7 @@ function GestaoAusencias() {
       {/* Modal Nova Ausência */}
       {modalAberto && (
         <Modal isOpen={modalAberto} onClose={() => setModalAberto(false)} title="Registrar Ausência">
-          <form onSubmit={handleSubmitAusencia} className="space-y-4">
+          <form onSubmit={processarEnvioFormularioAusencia} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo *</label>
               <select value={formAusencia.tipo} onChange={e => setFormAusencia(prev => ({ ...prev, tipo: e.target.value }))}
@@ -345,7 +361,7 @@ function GestaoAusencias() {
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm">
                 Cancelar
               </button>
-              <button type="button" onClick={handleRejeitar}
+              <button type="button" onClick={processarRejeicaoAusencia}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
                 Confirmar Rejeição
               </button>

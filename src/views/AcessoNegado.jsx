@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 function AcessoNegado() {
-  const navigate = useNavigate();
+  const navegarHistorico = useNavigate();
   return <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="yt-card rounded-2xl shadow-xl p-8 md:p-12 text-center">
@@ -41,7 +41,7 @@ function AcessoNegado() {
           </p>
 
           <div className="mb-8">
-            <button onClick={() => navigate(-1)} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md">
+            <button onClick={() => navegarHistorico(-1)} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md">
               <FiArrowLeft className="w-5 h-5" />
               Voltar
             </button>

@@ -5,186 +5,186 @@ import { useLanguage } from '../hooks/useLanguage.jsx';
 import { FiLock, FiLoader, FiCheckCircle, FiArrowLeft } from 'react-icons/fi';
 import { limparRecuperacao, lerRecuperacaoVerificada } from '../utils/passwordRecoveryStorage';
 
-function parseRpcResult(data) {
-  if (data == null) return { success: false, message: null };
-  if (typeof data === 'object' && !Array.isArray(data) && 'success' in data) {
-    return { success: Boolean(data.success), message: data.message || null };
+function interpretarRespostaRpcRedefinicaoSenha(dadosResposta) {
+  if (dadosResposta == null) return { sucesso: false, mensagem: null };
+  if (typeof dadosResposta === 'object' && !Array.isArray(dadosResposta) && 'success' in dadosResposta) {
+    return { sucesso: Boolean(dadosResposta.success), mensagem: dadosResposta.message || null };
   }
-  if (typeof data === 'string') {
+  if (typeof dadosResposta === 'string') {
     try {
-      const o = JSON.parse(data);
-      return { success: Boolean(o.success), message: o.message || null };
+      const objetoJson = JSON.parse(dadosResposta);
+      return { sucesso: Boolean(objetoJson.success), mensagem: objetoJson.message || null };
     } catch {
-      return { success: false, message: null };
+      return { sucesso: false, mensagem: null };
     }
   }
-  return { success: true, message: null };
+  return { sucesso: true, mensagem: null };
 }
 
-function hashIndicaRecuperacao() {
-  const h = typeof window !== 'undefined' ? window.location.hash : '';
-  return h.includes('type=recovery') || h.includes('type%3Drecovery');
+function urlHashIndicaFluxoRecuperacaoSenha() {
+  const fragmentoHash = typeof window !== 'undefined' ? window.location.hash : '';
+  return fragmentoHash.includes('type=recovery') || fragmentoHash.includes('type%3Drecovery');
 }
 
 function ResetarSenha() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const [modo, setModo] = useState('checando');
-  const [emailLegacy, setEmailLegacy] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState(false);
+  const [etapaRedefinicaoSenha, setEtapaRedefinicaoSenha] = useState('checando');
+  const [emailFluxoCodigoVerificado, setEmailFluxoCodigoVerificado] = useState('');
+  const [novaSenhaDigitada, setNovaSenhaDigitada] = useState('');
+  const [confirmacaoNovaSenha, setConfirmacaoNovaSenha] = useState('');
+  const [carregandoAtualizacaoSenha, setCarregandoAtualizacaoSenha] = useState(false);
+  const [mensagemErroFormulario, setMensagemErroFormulario] = useState('');
+  const [redefinicaoConcluidaComSucesso, setRedefinicaoConcluidaComSucesso] = useState(false);
 
-  const irParaEsqueci = useCallback(() => {
+  const navegarParaEsqueciSenha = useCallback(() => {
     navigate('/esqueci-senha', { replace: true });
   }, [navigate]);
 
   useEffect(() => {
-    let cancelado = false;
+    let componenteDesmontado = false;
 
-    const tentarLegacy = () => {
-      const state = location.state;
-      const armazenado = lerRecuperacaoVerificada();
-      const email =
-        (state?.email && String(state.email).trim().toLowerCase()) ||
-        (armazenado?.email ? String(armazenado.email).trim().toLowerCase() : '');
-      const verificado = Boolean(state?.codigoVerificado) || Boolean(armazenado);
-      if (email && verificado) {
-        setEmailLegacy(email);
-        setModo('legacy');
+    const tentarAtivarFluxoLegadoCodigoVerificado = () => {
+      const estadoNavegacao = location.state;
+      const dadosArmazenados = lerRecuperacaoVerificada();
+      const emailResolvido =
+        (estadoNavegacao?.email && String(estadoNavegacao.email).trim().toLowerCase()) ||
+        (dadosArmazenados?.email ? String(dadosArmazenados.email).trim().toLowerCase() : '');
+      const codigoFoiVerificado = Boolean(estadoNavegacao?.codigoVerificado) || Boolean(dadosArmazenados);
+      if (emailResolvido && codigoFoiVerificado) {
+        setEmailFluxoCodigoVerificado(emailResolvido);
+        setEtapaRedefinicaoSenha('legado');
         return true;
       }
       return false;
     };
 
-    if (tentarLegacy()) {
+    if (tentarAtivarFluxoLegadoCodigoVerificado()) {
       return () => {
-        cancelado = true;
+        componenteDesmontado = true;
       };
     }
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelado) return;
-      if (event === 'PASSWORD_RECOVERY' && session) {
-        setModo('supabase');
+    const { data: inscricaoAuth } = supabase.auth.onAuthStateChange((eventoAuth, sessao) => {
+      if (componenteDesmontado) return;
+      if (eventoAuth === 'PASSWORD_RECOVERY' && sessao) {
+        setEtapaRedefinicaoSenha('sessao_link_email');
       }
     });
 
-    const sessaoEhRecuperacao = async () => {
+    const sessaoAtualEhRecuperacaoPorLink = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
-      const hash = typeof window !== 'undefined' ? window.location.hash : '';
-      if (hashIndicaRecuperacao()) return true;
-      if (hash.includes('access_token') && hash.includes('type=recovery')) return true;
-      if (hash.includes('access_token') && hash.includes('type%3Drecovery')) return true;
+      const fragmentoHash = typeof window !== 'undefined' ? window.location.hash : '';
+      if (urlHashIndicaFluxoRecuperacaoSenha()) return true;
+      if (fragmentoHash.includes('access_token') && fragmentoHash.includes('type=recovery')) return true;
+      if (fragmentoHash.includes('access_token') && fragmentoHash.includes('type%3Drecovery')) return true;
       return false;
     };
 
     (async () => {
-      for (const espera of [0, 400, 1200, 2500, 5000]) {
-        if (espera) await new Promise(r => setTimeout(r, espera));
-        if (cancelado) return;
-        if (await sessaoEhRecuperacao()) {
-          if (!cancelado) setModo('supabase');
+      for (const milissegundosEspera of [0, 400, 1200, 2500, 5000]) {
+        if (milissegundosEspera) await new Promise(resolver => setTimeout(resolver, milissegundosEspera));
+        if (componenteDesmontado) return;
+        if (await sessaoAtualEhRecuperacaoPorLink()) {
+          if (!componenteDesmontado) setEtapaRedefinicaoSenha('sessao_link_email');
           return;
         }
       }
     })();
 
-    const tInvalido = setTimeout(() => {
-      if (cancelado) return;
-      setModo(current => (current !== 'checando' ? current : 'invalido'));
+    const temporizadorFluxoInvalido = setTimeout(() => {
+      if (componenteDesmontado) return;
+      setEtapaRedefinicaoSenha(etapaAtual => (etapaAtual !== 'checando' ? etapaAtual : 'invalido'));
     }, 9000);
 
     return () => {
-      cancelado = true;
-      clearTimeout(tInvalido);
-      sub.subscription.unsubscribe();
+      componenteDesmontado = true;
+      clearTimeout(temporizadorFluxoInvalido);
+      inscricaoAuth.subscription.unsubscribe();
     };
   }, [location.state]);
 
   useEffect(() => {
-    if (modo !== 'invalido') return;
-    const t = setTimeout(() => irParaEsqueci(), 2000);
-    return () => clearTimeout(t);
-  }, [modo, irParaEsqueci]);
+    if (etapaRedefinicaoSenha !== 'invalido') return;
+    const temporizadorRedirecionamento = setTimeout(() => navegarParaEsqueciSenha(), 2000);
+    return () => clearTimeout(temporizadorRedirecionamento);
+  }, [etapaRedefinicaoSenha, navegarParaEsqueciSenha]);
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setErro('');
-    if (novaSenha.length < 6) {
-      setErro(t('validation.passwordMinLengthReset'));
-      setLoading(false);
+  const processarDefinicaoNovaSenha = async eventoEnvio => {
+    eventoEnvio.preventDefault();
+    setCarregandoAtualizacaoSenha(true);
+    setMensagemErroFormulario('');
+    if (novaSenhaDigitada.length < 6) {
+      setMensagemErroFormulario(t('validacao.passwordMinLengthReset'));
+      setCarregandoAtualizacaoSenha(false);
       return;
     }
-    if (novaSenha !== confirmarSenha) {
-      setErro(t('validation.passwordsNotMatchReset'));
-      setLoading(false);
+    if (novaSenhaDigitada !== confirmacaoNovaSenha) {
+      setMensagemErroFormulario(t('validacao.passwordsNotMatchReset'));
+      setCarregandoAtualizacaoSenha(false);
       return;
     }
 
     try {
-      if (modo === 'supabase') {
-        const { error: upErr } = await supabase.auth.updateUser({ password: novaSenha });
-        if (upErr) {
-          setErro(upErr.message || t('validation.errorUpdatingPassword'));
-          setLoading(false);
+      if (etapaRedefinicaoSenha === 'sessao_link_email') {
+        const { error: erroAtualizacao } = await supabase.auth.updateUser({ password: novaSenhaDigitada });
+        if (erroAtualizacao) {
+          setMensagemErroFormulario(erroAtualizacao.message || t('validacao.errorUpdatingPassword'));
+          setCarregandoAtualizacaoSenha(false);
           return;
         }
         limparRecuperacao();
         await supabase.auth.signOut();
-        setSucesso(true);
+        setRedefinicaoConcluidaComSucesso(true);
         setTimeout(() => navigate('/login', { replace: true }), 2500);
         return;
       }
 
-      if (modo === 'legacy') {
-        const { data, error: rpcError } = await supabase.rpc('reset_user_password', {
-          user_email: emailLegacy,
-          new_password: novaSenha
+      if (etapaRedefinicaoSenha === 'legado') {
+        const { data: dadosRpc, error: erroRpc } = await supabase.rpc('reset_user_password', {
+          user_email: emailFluxoCodigoVerificado,
+          new_password: novaSenhaDigitada
         });
-        if (rpcError) {
-          if (rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
-            setErro(t('validation.pendingDatabaseConfig'));
+        if (erroRpc) {
+          if (erroRpc.message.includes('function') && erroRpc.message.includes('does not exist')) {
+            setMensagemErroFormulario(t('validacao.pendingDatabaseConfig'));
           } else {
-            setErro(rpcError.message || t('validation.errorUpdatingPassword'));
+            setMensagemErroFormulario(erroRpc.message || t('validacao.errorUpdatingPassword'));
           }
-          setLoading(false);
+          setCarregandoAtualizacaoSenha(false);
           return;
         }
-        const parsed = parseRpcResult(data);
-        if (!parsed.success) {
-          setErro(parsed.message || t('validation.errorUpdatingPassword'));
-          setLoading(false);
+        const resultadoInterpretado = interpretarRespostaRpcRedefinicaoSenha(dadosRpc);
+        if (!resultadoInterpretado.sucesso) {
+          setMensagemErroFormulario(resultadoInterpretado.mensagem || t('validacao.errorUpdatingPassword'));
+          setCarregandoAtualizacaoSenha(false);
           return;
         }
         limparRecuperacao();
-        setSucesso(true);
+        setRedefinicaoConcluidaComSucesso(true);
         setTimeout(() => navigate('/login', { replace: true }), 2500);
         return;
       }
     } catch {
-      setErro('Ocorreu um erro inesperado. Tente novamente.');
+      setMensagemErroFormulario('Ocorreu um erro inesperado. Tente novamente.');
     }
-    setLoading(false);
+    setCarregandoAtualizacaoSenha(false);
   };
 
-  if (modo === 'checando') {
+  if (etapaRedefinicaoSenha === 'checando') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
           <FiLoader className="w-10 h-10 text-blue-600 dark:text-blue-400 animate-spin" />
-          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('common.loading')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{t('comum.loading')}</p>
         </div>
       </div>
     );
   }
 
-  if (modo === 'invalido') {
+  if (etapaRedefinicaoSenha === 'invalido') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center yt-modal-surface rounded-xl shadow-2xl p-8">
@@ -197,7 +197,7 @@ function ResetarSenha() {
     );
   }
 
-  if (sucesso) {
+  if (redefinicaoConcluidaComSucesso) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -228,13 +228,13 @@ function ResetarSenha() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Nova senha</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              {modo === 'supabase'
+              {etapaRedefinicaoSenha === 'sessao_link_email'
                 ? 'Defina sua nova senha para a conta.'
-                : `Conta: ${emailLegacy}`}
+                : `Conta: ${emailFluxoCodigoVerificado}`}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={processarDefinicaoNovaSenha} className="space-y-6">
             <div>
               <label htmlFor="novaSenha" className="block text-sm font-semibold yt-label mb-2">
                 Nova senha
@@ -246,15 +246,15 @@ function ResetarSenha() {
                 <input
                   type="password"
                   id="novaSenha"
-                  value={novaSenha}
-                  onChange={e => {
-                    setNovaSenha(e.target.value);
-                    setErro('');
+                  value={novaSenhaDigitada}
+                  onChange={evento => {
+                    setNovaSenhaDigitada(evento.target.value);
+                    setMensagemErroFormulario('');
                   }}
-                  disabled={loading}
+                  disabled={carregandoAtualizacaoSenha}
                   className={
                     'w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed' +
-                    (erro ? ' !border-red-500' : '')
+                    (mensagemErroFormulario ? ' !border-red-500' : '')
                   }
                   placeholder="••••••••"
                   required
@@ -273,34 +273,34 @@ function ResetarSenha() {
                 <input
                   type="password"
                   id="confirmarSenha"
-                  value={confirmarSenha}
-                  onChange={e => {
-                    setConfirmarSenha(e.target.value);
-                    setErro('');
+                  value={confirmacaoNovaSenha}
+                  onChange={evento => {
+                    setConfirmacaoNovaSenha(evento.target.value);
+                    setMensagemErroFormulario('');
                   }}
-                  disabled={loading}
+                  disabled={carregandoAtualizacaoSenha}
                   className={
                     'w-full pl-10 pr-4 py-3 border rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent yt-field disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed' +
-                    (erro ? ' !border-red-500' : '')
+                    (mensagemErroFormulario ? ' !border-red-500' : '')
                   }
                   placeholder="••••••••"
                   required
                   minLength={6}
                 />
               </div>
-              {erro && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">{erro}</p>
+              {mensagemErroFormulario && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">{mensagemErroFormulario}</p>
               )}
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={carregandoAtualizacaoSenha}
               className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {carregandoAtualizacaoSenha ? (
                 <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  {t('common.loading')}
+                  {t('comum.loading')}
                 </>
               ) : (
                 'Confirmar nova senha'

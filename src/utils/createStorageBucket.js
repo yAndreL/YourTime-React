@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase';
-export async function checkBucketExists() {
+export async function verificarSeBucketExiste() {
   try {
     const {
       data,
@@ -11,10 +11,10 @@ export async function checkBucketExists() {
         error
       };
     }
-    const avatarsBucket = data?.find(bucket => bucket.name === 'avatars');
+    const bucketAvatares = data?.find(bucket => bucket.name === 'avatars');
     return {
-      exists: !!avatarsBucket,
-      bucket: avatarsBucket || null,
+      exists: !!bucketAvatares,
+      bucket: bucketAvatares || null,
       error: null
     };
   } catch (error) {
@@ -24,9 +24,9 @@ export async function checkBucketExists() {
     };
   }
 }
-export async function createBucketIfNotExists() {
+export async function criarBucketSeNaoExistir() {
   try {
-    const check = await checkBucketExists();
+    const check = await verificarSeBucketExiste();
     if (check.exists) {
       return {
         success: true,
@@ -66,8 +66,8 @@ export async function createBucketIfNotExists() {
     };
   }
 }
-export async function ensureBucketExists() {
-  const check = await checkBucketExists();
+export async function garantirQueBucketExiste() {
+  const check = await verificarSeBucketExiste();
   if (check.exists) {
     return {
       success: true,
@@ -75,12 +75,12 @@ export async function ensureBucketExists() {
       message: 'Bucket "avatars" existe e está pronto para uso'
     };
   }
-  const createResult = await createBucketIfNotExists();
-  if (!createResult.success) {
+  const resultadoCriacao = await criarBucketSeNaoExistir();
+  if (!resultadoCriacao.success) {
     return {
       success: false,
       exists: false,
-      message: createResult.message || 'Não foi possível verificar/criar o bucket. Configure manualmente no Supabase Dashboard.',
+      message: resultadoCriacao.message || 'Não foi possível verificar/criar o bucket. Configure manualmente no Supabase Dashboard.',
       instructions: `
 Para criar o bucket manualmente:
 1. Acesse o Supabase Dashboard
@@ -93,12 +93,12 @@ Para criar o bucket manualmente:
     };
   }
   return {
-    success: createResult.success,
+    success: resultadoCriacao.success,
     exists: true,
-    message: createResult.message
+    message: resultadoCriacao.message
   };
 }
-export async function testBucketAccess() {
+export async function testarAcessoAoBucket() {
   try {
     const {
       data: {
@@ -127,7 +127,7 @@ export async function testBucketAccess() {
     return {
       success: true,
       message: 'Bucket acessível e funcionando',
-      canRead: true
+      podeLer: true
     };
   } catch (error) {
     return {

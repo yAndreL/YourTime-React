@@ -68,20 +68,20 @@ class ConfigService {
   }
   static async atualizarConfiguracoes(userId, configuracoes) {
     try {
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: erroPerfil } = await supabase
         .from('profiles')
         .select('superior_empresa_id')
         .eq('id', userId)
         .maybeSingle();
-      if (profileError) throw profileError;
+      if (erroPerfil) throw erroPerfil;
 
-      const tenantId = profile?.superior_empresa_id;
-      const temTenant = Boolean(tenantId);
+      const idEmpresaSuperior = profile?.superior_empresa_id;
+      const temEmpresaSuperior = Boolean(idEmpresaSuperior);
 
       const executarUpdate = async comFiltroTenant => {
         let q = supabase.from('configuracoes').update(configuracoes).eq('user_id', userId);
-        if (comFiltroTenant && temTenant) {
-          q = q.eq('superior_empresa_id', tenantId);
+        if (comFiltroTenant && temEmpresaSuperior) {
+          q = q.eq('superior_empresa_id', idEmpresaSuperior);
         }
         return q.select('*');
       };
@@ -89,7 +89,7 @@ class ConfigService {
       let { data, error } = await executarUpdate(true);
       if (error) throw error;
 
-      if (temTenant && (!data || data.length === 0)) {
+      if (temEmpresaSuperior && (!data || data.length === 0)) {
         const segundo = await executarUpdate(false);
         if (segundo.error) throw segundo.error;
         data = segundo.data;
