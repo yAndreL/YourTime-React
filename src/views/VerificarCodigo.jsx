@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiArrowLeft, FiLoader, FiMail, FiAlertCircle } from 'react-icons/fi';
-import { enviarCodigoRecuperacao } from '../services/EmailService';
+import { postAuthRecovery, postAuthVerify } from '../services/ApiService';
 import { useLanguage } from '../hooks/useLanguage';
 import {
-  salvarRecuperacaoCodigo,
-  lerRecuperacaoPendente,
-  marcarCodigoVerificado
+  salvarRecuperacaoEmail,
+  salvarTempToken,
+  lerRecuperacaoPendente
 } from '../utils/passwordRecoveryStorage';
 
 function VerificarCodigo() {
@@ -17,19 +17,16 @@ function VerificarCodigo() {
   const dadosIniciaisVerificacao = useMemo(() => {
     const estadoNavegacao = location.state;
     let emailExtraido = estadoNavegacao?.email ? String(estadoNavegacao.email).trim().toLowerCase() : '';
-    let codigoExtraido = estadoNavegacao?.codigo != null ? String(estadoNavegacao.codigo) : '';
-    if (!emailExtraido || !codigoExtraido) {
+    if (!emailExtraido) {
       const pendenteArmazenado = lerRecuperacaoPendente();
       if (pendenteArmazenado) {
         emailExtraido = emailExtraido || pendenteArmazenado.email;
-        codigoExtraido = codigoExtraido || pendenteArmazenado.code;
       }
     }
-    return { email: emailExtraido, codigo: codigoExtraido };
+    return emailExtraido;
   }, [location.state]);
 
-  const [emailAtual, setEmailAtual] = useState(dadosIniciaisVerificacao.email);
-  const [codigoEsperadoServidor, setCodigoEsperadoServidor] = useState(dadosIniciaisVerificacao.codigo);
+  const [emailAtual, setEmailAtual] = useState(dadosIniciaisVerificacao);
   const [digitosCodigo, setDigitosCodigo] = useState(['', '', '', '', '', '']);
   const [carregandoVerificacao, setCarregandoVerificacao] = useState(false);
   const [mensagemErroValidacao, setMensagemErroValidacao] = useState('');
@@ -39,19 +36,18 @@ function VerificarCodigo() {
   const refsInputDigitosCodigo = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
   useEffect(() => {
-    setEmailAtual(dadosIniciaisVerificacao.email);
-    setCodigoEsperadoServidor(dadosIniciaisVerificacao.codigo);
-  }, [dadosIniciaisVerificacao.email, dadosIniciaisVerificacao.codigo]);
+    setEmailAtual(dadosIniciaisVerificacao);
+  }, [dadosIniciaisVerificacao]);
 
   useEffect(() => {
-    if (!emailAtual || !codigoEsperadoServidor) {
+    if (!emailAtual) {
       navigate('/esqueci-senha', { replace: true });
       return;
     }
-    salvarRecuperacaoCodigo(emailAtual, codigoEsperadoServidor);
+    salvarRecuperacaoEmail(emailAtual);
     const temporizadorReenvio = setTimeout(() => setExibirOpcaoReenvio(true), 20000);
     return () => clearTimeout(temporizadorReenvio);
-  }, [emailAtual, codigoEsperadoServidor, navigate]);
+  }, [emailAtual, navigate]);
 
   const atualizarDigitoCodigoVerificacao = (indiceDigito, valorDigitado) => {
     if (!/^\d*$/.test(valorDigitado)) return;
@@ -85,22 +81,25 @@ function VerificarCodigo() {
     setCarregandoVerificacao(true);
     setMensagemErroValidacao('');
     const codigoDigitadoCompleto = digitosCodigo.join('');
-    const codigoEsperadoNormalizado = String(codigoEsperadoServidor).trim();
     if (codigoDigitadoCompleto.length !== 6) {
       setMensagemErroValidacao(t('validacao.fillAllDigits'));
       setCarregandoVerificacao(false);
       return;
     }
-    if (codigoDigitadoCompleto === codigoEsperadoNormalizado) {
-      marcarCodigoVerificado(emailAtual);
-      navigate('/resetar-senha', {
-        state: {
-          email: emailAtual,
-          codigoVerificado: true
-        }
-      });
-    } else {
-      setMensagemErroValidacao(t('validacao.invalidCode'));
+    try {
+      // O servidor valida o codigo (comparacao hash, TTL, one-time)
+      const resultado = await postAuthVerify(emailAtual, codigoDigitadoCompleto);
+      if (resultado.verified && resultado.temp_token) {
+        salvarTempToken(resultado.temp_token);
+        navigate('/resetar-senha', {
+          state: {
+            email: emailAtual,
+            temp_token: resultado.temp_token
+          }
+        });
+      }
+    } catch (erro) {
+      setMensagemErroValidacao(erro.message || t('validacao.invalidCode'));
       setDigitosCodigo(['', '', '', '', '', '']);
       refsInputDigitosCodigo[0].current?.focus();
     }
@@ -112,35 +111,23 @@ function VerificarCodigo() {
     setMensagemSucessoReenvio('');
     setMensagemErroValidacao('');
     try {
-      const novoCodigoGerado = Math.floor(100000 + Math.random() * 900000).toString();
-      await enviarCodigoRecuperacao(emailAtual, novoCodigoGerado);
-      salvarRecuperacaoCodigo(emailAtual, novoCodigoGerado);
-      if (import.meta.env.DEV) {
-        console.info('[YourTime] Novo código de recuperação (dev):', novoCodigoGerado);
-      }
-      setCodigoEsperadoServidor(novoCodigoGerado);
+      // Servidor gera novo codigo e envia por email
+      await postAuthRecovery(emailAtual);
       setDigitosCodigo(['', '', '', '', '', '']);
-      navigate('/verificar-codigo', {
-        state: {
-          email: emailAtual,
-          codigo: novoCodigoGerado
-        },
-        replace: true
-      });
       setMensagemSucessoReenvio('Novo código enviado com sucesso!');
       setExibirOpcaoReenvio(false);
       setTimeout(() => {
         setExibirOpcaoReenvio(true);
         setMensagemSucessoReenvio('');
       }, 20000);
-    } catch {
-      setMensagemErroValidacao(t('validacao.errorResendingCode'));
+    } catch (error) {
+      setMensagemErroValidacao(error.message || t('validacao.errorResendingCode'));
     } finally {
       setReenviandoCodigo(false);
     }
   };
 
-  if (!emailAtual || !codigoEsperadoServidor) {
+  if (!emailAtual) {
     return null;
   }
 

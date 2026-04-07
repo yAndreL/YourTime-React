@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLoader, FiArrowLeft, FiKey } from 'react-icons/fi';
-import { supabase } from '../config/supabase';
-import { enviarCodigoRecuperacao } from '../services/EmailService';
+import { postAuthRecovery } from '../services/ApiService';
 import { useLanguage } from '../hooks/useLanguage.jsx';
-import { salvarRecuperacaoCodigo } from '../utils/passwordRecoveryStorage';
+import { salvarRecuperacaoEmail } from '../utils/passwordRecoveryStorage';
 
 function EsqueciSenha() {
   const { t } = useLanguage();
@@ -12,32 +11,6 @@ function EsqueciSenha() {
   const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [carregandoEnvio, setCarregandoEnvio] = useState(false);
   const [mensagemErro, setMensagemErro] = useState('');
-  const [metodoRecuperacao, setMetodoRecuperacao] = useState('link');
-  const [linkRecuperacaoEnviado, setLinkRecuperacaoEnviado] = useState(false);
-
-  const gerarCodigoNumericoSeisDigitos = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-  const processarEnvioLinkRecuperacaoPorEmail = async eventoEnvio => {
-    eventoEnvio.preventDefault();
-    setCarregandoEnvio(true);
-    setMensagemErro('');
-    setLinkRecuperacaoEnviado(false);
-    const emailFormatado = emailRecuperacao.trim().toLowerCase();
-    try {
-      const urlRedirecionamentoReset = `${window.location.origin}/resetar-senha`;
-      const { error } = await supabase.auth.resetPasswordForEmail(emailFormatado, { redirectTo: urlRedirecionamentoReset });
-      if (error) {
-        setMensagemErro(error.message || t('validacao.errorSendingEmail'));
-        return;
-      }
-      setLinkRecuperacaoEnviado(true);
-    } catch (erro) {
-      console.error(erro);
-      setMensagemErro(t('validacao.errorSendingEmail'));
-    } finally {
-      setCarregandoEnvio(false);
-    }
-  };
 
   const processarEnvioCodigoRecuperacaoSeisDigitos = async eventoEnvio => {
     eventoEnvio.preventDefault();
@@ -45,21 +18,11 @@ function EsqueciSenha() {
     setMensagemErro('');
     try {
       const emailFormatado = emailRecuperacao.trim().toLowerCase();
-      const codigoGerado = gerarCodigoNumericoSeisDigitos();
-      await enviarCodigoRecuperacao(emailFormatado, codigoGerado);
-      salvarRecuperacaoCodigo(emailFormatado, codigoGerado);
-      if (import.meta.env.DEV) {
-        console.info('[YourTime] Código de recuperação (ambiente local):', codigoGerado);
-      }
-      navigate('/verificar-codigo', {
-        state: {
-          email: emailFormatado,
-          codigo: codigoGerado
-        }
-      });
+      await postAuthRecovery(emailFormatado);
+      salvarRecuperacaoEmail(emailFormatado);
+      navigate('/verificar-codigo', { state: { email: emailFormatado } });
     } catch (erroEnvio) {
-      console.error('Erro ao enviar email:', erroEnvio);
-      setMensagemErro(t('validacao.errorSendingEmail'));
+      setMensagemErro(erroEnvio.message || t('validacao.errorSendingEmail'));
     } finally {
       setCarregandoEnvio(false);
     }
@@ -72,53 +35,11 @@ function EsqueciSenha() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Recuperar senha</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Informe seu e-mail e escolha como deseja recuperar o acesso.
+              Informe seu e-mail e receba um c&oacute;digo de 6 d&iacute;gitos para verificar sua identidade.
             </p>
           </div>
 
-          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 mb-6 gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMetodoRecuperacao('link');
-                setMensagemErro('');
-                setLinkRecuperacaoEnviado(false);
-              }}
-              className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                metodoRecuperacao === 'link'
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              Link por e-mail
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMetodoRecuperacao('codigo');
-                setMensagemErro('');
-                setLinkRecuperacaoEnviado(false);
-              }}
-              className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors inline-flex items-center justify-center gap-1 ${
-                metodoRecuperacao === 'codigo'
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <FiKey className="w-3.5 h-3.5 shrink-0" />
-              Código 6 dígitos
-            </button>
-          </div>
-
-          {linkRecuperacaoEnviado && metodoRecuperacao === 'link' && (
-            <div className="mb-6 p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-sm text-gray-700 dark:text-gray-300">
-              Se existir uma conta para este e-mail, você receberá um link da <strong>Supabase</strong> para
-              definir uma nova senha. Verifique também a pasta de spam. O link abre esta aplicação em{' '}
-              <strong>/resetar-senha</strong>.
-            </div>
-          )}
-
-          <form onSubmit={metodoRecuperacao === 'link' ? processarEnvioLinkRecuperacaoPorEmail : processarEnvioCodigoRecuperacaoSeisDigitos} className="space-y-6">
+          <form onSubmit={processarEnvioCodigoRecuperacaoSeisDigitos} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold yt-label mb-2">
                 E-mail
@@ -142,12 +63,7 @@ function EsqueciSenha() {
                   required
                 />
               </div>
-              {metodoRecuperacao === 'codigo' && import.meta.env.DEV && (
-                <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-                  Modo desenvolvimento: o e-mail não é enviado; o código aparece no console (F12) e na próxima tela o fluxo segue normalmente.
-                </p>
-              )}
-              {mensagemErro && <p className="mt-2 text-sm text-red-600 flex items-center gap-1">{mensagemErro}</p>}
+              {mensagemErro && <p className="mt-2 text-sm text-red-600">{mensagemErro}</p>}
             </div>
 
             <button
@@ -158,12 +74,13 @@ function EsqueciSenha() {
               {carregandoEnvio ? (
                 <>
                   <FiLoader className="w-5 h-5 animate-spin" />
-                  Enviando…
+                  Enviando&hellip;
                 </>
-              ) : metodoRecuperacao === 'link' ? (
-                'Enviar link de recuperação'
               ) : (
-                'Enviar código'
+                <>
+                  <FiKey className="w-5 h-5" />
+                  Enviar c&oacute;digo de verifica&ccedil;&atilde;o
+                </>
               )}
             </button>
           </form>
