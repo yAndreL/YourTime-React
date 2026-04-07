@@ -331,8 +331,13 @@ function Perfil() {
           setSalvando(false);
           return;
         }
-        if (novaSenha.length < 6) {
-          showError('A senha deve ter no mínimo 6 caracteres.');
+        if (novaSenha.length < 8) {
+          showError('A senha deve ter no minimo 8 caracteres, contendo pelo menos uma letra e um numero.');
+          setSalvando(false);
+          return;
+        }
+        if (!/[a-zA-Z]/.test(novaSenha) || !/[0-9]/.test(novaSenha)) {
+          showError('A senha deve conter pelo menos uma letra e um numero.');
           setSalvando(false);
           return;
         }
@@ -434,6 +439,12 @@ function Perfil() {
       const empresaFolder = superiorEmpresaId || 'default';
       if (!superiorEmpresaId) {}
       const fileExt = file.name.split('.').pop().toLowerCase();
+      const extensoesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!extensoesPermitidas.includes(fileExt)) {
+        showError('Formato de imagem nao suportado. Use JPG, PNG, GIF ou WebP.');
+        setEnviandoFotoPerfil(false);
+        return;
+      }
       const fileName = `${user.id}.${fileExt}`;
       const filePath = `${empresaFolder}/${fileName}`;
       const mimeTypes = {
@@ -457,9 +468,9 @@ function Perfil() {
         if (uploadError.message) {
           const errorMsg = uploadError.message.toLowerCase();
           if (errorMsg.includes('bucket not found') || errorMsg.includes('does not exist') || errorMsg.includes('the resource was not found') || uploadError.statusCode === '404') {
-            errorMessage = '❌ Bucket "avatars" não encontrado!\n\n📋 Solução: Acesse o Supabase Dashboard → Storage → New Bucket\nCrie um bucket chamado "avatars" e marque como público.\n\nOu execute o arquivo CREATE_STORAGE_BUCKET.sql no SQL Editor.';
+            errorMessage = 'Bucket "avatars" não encontrado. Solução: Acesse o Supabase Dashboard → Storage → New Bucket. Crie um bucket chamado "avatars" e marque como público. Ou execute o arquivo CREATE_STORAGE_BUCKET.sql no SQL Editor.';
           } else if (errorMsg.includes('mime type') || errorMsg.includes('application/json') || errorMsg.includes('not supported')) {
-            errorMessage = '❌ O bucket "avatars" não está configurado corretamente!\n\n📋 Solução: Vá no Supabase Dashboard → Storage → avatars → Settings\nConfigure "Allowed MIME types" para aceitar:\n• image/png\n• image/jpeg\n• image/jpg\n• image/gif\n• image/webp\n\nOu recrie o bucket usando CREATE_STORAGE_BUCKET.sql';
+            errorMessage = 'O bucket "avatars" não está configurado corretamente. Solução: Vá no Supabase Dashboard → Storage → avatars → Settings. Configure "Allowed MIME types" para aceitar: image/png, image/jpeg, image/jpg, image/gif, image/webp. Ou recrie o bucket usando CREATE_STORAGE_BUCKET.sql';
           } else {
             errorMessage = `Erro: ${uploadError.message}`;
           }

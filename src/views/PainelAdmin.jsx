@@ -218,14 +218,25 @@ function PainelAdministrativo() {
         let pontoHoje = null;
         let statusPonto = 'ausente';
 
-        if (temFormulario) {
-          pontoHoje = dadosPonto;
-          statusPonto =
-            dadosPonto.status === 'A' ? 'completed' : dadosPonto.status === 'R' ? 'rejected' : 'pending';
-        } else if (temBatidas) {
+        // Batidas sao fonte primaria (dados reais do relogio)
+        // Formulario e fallback para dias sem batidas
+        if (temBatidas) {
           pontoHoje = { origemRegistroPonto: 'batidas', batidasDoDia: batidasNoDiaOficial };
           const { estado } = BatidaService.determinarEstadoJornada(batidasNoDiaOficial);
           statusPonto = estado === 'encerrada' ? 'batida_fechada' : 'batida_aberta';
+          // Se tambem tem formulario, anexa como info complementar
+          if (temFormulario) {
+            pontoHoje.formularioComplementar = dadosPonto;
+            if (dadosPonto.status === 'R') {
+              statusPonto = 'batida_com_formulario_rejeitado';
+            } else if (dadosPonto.status === 'A') {
+              statusPonto = 'batida_com_formulario_aprovado';
+            }
+          }
+        } else if (temFormulario) {
+          pontoHoje = dadosPonto;
+          statusPonto =
+            dadosPonto.status === 'A' ? 'completed' : dadosPonto.status === 'R' ? 'rejected' : 'pending';
         }
 
         return {
@@ -313,6 +324,18 @@ function PainelAdministrativo() {
   });
   const toggleStatusFuncionario = async (funcionarioId, novoStatus) => {
     try {
+      // Verifica que o funcionario pertence ao mesmo tenant do admin
+      if (superiorEmpresaId) {
+        const { data: funcionario } = await supabase
+          .from('profiles')
+          .select('superior_empresa_id')
+          .eq('id', funcionarioId)
+          .maybeSingle();
+        if (!funcionario || funcionario.superior_empresa_id !== superiorEmpresaId) {
+          showError(t('comum.accessDenied'));
+          return;
+        }
+      }
       const {
         error
       } = await supabase.from('profiles').update({
@@ -324,7 +347,7 @@ function PainelAdministrativo() {
         is_active: novoStatus
       } : funcionario));
     } catch (error) {
-      alert('Erro ao atualizar status do funcionário');
+      alert('Erro ao atualizar status do funcionario');
     }
   };
   const excluirFuncionario = async funcionarioId => {
@@ -376,6 +399,11 @@ function PainelAdministrativo() {
       } = await supabase.from('agendamento').select('*').eq('id', agendamentoId).single();
       if (erroBusca) throw erroBusca;
 
+      if (agendamento.superior_empresa_id !== superiorEmpresaId) {
+        showError(t('comum.accessDenied'));
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       const idAdministrador = session?.user?.id;
 
@@ -412,6 +440,11 @@ function PainelAdministrativo() {
         error: erroBusca
       } = await supabase.from('agendamento').select('*').eq('id', agendamentoId).single();
       if (erroBusca) throw erroBusca;
+
+      if (agendamento.superior_empresa_id !== superiorEmpresaId) {
+        showError(t('comum.accessDenied'));
+        return;
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       const idAdministrador = session?.user?.id;
@@ -662,22 +695,29 @@ function PainelAdministrativo() {
                               {calcularHorasTrabalhadas(funcionario.pontoHoje)}
                             </td>
                             <td className="px-0 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium">
-                              {funcionario.pontoHoje?.origemRegistroPonto === 'batidas' ? <span className="text-gray-600 dark:text-gray-400 text-[9px] sm:text-[10px] md:text-xs">{t('administracao.electronicPunchActionsHint')}</span> : funcionario.pontoHoje ? <div className="flex items-center gap-2">
-                                  {funcionario.statusPonto === 'pending' && <>
-                                      <button onClick={() => aprovarPonto(funcionario.id, funcionario.pontoHoje.id)} className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Aprovar ponto">
-                                        <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.approve')}</span>
-                                      </button>
-                                      <button onClick={() => desaprovarPonto(funcionario.id, funcionario.pontoHoje.id)} className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Desaprovar ponto">
+                              {(() => {
+                                const ponto = funcionario.pontoHoje;
+                                const somenteBatidas = ponto?.origemRegistroPonto === 'batidas' && !ponto?.formularioComplementar;
+                                const agendamentoId = ponto?.formularioComplementar?.id ?? ponto?.id;
+                                if (somenteBatidas) return <span className="text-gray-600 dark:text-gray-400 text-[9px] sm:text-[10px] md:text-xs">{t('administracao.electronicPunchActionsHint')}</span>;
+                                if (ponto) return <div className="flex items-center gap-2">
+                                    {funcionario.statusPonto === 'pending' && <>
+                                        <button onClick={() => aprovarPonto(funcionario.id, agendamentoId)} className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Aprovar ponto">
+                                          <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.approve')}</span>
+                                        </button>
+                                        <button onClick={() => desaprovarPonto(funcionario.id, agendamentoId)} className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Desaprovar ponto">
+                                          <FiXCircle className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.disapprove')}</span>
+                                        </button>
+                                      </>}
+                                    {funcionario.statusPonto === 'completed' && <button onClick={() => desaprovarPonto(funcionario.id, agendamentoId)} className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Desaprovar ponto">
                                         <FiXCircle className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.disapprove')}</span>
-                                      </button>
-                                    </>}
-                                  {funcionario.statusPonto === 'completed' && <button onClick={() => desaprovarPonto(funcionario.id, funcionario.pontoHoje.id)} className="text-red-600 hover:text-red-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Desaprovar ponto">
-                                      <FiXCircle className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.disapprove')}</span>
-                                    </button>}
-                                  {funcionario.statusPonto === 'rejected' && <button onClick={() => aprovarPonto(funcionario.id, funcionario.pontoHoje.id)} className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Aprovar ponto">
-                                      <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.approve')}</span>
-                                    </button>}
-                                </div> : <span className="text-gray-400 text-[9px] sm:text-[10px] md:text-xs">{t('administracao.noTimeEntry')}</span>}
+                                      </button>}
+                                    {funcionario.statusPonto === 'rejected' && <button onClick={() => aprovarPonto(funcionario.id, agendamentoId)} className="text-green-600 hover:text-green-900 inline-flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 lg:px-2 py-0.5 sm:py-0.5 lg:py-1 rounded hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors text-[9px] sm:text-[10px] md:text-xs" title="Aprovar ponto">
+                                        <FiCheck className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4" /> <span className="hidden sm:inline">{t('administracao.approve')}</span>
+                                      </button>}
+                                  </div>;
+                                return <span className="text-gray-400 text-[9px] sm:text-[10px] md:text-xs">{t('administracao.noTimeEntry')}</span>;
+                              })()}
                             </td>
                           </tr>)}
                     </tbody>

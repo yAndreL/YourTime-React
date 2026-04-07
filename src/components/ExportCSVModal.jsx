@@ -281,9 +281,9 @@ function ExportCSVModal({
         csvLines.push(`,,Dias Úteis Trabalhados,${diasUteis},,,Rejeitados,${diasRejeitados},${(diasRejeitados / diasUteis * 100).toFixed(1)}%`);
         csvLines.push(`,,Média Diária,${formatarHoras(totalHorasTrabalhadas / diasUteis)}`);
         csvLines.push('');
-        csvLines.push(',,💡 Dica: Selecione as colunas Status e Quantidade acima e crie um Gráfico de Pizza!');
+        csvLines.push(`,,${t('exportacao.excelChartTip')}`);
         csvLines.push('');
-        csvLines.push(`,,${t('exportacao.workedHoursPerDay').toUpperCase()} (${t('exportacao.barChartTip').replace('💡 ', '')})`);
+        csvLines.push(`,,${t('exportacao.workedHoursPerDay').toUpperCase()} (${t('exportacao.barChartTip')})`);
         csvLines.push(`,,${t('exportacao.date')},${t('exportacao.normalHoursUpTo8')},${t('exportacao.extraHoursAbove8')},${t('exportacao.total')},${t('exportacao.status')}`);
         dadosDetalhados.forEach(dia => {
           const match = dia.totalHoras.match(/(\d+)h\s*(\d+)min/);
@@ -304,7 +304,7 @@ function ExportCSVModal({
         });
         csvLines.push('');
         csvLines.push('');
-        csvLines.push('═════════════════════════════════════════════════════════════════════');
+        csvLines.push('===================================================================');
         csvLines.push('');
         csvLines.push('');
       }

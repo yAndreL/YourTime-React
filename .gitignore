@@ -35,3 +35,7 @@ estrutura_banco.json
 CODIGOS_ERRO.md
 
 \.temp
+
+# MCP config (contains tokens)
+.mcp.json
+.claude

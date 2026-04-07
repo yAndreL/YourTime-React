@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase.js';
 import MainLayout from '../components/layout/MainLayout';
 import Modal from '../components/ui/Modal';
 import GerenciamentoProjetosSkeleton from '../components/ui/GerenciamentoProjetosSkeleton';
+import GeocercaSelector from '../components/GeocercaSelector';
 import { useModal } from '../hooks/useModal';
 import { useToast } from '../hooks/useToast';
 import { useLanguage } from '../hooks/useLanguage';
@@ -174,7 +175,7 @@ function GerenciamentoProjetos() {
         } = await supabase.from('profiles').select('superior_empresa_id').eq('id', idUsuario).single();
         empresaIdFiltro = perfil?.superior_empresa_id || null;
       }
-      let consulta = supabase.from('projetos').select('*').order('created_at', {
+      let consulta = supabase.from('projetos').select('*').is('deleted_at', null).order('created_at', {
         ascending: false
       });
       if (empresaIdFiltro) {
@@ -351,7 +352,10 @@ function GerenciamentoProjetos() {
         prioridade: projeto.prioridade || 'media',
         orcamento: projeto.orcamento || '',
         horas_estimadas: projeto.horas_estimadas || '',
-        cor_identificacao: projeto.cor_identificacao || '#3B82F6'
+        cor_identificacao: projeto.cor_identificacao || '#3B82F6',
+        geocerca_latitude: projeto.geocerca_latitude || '',
+        geocerca_longitude: projeto.geocerca_longitude || '',
+        geocerca_raio_metros: projeto.geocerca_raio_metros || '100'
       });
     } else {
       setProjetoEmEdicao(null);
@@ -415,6 +419,15 @@ function GerenciamentoProjetos() {
     e.preventDefault();
     try {
       setCarregandoGerenciamentoProjetos(true);
+
+      // Validacao do orcamento
+      const orcamentoVal = dadosFormulario.orcamento ? parseFloat(dadosFormulario.orcamento) : null;
+      if (orcamentoVal !== null && (isNaN(orcamentoVal) || orcamentoVal < 0 || orcamentoVal > 999999999)) {
+        showError(t('projetos.invalidBudget'));
+        setCarregandoGerenciamentoProjetos(false);
+        return;
+      }
+
       const dadosProjeto = {
         nome: dadosFormulario.nome,
         descricao: dadosFormulario.descricao,
@@ -422,12 +435,15 @@ function GerenciamentoProjetos() {
         responsavel_id: dadosFormulario.responsavel_id || null,
         data_inicio: dadosFormulario.data_inicio || null,
         data_fim: dadosFormulario.data_fim || null,
-        orcamento: dadosFormulario.orcamento ? parseFloat(dadosFormulario.orcamento) : null,
+        orcamento: orcamentoVal,
         status: dadosFormulario.status,
         cor_identificacao: dadosFormulario.cor_identificacao,
         horas_estimadas: dadosFormulario.horas_estimadas ? parseInt(dadosFormulario.horas_estimadas) : null,
         prioridade: dadosFormulario.prioridade,
-        superior_empresa_id: superiorEmpresaId
+        superior_empresa_id: superiorEmpresaId,
+        geocerca_latitude: dadosFormulario.geocerca_latitude ? parseFloat(dadosFormulario.geocerca_latitude) : null,
+        geocerca_longitude: dadosFormulario.geocerca_longitude ? parseFloat(dadosFormulario.geocerca_longitude) : null,
+        geocerca_raio_metros: dadosFormulario.geocerca_raio_metros ? parseInt(dadosFormulario.geocerca_raio_metros, 10) : 100
       };
       let result;
       if (projetoEmEdicao) {
@@ -459,27 +475,44 @@ function GerenciamentoProjetos() {
     showConfirm(t('projetos.deleteConfirmMessage'), async () => {
       try {
         setCarregandoGerenciamentoProjetos(true);
-        const {
-          error: erroAgendamento
-        } = await supabase.from('agendamento').delete().eq('projeto_id', projetoId);
-        if (erroAgendamento) {
-          throw erroAgendamento;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error('Nao autenticado');
+
+        const { data: perfil } = await supabase
+          .from('profiles')
+          .select('role, superior_empresa_id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (perfil?.role !== 'admin') {
+          showError(t('comum.accessDenied'));
+          return;
         }
-        const {
-          error: erroProjeto
-        } = await supabase.from('projetos').delete().eq('id', projetoId);
+
+        const { data: projeto } = await supabase
+          .from('projetos')
+          .select('id, superior_empresa_id')
+          .eq('id', projetoId)
+          .maybeSingle();
+
+        if (!projeto || projeto.superior_empresa_id !== perfil.superior_empresa_id) {
+          showError(t('comum.accessDenied'));
+          return;
+        }
+
+        setCarregandoGerenciamentoProjetos(true);
+
+        // Soft-delete: preserva batidas e jornadas (CLT Art. 74)
+        const { error: erroProjeto } = await supabase
+          .from('projetos')
+          .update({ status: 'cancelado', deleted_at: new Date().toISOString() })
+          .eq('id', projetoId);
         if (erroProjeto) {
           throw erroProjeto;
         }
-        const {
-          data: {
-            user
-          }
-        } = await supabase.auth.getUser();
-        if (user) {
-          CacheService.remove('projetos', user.id);
-        }
-        await carregarProjetos(user?.id, false);
+
+        CacheService.remove('projetos', session.user.id);
+        await carregarProjetos(session.user.id, false);
         showSuccess(t('projetos.projectDeleted'));
       } catch {
         showError(t('projetos.errorDeleteProject'));
@@ -533,13 +566,13 @@ function GerenciamentoProjetos() {
   const obterTextoPrioridade = prioridade => {
     switch (prioridade) {
       case 'baixa':
-        return `🔹 ${t('projetos.priorityLow')}`;
+        return t('projetos.priorityLow');
       case 'media':
-        return `🔸 ${t('projetos.priorityMedium')}`;
+        return t('projetos.priorityMedium');
       case 'alta':
-        return `🔶 ${t('projetos.priorityHigh')}`;
+        return t('projetos.priorityHigh');
       case 'urgente':
-        return `🔺 ${t('projetos.priorityUrgent')}`;
+        return t('projetos.priorityUrgent');
       default:
         return t('projetos.undefinedPriority');
     }
@@ -651,10 +684,10 @@ function GerenciamentoProjetos() {
                 <label className="block text-sm font-medium yt-label mb-2">{t('projetos.priority')}</label>
                 <select name="prioridade" value={filtrosProjetos.prioridade} onChange={aoAlterarFiltroListaProjetos} className="w-full px-4 py-2.5 border rounded-lg yt-field focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="todas">{t('projetos.allPriorities')}</option>
-                  <option value="baixa">🔹 {t('projetos.priorityLow')}</option>
-                  <option value="media">🔸 {t('projetos.priorityMedium')}</option>
-                  <option value="alta">🔶 {t('projetos.priorityHigh')}</option>
-                  <option value="urgente">🔺 {t('projetos.priorityUrgent')}</option>
+                  <option value="baixa">{t('projetos.priorityLow')}</option>
+                  <option value="media">{t('projetos.priorityMedium')}</option>
+                  <option value="alta">{t('projetos.priorityHigh')}</option>
+                  <option value="urgente">{t('projetos.priorityUrgent')}</option>
                 </select>
               </div>
 
@@ -877,6 +910,23 @@ function GerenciamentoProjetos() {
                         {usuarios.map(usuario => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
                       </select>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium yt-label mb-1">
+                      Geocerca do Projeto (opcional)
+                    </label>
+                    <GeocercaSelector
+                      latitude={dadosFormulario.geocerca_latitude ? parseFloat(dadosFormulario.geocerca_latitude) : null}
+                      longitude={dadosFormulario.geocerca_longitude ? parseFloat(dadosFormulario.geocerca_longitude) : null}
+                      raio={dadosFormulario.geocerca_raio_metros ? parseInt(dadosFormulario.geocerca_raio_metros, 10) : 100}
+                      onChange={(lat, lon, raio) => setDadosFormulario(prev => ({
+                        ...prev,
+                        geocerca_latitude: lat.toString(),
+                        geocerca_longitude: lon.toString(),
+                        geocerca_raio_metros: raio.toString()
+                      }))}
+                    />
                   </div>
 
                   <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4">

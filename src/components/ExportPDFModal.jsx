@@ -590,8 +590,7 @@ function ExportPDFModal({
               <p className="text-gray-700 dark:text-gray-300 mb-4">{erroModal.message}</p>
               <div className="yt-inset border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  <strong>💡 Dica:</strong> Se o erro persistir, verifique sua conexão com a internet e tente novamente. 
-                  Para mais informações, consulte o código de erro na documentação.
+                  <strong>{t('exportacao.tip')}:</strong> {t('exportacao.pdfErrorTip')}
                 </p>
               </div>
             </div>

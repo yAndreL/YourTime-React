@@ -248,13 +248,14 @@ describe('CalculoTrabalhistaService', () => {
       expect(CalculoTrabalhistaService.calcularAdicionalNoturno(null)).toBe(0);
     });
 
-    it('calcula minutos noturnos para trabalho entre 22h e 23h', () => {
+    it('calcula minutos noturnos ficticios (fator 52.5min) para 22h-23h', () => {
       const batidas = [
         { tipo: 'entrada', timestamp_servidor: '2026-03-25T22:00:00' },
         { tipo: 'saida', timestamp_servidor: '2026-03-25T23:00:00' },
       ];
+      // 60min reais / 0.875 = ~68.57 -> 69 ficticios
       const resultado = CalculoTrabalhistaService.calcularAdicionalNoturno(batidas);
-      expect(resultado).toBe(60);
+      expect(Math.round(resultado)).toBe(69);
     });
 
     it('calcula zero para trabalho inteiramente diurno', () => {
@@ -264,6 +265,69 @@ describe('CalculoTrabalhistaService', () => {
       ];
       const resultado = CalculoTrabalhistaService.calcularAdicionalNoturno(batidas);
       expect(resultado).toBe(0);
+    });
+  });
+
+  // ── segmentarHorasExtrasPorPercentual ──
+  describe('segmentarHorasExtrasPorPercentual', () => {
+    it('retorna zeros para extras negativos', () => {
+      const seg = CalculoTrabalhistaService.segmentarHorasExtrasPorPercentual(0, '2026-04-06');
+      expect(seg.minutos50).toBe(0);
+      expect(seg.minutos100).toBe(0);
+    });
+
+    it('segmenta até 120min a 50% em dia útil (segunda)', () => {
+      const seg = CalculoTrabalhistaService.segmentarHorasExtrasPorPercentual(90, '2026-04-06'); // segunda
+      expect(seg.minutos50).toBe(90);
+      expect(seg.minutos100).toBe(0);
+      expect(seg.valor50Minutos).toBe(Math.round(90 * 1.5));
+    });
+
+    it('segmenta excedente de 2h a 100% em dia útil', () => {
+      const seg = CalculoTrabalhistaService.segmentarHorasExtrasPorPercentual(180, '2026-04-06'); // 3h extra, seg
+      expect(seg.minutos50).toBe(120);
+      expect(seg.minutos100).toBe(60);
+      expect(seg.valor50Minutos).toBe(Math.round(120 * 1.5));
+      expect(seg.valor100Minutos).toBe(Math.round(60 * 2));
+    });
+
+    it('domingo vai tudo a 100%', () => {
+      const seg = CalculoTrabalhistaService.segmentarHorasExtrasPorPercentual(60, '2026-04-05'); // dom
+      expect(seg.minutos50).toBe(0);
+      expect(seg.minutos100).toBe(60);
+    });
+
+    it('feriado vai tudo a 100%', () => {
+      const seg = CalculoTrabalhistaService.segmentarHorasExtrasPorPercentual(60, '2026-04-06', true);
+      expect(seg.minutos50).toBe(0);
+      expect(seg.minutos100).toBe(60);
+    });
+  });
+
+  // ── calcularBancoDeHorasExpiracao ──
+  describe('calcularBancoDeHorasExpiracao', () => {
+    it('marca entradas recentes como ativas', () => {
+      const entradas = [
+        { dataCriacao: '2026-01-15', saldoMinutos: 60 }
+      ];
+      const resultado = CalculoTrabalhistaService.calcularBancoDeHorasExpiracao(entradas, '2026-02-15');
+      expect(resultado.saldoValido).toBe(60);
+      expect(resultado.saldoExpirado).toBe(0);
+    });
+
+    it('marca entradas antigas como expiradas', () => {
+      const entradas = [
+        { dataCriacao: '2025-06-01', saldoMinutos: 120 }
+      ];
+      const resultado = CalculoTrabalhistaService.calcularBancoDeHorasExpiracao(entradas, '2026-02-15');
+      expect(resultado.saldoExpirado).toBe(120);
+      expect(resultado.saldoValido).toBe(0);
+    });
+
+    it('lista vazia retorna zeros', () => {
+      const resultado = CalculoTrabalhistaService.calcularBancoDeHorasExpiracao([]);
+      expect(resultado.saldoValido).toBe(0);
+      expect(resultado.saldoExpirado).toBe(0);
     });
   });
 

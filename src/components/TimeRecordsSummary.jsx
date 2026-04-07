@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
-import { FiRefreshCw, FiClock, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiRefreshCw, FiClock, FiEye, FiEyeOff, FiAlertTriangle } from 'react-icons/fi';
 import { formatarData } from '../utils/dateUtils';
 function TimeRecordsSummary({
   registrosApontamento,
@@ -25,14 +25,14 @@ function TimeRecordsSummary({
   if (mensagemErro) {
     return <div className="yt-card p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resumo de Ponto</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('painel.timeRecordSummary')}</h3>
           {aoRecarregar && <button type="button" onClick={aoRecarregar} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
               <FiRefreshCw className="w-4 h-4" /> Atualizar
             </button>}
         </div>
         <div className="text-center py-8">
-          <div className="text-red-400 text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">Erro ao Carregar Dados</h3>
+          <FiAlertTriangle className="text-red-400 text-4xl mb-4" />
+          <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">{t('painel.errorLoadingData')}</h3>
           <p className="text-red-600 dark:text-red-400 mb-4">{mensagemErro}</p>
         </div>
       </div>;

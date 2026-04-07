@@ -118,32 +118,26 @@ export const BATIDA_PROJETO = {
   BLOQUEAR_EXPORT_SE_BATIDAS_SEM_PROJETO: false
 };
 export const SIDEBAR_MENU = [{
-  icon: '🏠',
   label: 'Dashboard',
   route: ROUTES.HOME,
   roles: [USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
 }, {
-  icon: '📝',
   label: 'Registrar Ponto',
   route: ROUTES.FORM,
   roles: [USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
 }, {
-  icon: '🏢',
   label: 'Painel Administrativo',
   route: ROUTES.PAINEL_ADMIN,
   roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER]
 }, {
-  icon: '📊',
   label: 'Histórico',
   route: ROUTES.HISTORY,
   roles: [USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
 }, {
-  icon: '👤',
   label: 'Perfil',
   route: ROUTES.PROFILE,
   roles: [USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.MANAGER]
 }, {
-  icon: '⚙️',
   label: 'Configurações',
   route: ROUTES.SETTINGS,
   roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER]

@@ -1,6 +1,16 @@
 import { supabase } from '../config/supabase';
 import { translations } from '../i18n/translations';
 import { formatarData } from '../utils/dateUtils';
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 const t = (language, key) => {
   const keys = key.split('.');
   let value = translations[language] || translations['pt-BR'];
@@ -90,14 +100,14 @@ class NotificationService {
       };
     }
   }
-  static async marcarComoLida(notificacaoId) {
+  static async marcarComoLida(notificacaoId, userId) {
     try {
       const {
         error
       } = await supabase.from('notificacoes').update({
         lida: true,
         lida_em: new Date().toISOString()
-      }).eq('id', notificacaoId);
+      }).eq('id', notificacaoId).eq('user_id', userId);
       if (error) throw error;
       return {
         success: true
@@ -128,11 +138,11 @@ class NotificationService {
       };
     }
   }
-  static async deletarNotificacao(notificacaoId) {
+  static async deletarNotificacao(notificacaoId, userId) {
     try {
       const {
         error
-      } = await supabase.from('notificacoes').delete().eq('id', notificacaoId);
+      } = await supabase.from('notificacoes').delete().eq('id', notificacaoId).eq('user_id', userId);
       if (error) throw error;
       return {
         success: true
@@ -322,14 +332,18 @@ class NotificationService {
     }
   }
   static async enviarRelatorioSemanal(userEmail, userName, relatorio) {
+    const nome = escapeHtml(userName);
+    const totalHoras = escapeHtml(String(relatorio.totalHoras));
+    const diasTrabalhados = escapeHtml(String(relatorio.diasTrabalhados));
+    const mediaDiaria = escapeHtml(String(relatorio.mediaDiaria));
     const html = `
       <h2>Relatório Semanal - YourTime</h2>
-      <p>Olá ${userName},</p>
+      <p>Olá ${nome},</p>
       <p>Segue seu relatório de horas da semana:</p>
       <div style="margin: 20px 0;">
-        <p><strong>Total de horas:</strong> ${relatorio.totalHoras}</p>
-        <p><strong>Dias trabalhados:</strong> ${relatorio.diasTrabalhados}</p>
-        <p><strong>Média diária:</strong> ${relatorio.mediaDiaria}</p>
+        <p><strong>Total de horas:</strong> ${totalHoras}</p>
+        <p><strong>Dias trabalhados:</strong> ${diasTrabalhados}</p>
+        <p><strong>Média diária:</strong> ${mediaDiaria}</p>
       </div>
       <p>Acesse o sistema para mais detalhes.</p>
       <hr>
@@ -338,7 +352,7 @@ class NotificationService {
     return await this.enviarEmail({
       para: userEmail,
       assunto: 'Relatório Semanal - YourTime',
-      mensagem: `Relatório semanal com ${relatorio.totalHoras} horas trabalhadas`,
+      mensagem: `Relatório semanal com ${totalHoras} horas trabalhadas`,
       html
     });
   }

@@ -51,6 +51,9 @@ function Configuracoes() {
   const [salvandoConfiguracoes, setSalvandoConfiguracoes] = useState(false);
   const [modalConfirmacaoRestaurarVisivel, setModalConfirmacaoRestaurarVisivel] = useState(false);
   useEffect(() => {
+    carregarConfiguracoes();
+  }, []);
+  useEffect(() => {
     if (modalConfirmacaoRestaurarVisivel) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -60,9 +63,6 @@ function Configuracoes() {
       document.body.style.overflow = 'unset';
     };
   }, [modalConfirmacaoRestaurarVisivel]);
-  useEffect(() => {
-    carregarConfiguracoes();
-  }, []);
   const obterIdUsuarioAtual = async () => {
     const {
       data: {
@@ -305,10 +305,10 @@ function Configuracoes() {
                     {t('configuracoes.interfaceLanguage')}
                   </label>
                   <select value={config.language} onChange={e => atualizarCampoConfiguracao('language', e.target.value)} className="block w-full border rounded-md shadow-sm yt-field focus:ring-blue-500 focus:border-blue-500 p-2">
-                    <option value="pt-BR">🇧🇷 Português (Brasil)</option>
-                    <option value="en-US">🇺🇸 English (United States)</option>
-                    <option value="es-ES">🇪🇸 Español (España)</option>
-                    <option value="fr-FR">🇫🇷 Français (France)</option>
+                    <option value="pt-BR">Português (Brasil)</option>
+                    <option value="en-US">English (United States)</option>
+                    <option value="es-ES">Español (España)</option>
+                    <option value="fr-FR">Français (France)</option>
                   </select>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     {t('configuracoes.languageDesc')}

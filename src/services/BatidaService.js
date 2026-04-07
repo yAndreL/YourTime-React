@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase';
 import CalculoTrabalhistaService from './CalculoTrabalhistaService';
 import ConfigService from './ConfigService';
+import { postRegistrarBatida } from './ApiService';
 import { BATIDA_PROJETO } from '../constants/AppConstants';
 import {
   FUSO_PADRAO_IANA,
@@ -13,6 +14,38 @@ import {
 } from '../utils/fusoHorarioData';
 
 class BatidaService {
+  /** Calcula distância entre dois pontos em metros (fórmula de Haversine) */
+  static distanciaHaversine(lat1, lon1, lat2, lon2) {
+    if (typeof lat1 !== 'number' || typeof lon1 !== 'number') return Infinity;
+    const R = 6371000;
+    const toRad = (deg) => deg * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /** Busca configuração de geocerca de um projeto */
+  static async buscarGeocercaProjeto(projetoId) {
+    if (!projetoId) return null;
+    try {
+      const { data, error } = await supabase
+        .from('projetos')
+        .select('geocerca_latitude, geocerca_longitude, geocerca_raio_metros')
+        .eq('id', projetoId)
+        .maybeSingle();
+      if (error || !data || data.geocerca_latitude == null) return null;
+      return {
+        latitude: data.geocerca_latitude,
+        longitude: data.geocerca_longitude,
+        raio_metros: data.geocerca_raio_metros || 100
+      };
+    } catch {
+      return null;
+    }
+  }
+
   static async resolverFusoHorarioUsuario(userId) {
     if (!userId) return FUSO_PADRAO_IANA;
     const resultado = await ConfigService.buscarConfiguracoes(userId);
@@ -21,36 +54,17 @@ class BatidaService {
     }
     return FUSO_PADRAO_IANA;
   }
-  static async registrarBatida({ userId, tipo, latitude, longitude, precisaoGps, fotoUrl, projetoId, empresaId, superiorEmpresaId, observacao }) {
+  static async registrarBatida({ tipo, latitude, longitude, precisaoGps, projetoId, observacao }) {
     try {
-      const batida = {
-        user_id: userId,
+      const resultado = await postRegistrarBatida({
         tipo,
-        timestamp_servidor: new Date().toISOString(),
-        timestamp_cliente: new Date().toISOString(),
-        latitude: latitude || null,
-        longitude: longitude || null,
-        precisao_gps: precisaoGps || null,
-        foto_url: fotoUrl || null,
-        dispositivo: navigator.userAgent?.substring(0, 255) || null,
-        retroativo: false,
-        observacao: observacao || null,
-        projeto_id: projetoId || null,
-        empresa_id: empresaId || null,
-        superior_empresa_id: superiorEmpresaId || null
-      };
-
-      const { data, error } = await supabase
-        .from('batidas')
-        .insert([batida])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await this.atualizarJornada(userId, superiorEmpresaId, projetoId, empresaId);
-
-      return { success: true, data };
+        projetoId,
+        latitude,
+        longitude,
+        precisaoGps,
+        observacao
+      });
+      return { success: true, data: resultado.batida, estado: resultado.estado };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -234,25 +248,29 @@ class BatidaService {
 
   /**
    * Mapeia batidas ordenadas para os quatro horários do formulário de apontamento (1ª e 2ª entrada/saída).
+   * @param {Array} batidasLista - batidas ordenadas
+   * @param {string} fusoIANA - fuso IANA para exibição dos horários (padrão 'America/Sao_Paulo')
    */
-  static formatarHorariosQuatroSlotsEstiloApontamento(batidasLista) {
+  static formatarHorariosQuatroSlotsEstiloApontamento(batidasLista, fusoIANA = FUSO_PADRAO_IANA) {
     const ordenadas = [...(batidasLista || [])].sort(
       (a, c) => new Date(a.timestamp_servidor) - new Date(c.timestamp_servidor)
     );
     const entradas = ordenadas.filter(b => b.tipo === 'entrada');
     const saidas = ordenadas.filter(b => b.tipo === 'saida');
-    const formatarHoraLocal = b =>
+    const formatarHoraNoFuso = b =>
       b?.timestamp_servidor
-        ? new Date(b.timestamp_servidor).toLocaleTimeString('pt-BR', {
+        ? new Intl.DateTimeFormat('pt-BR', {
             hour: '2-digit',
-            minute: '2-digit'
-          })
+            minute: '2-digit',
+            hour12: false,
+            timeZone: fusoIANA
+          }).format(new Date(b.timestamp_servidor))
         : '--:--';
     return {
-      entrada1: formatarHoraLocal(entradas[0]),
-      saida1: formatarHoraLocal(saidas[0]),
-      entrada2: formatarHoraLocal(entradas[1]),
-      saida2: formatarHoraLocal(saidas[1])
+      entrada1: formatarHoraNoFuso(entradas[0]),
+      saida1: formatarHoraNoFuso(saidas[0]),
+      entrada2: formatarHoraNoFuso(entradas[1]),
+      saida2: formatarHoraNoFuso(saidas[1])
     };
   }
 
@@ -327,15 +345,17 @@ class BatidaService {
         const ultimaSaida = [...batidasDoDiaOficial].reverse().find(b => b.tipo === 'saida');
 
         if (primeiraEntrada && horaEntradaPerfil) {
-          const horaReal = new Date(primeiraEntrada.timestamp_servidor)
-            .toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+          const horaReal = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', minute: '2-digit', hour12: false, timeZone: fuso
+          }).format(new Date(primeiraEntrada.timestamp_servidor));
           const calculado = CalculoTrabalhistaService.calcularAtraso(horaReal, horaEntradaPerfil);
           atrasoMinutos = calculado <= LIMITE_ATRASO_RAZOAVEL ? calculado : 0;
         }
 
         if (ultimaSaida && horaSaidaPerfil) {
-          const horaReal = new Date(ultimaSaida.timestamp_servidor)
-            .toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+          const horaReal = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', minute: '2-digit', hour12: false, timeZone: fuso
+          }).format(new Date(ultimaSaida.timestamp_servidor));
           const calculado = CalculoTrabalhistaService.calcularSaidaAntecipada(horaReal, horaSaidaPerfil);
           saidaAntecipadaMinutos = calculado <= LIMITE_ATRASO_RAZOAVEL ? calculado : 0;
         }
@@ -450,15 +470,20 @@ class BatidaService {
     return `${h}h${m}min`;
   }
 
-  static obterIntervaloMesCorrenteFormatado() {
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = hoje.getMonth() + 1;
-    const ultimoDia = new Date(ano, mes, 0).getDate();
-    const mm = String(mes).padStart(2, '0');
+  static obterIntervaloMesCorrenteFormatado(fusoIANA = FUSO_PADRAO_IANA) {
+    const agoraNoFuso = new Intl.DateTimeFormat('en-CA', {
+      timeZone: fusoIANA,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+    const [anoStr, mesStr] = agoraNoFuso.split('-');
+    const ano = parseInt(anoStr);
+    const mes = parseInt(mesStr);
+    const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
     return {
-      dataInicio: `${ano}-${mm}-01`,
-      dataFim: `${ano}-${mm}-${String(ultimoDia).padStart(2, '0')}`
+      dataInicio: `${ano}-${mesStr}-01`,
+      dataFim: `${ano}-${mesStr}-${String(ultimoDia).padStart(2, '0')}`
     };
   }
 

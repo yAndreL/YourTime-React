@@ -31,7 +31,6 @@ function ProtectedRoute({
             setAutorizado(true);
             setCarregando(false);
           }
-          void supabase.auth.getUser();
           return;
         }
         const {
@@ -48,9 +47,6 @@ function ProtectedRoute({
         if (!cancelado) {
           setAutorizado(ehAdministrador);
           setCarregando(false);
-        }
-        if (ehAdministrador) {
-          void supabase.auth.getUser();
         }
       } catch (error) {
         if (!cancelado) {

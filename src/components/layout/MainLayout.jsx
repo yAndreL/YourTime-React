@@ -56,10 +56,10 @@ function MainLayout({ children, title, subtitle }) {
   };
 
   const idiomas = [
-    { code: 'pt-BR', name: 'Português', flag: '🇧🇷' },
-    { code: 'en-US', name: 'English', flag: '🇺🇸' },
-    { code: 'es-ES', name: 'Español', flag: '🇪🇸' },
-    { code: 'fr-FR', name: 'Français', flag: '🇫🇷' }
+    { code: 'pt-BR', name: 'Português' },
+    { code: 'en-US', name: 'English' },
+    { code: 'es-ES', name: 'Español' },
+    { code: 'fr-FR', name: 'Français' }
   ];
 
   const carregarPerfil = async () => {

@@ -64,15 +64,15 @@ export const NotificationProvider = ({
         }
       } catch (error) {}
     };
-    const deletarNotificacoesAntigas = async () => {
+    const deletarNotificacoesAntigas = async (userId) => {
       try {
         const trintaDiasAtras = new Date();
         trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
         const dataLimite = trintaDiasAtras.toISOString();
-        await supabase.from('notificacoes').delete().lt('created_at', dataLimite);
+        await supabase.from('notificacoes').delete().lt('created_at', dataLimite).eq('user_id', userId);
       } catch (error) {}
     };
-    const verificarELimparNotificacoes = async () => {
+    const verificarELimparNotificacoes = async (userId) => {
       const {
         isAdmin,
         superiorEmpresaId
@@ -81,12 +81,20 @@ export const NotificationProvider = ({
         return;
       }
       await limparNotificacoesAnteriorizadas();
-      await deletarNotificacoesAntigas();
+      await deletarNotificacoesAntigas(userId);
     };
-    verificarELimparNotificacoes().then(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        setInicializado(true);
+        return;
+      }
+      await verificarELimparNotificacoes(user.id);
       setInicializado(true);
-    });
-    idIntervalo = setInterval(verificarELimparNotificacoes, 60000);
+      idIntervalo = setInterval(() => verificarELimparNotificacoes(user.id), 60000);
+    })();
+
     return () => {
       if (idIntervalo) {
         clearInterval(idIntervalo);

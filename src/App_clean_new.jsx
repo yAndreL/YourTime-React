@@ -125,7 +125,7 @@ function App() {
   useEffect(() => {
     if (!idUsuarioAtualSessao) return;
     const carregarContagemBatidasSemProjeto = async () => {
-      const { dataInicio, dataFim } = BatidaService.obterIntervaloMesCorrenteFormatado();
+      const { dataInicio, dataFim } = BatidaService.obterIntervaloMesCorrenteFormatado(fusoHorario);
       const resultado = await BatidaService.contarBatidasSemProjetoNoPeriodo(
         [idUsuarioAtualSessao],
         dataInicio,
@@ -301,7 +301,7 @@ function App() {
   const limparProjetoSelecionadoNoDashboard = () => {
     setProjetoSelecionadoDashboard(null);
     localStorage.removeItem('selectedProject');
-    exibirMensagemToastConfirmacao('Projeto desmarcado');
+    exibirMensagemToastConfirmacao(t('painel.projectDeselected'));
   };
   const exibirMensagemToastConfirmacao = textoMensagem => {
     setTextoToastConfirmacao(textoMensagem);
@@ -427,7 +427,7 @@ function App() {
 
           <div className="yt-card p-4 sm:p-6 mb-6">
             {mensagemErroConsultaProjetos && <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-                Não foi possível carregar os projetos ({mensagemErroConsultaProjetos}). Verifique a conexão com a internet.
+                {t('painel.errorLoadingProjects')} ({mensagemErroConsultaProjetos}). {t('painel.checkInternetConnection')}
               </div>}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -709,7 +709,7 @@ function App() {
                     <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${record.entrada1 ? 'bg-green-500' : record.saida1 ? 'bg-red-500' : 'bg-blue-500'}`}></div>
                       <span className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
-                        {record.entrada1 ? t('painel.newEntry') : record.saida1 ? 'Saída registrada' : record.entrada2 ? 'Entrada 2 registrada' : record.saida2 ? 'Saída 2 registrada' : 'Registro de ponto'}
+                        {record.entrada1 ? t('painel.newEntry') : record.saida1 ? t('painel.exitRegistered') : record.entrada2 ? t('painel.entry2Registered') : record.saida2 ? t('painel.exit2Registered') : t('painel.timeEntryRegistered')}
                         {record.observacao && ` - ${record.observacao}`}
                       </span>
                     </div>

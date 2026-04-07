@@ -4,6 +4,7 @@ import { supabase } from '../config/supabase.js';
 import CacheService from '../services/CacheService';
 import ConfigService from '../services/ConfigService';
 import BatidaService from '../services/BatidaService';
+import { reconciliarPeriodo } from '../utils/reconciliacaoPonto';
 import {
   FUSO_PADRAO_IANA,
   obterIntervaloUtcSemiabertoParaDiaCalendario,
@@ -144,36 +145,22 @@ function HistoricoApontamento() {
         throw erroBatidas;
       }
 
-      const porDiaOficial = BatidaService.agruparBatidasPorDiaOficialJornada(dadosBatidas || [], fusoUsuario);
-      const linhasBatidas = [];
-      for (const dataOficial of Object.keys(porDiaOficial)) {
-        if (filtrosHistorico.dataInicio && dataOficial < filtrosHistorico.dataInicio) continue;
-        if (filtrosHistorico.dataFim && dataOficial > filtrosHistorico.dataFim) continue;
-        const lista = porDiaOficial[dataOficial];
-        if (!lista?.length) continue;
-        const horarios = BatidaService.formatarHorariosQuatroSlotsEstiloApontamento(lista);
-        const comRetroativo = lista.some(b => b.retroativo === true);
-        const projetoIdRef = lista.map(b => b.projeto_id).find(id => id != null && id !== '');
-        linhasBatidas.push({
-          id: `batidas-${dataOficial}`,
-          data: dataOficial,
-          origemLista: 'batidas',
-          projetoIdRef,
-          entrada1: horarios.entrada1,
-          saida1: horarios.saida1,
-          entrada2: horarios.entrada2,
-          saida2: horarios.saida2,
-          horasTrabalhadas: BatidaService.formatarHorasMinutosDecimalStringAPartirDasBatidas(lista),
-          anotacoes: comRetroativo ? t('historico.retroactiveNote') : '',
-          status: 'REG_APP'
-        });
-      }
+      // Reconcilia as duas fontes: batidas é primária, formulário é fallback
+      const reconciliados = reconciliarPeriodo(data || [], dadosBatidas || [], fusoUsuario);
 
+      // Busca mapa de projetos
       const idsProjetos = [
-        ...new Set([
-          ...(data || []).map(a => a.projeto_id).filter(Boolean),
-          ...linhasBatidas.map(l => l.projetoIdRef).filter(Boolean)
-        ])
+        ...new Set(
+          reconciliados.flatMap(r => {
+            const ids = [];
+            if (r.origem === 'formulario' && r.agendamento?.projeto_id) ids.push(r.agendamento.projeto_id);
+            if (r.origem === 'batidas') {
+              ids.push(...r.batidas.map(b => b.projeto_id).filter(id => id != null && id !== ''));
+              if (r.agendamento?.projeto_id) ids.push(r.agendamento.projeto_id);
+            }
+            return ids;
+          })
+        )
       ];
       let mapaProjetos = {};
       if (idsProjetos.length > 0) {
@@ -183,28 +170,49 @@ function HistoricoApontamento() {
         }
       }
 
-      const apontamentosFormulario = (data || []).map(apontamento => ({
-        id: apontamento.id,
-        data: apontamento.data,
-        origemLista: 'formulario',
-        projeto: mapaProjetos[apontamento.projeto_id] || t('historico.noProjectLabel'),
-        entrada1: apontamento.entrada1 || '--:--',
-        saida1: apontamento.saida1 || '--:--',
-        entrada2: apontamento.entrada2 || '--:--',
-        saida2: apontamento.saida2 || '--:--',
-        horasTrabalhadas: calcularHorasTrabalhadas(apontamento),
-        anotacoes: apontamento.observacao,
-        status: apontamento.status || 'P'
-      }));
+      // Mapeia para estrutura da UI
+      const apontamentosMapeados = reconciliados.map(r => {
+        if (r.origem === 'batidas') {
+          const horarios = BatidaService.formatarHorariosQuatroSlotsEstiloApontamento(r.batidas, fusoUsuario);
+          const comRetroativo = r.batidas.some(b => b.retroativo === true);
+          const projetoIdRef = r.batidas.map(b => b.projeto_id).find(id => id != null && id !== '');
+          const projetoNome = projetoIdRef
+            ? mapaProjetos[projetoIdRef] || t('historico.noProjectLabel')
+            : t('historico.noProjectLabel');
+          const temFormularioComplementar = r.agendamento && (r.agendamento.observacao || r.agendamento.status === 'R');
+          return {
+            id: `batidas-${r.data}`,
+            data: r.data,
+            origemLista: 'batidas',
+            projeto: projetoNome,
+            entrada1: horarios.entrada1,
+            saida1: horarios.saida1,
+            entrada2: horarios.entrada2,
+            saida2: horarios.saida2,
+            horasTrabalhadas: BatidaService.formatarHorasMinutosDecimalStringAPartirDasBatidas(r.batidas),
+            anotacoes: comRetroativo ? t('historico.retroactiveNote') : '',
+            status: r.status === 'R' ? 'rejeitada' : (r.agendamento ? r.agendamento.status : 'REG_APP'),
+            temFormularioComplementar,
+            observacaoFormulario: r.agendamento?.observacao || null
+          };
+        }
 
-      const apontamentosBatidasMapeados = linhasBatidas.map(linha => ({
-        ...linha,
-        projeto: linha.projetoIdRef ? mapaProjetos[linha.projetoIdRef] || t('historico.noProjectLabel') : t('historico.noProjectLabel')
-      }));
-
-      const apontamentosMapeados = [...apontamentosFormulario, ...apontamentosBatidasMapeados].sort((a, b) =>
-        String(b.data).localeCompare(String(a.data))
-      );
+        // Origem formulário (sem batidas nesse dia)
+        const a = r.agendamento;
+        return {
+          id: a.id,
+          data: a.data,
+          origemLista: 'formulario',
+          projeto: mapaProjetos[a.projeto_id] || t('historico.noProjectLabel'),
+          entrada1: a.entrada1 || '--:--',
+          saida1: a.saida1 || '--:--',
+          entrada2: a.entrada2 || '--:--',
+          saida2: a.saida2 || '--:--',
+          horasTrabalhadas: calcularHorasTrabalhadas(a),
+          anotacoes: a.observacao,
+          status: a.status || 'P'
+        };
+      });
 
       setApontamentos(apontamentosMapeados);
       if (userId) {
@@ -435,6 +443,11 @@ function HistoricoApontamento() {
                           {t('historico.recordSourceForm')}
                         </span>
                       )}
+                      {apontamento.temFormularioComplementar && (
+                        <span className="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800" title={apontamento.observacaoFormulario}>
+                          Formulario complementar
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium truncate">{apontamento.projeto}</p>
                   </div>
@@ -471,9 +484,14 @@ function HistoricoApontamento() {
                   </div>
                 </div>
 
-                {apontamento.anotacoes && <div className="mt-2 yt-inset rounded p-2 border border-gray-200 dark:border-gray-700">
+                {(apontamento.anotacoes || apontamento.observacaoFormulario) && <div className="mt-2 yt-inset rounded p-2 border border-gray-200 dark:border-gray-700">
                     <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">{t('historico.notes')}</div>
-                    <div className="text-sm text-gray-800 dark:text-gray-200">{apontamento.anotacoes}</div>
+                    {apontamento.anotacoes && <div className="text-sm text-gray-800 dark:text-gray-200">{apontamento.anotacoes}</div>}
+                    {apontamento.observacaoFormulario && (
+                      <div className="text-sm text-amber-700 dark:text-amber-300 italic mt-1 border-l-2 border-amber-400 pl-2">
+                        Justificativa: {apontamento.observacaoFormulario}
+                      </div>
+                    )}
                   </div>}
               </div>;
         })}

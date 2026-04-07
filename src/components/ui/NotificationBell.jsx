@@ -136,7 +136,9 @@ function NotificationBell({ showMenuLabel = false }) {
   };
   const handleMarcarComoLida = async (notificacaoId, event) => {
     event.stopPropagation();
-    const resultado = await NotificationService.marcarComoLida(notificacaoId);
+    const idUsuario = await getIdUsuarioAtual();
+    if (!idUsuario) return;
+    const resultado = await NotificationService.marcarComoLida(notificacaoId, idUsuario);
     if (resultado.success) {
       setNotificacoes(prev => prev.map(n => n.id === notificacaoId ? {
         ...n,
@@ -159,7 +161,9 @@ function NotificationBell({ showMenuLabel = false }) {
   };
   const handleDeletarNotificacao = async (notificacaoId, event) => {
     event.stopPropagation();
-    const resultado = await NotificationService.deletarNotificacao(notificacaoId);
+    const idUsuario = await getIdUsuarioAtual();
+    if (!idUsuario) return;
+    const resultado = await NotificationService.deletarNotificacao(notificacaoId, idUsuario);
     if (resultado.success) {
       const notificacaoEncontrada = notificacoes.find(n => n.id === notificacaoId);
       setNotificacoes(prev => prev.filter(n => n.id !== notificacaoId));

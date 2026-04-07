@@ -262,24 +262,6 @@ class SupabaseService {
   onAuthStateChange(callback) {
     return supabase.auth.onAuthStateChange(callback);
   }
-  async executeRawQuery(query, params = []) {
-    try {
-      const {
-        data,
-        error
-      } = await supabase.rpc(query, params);
-      if (error) throw error;
-      return {
-        success: true,
-        data
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
   async fixRLSPerformance() {
     return {
       success: true,

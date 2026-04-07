@@ -102,7 +102,9 @@ function Notificacoes() {
     setCarregandoNotificacoes(false);
   };
   const processarMarcarNotificacaoComoLida = async notificacaoId => {
-    const resultado = await NotificationService.marcarComoLida(notificacaoId);
+    const idUsuario = await obterIdUsuarioAtualAutenticado();
+    if (!idUsuario) return;
+    const resultado = await NotificationService.marcarComoLida(notificacaoId, idUsuario);
     if (resultado.success) {
       setListaNotificacoes(anterior => anterior.map(n => n.id === notificacaoId ? {
         ...n,
@@ -122,7 +124,9 @@ function Notificacoes() {
     }
   };
   const processarExcluirNotificacao = async notificacaoId => {
-    const resultado = await NotificationService.deletarNotificacao(notificacaoId);
+    const idUsuario = await obterIdUsuarioAtualAutenticado();
+    if (!idUsuario) return;
+    const resultado = await NotificationService.deletarNotificacao(notificacaoId, idUsuario);
     if (resultado.success) {
       setListaNotificacoes(anterior => anterior.filter(n => n.id !== notificacaoId));
     }

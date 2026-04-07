@@ -36,12 +36,12 @@ export const usePendingPointsNotifications = () => {
         ascending: false
       });
       if (error) {
-        console.error('❌ Erro ao buscar pontos pendentes:', error);
+        console.error('Erro ao buscar pontos pendentes:', error);
         return [];
       }
       return pontosPendentes || [];
     } catch (error) {
-      console.error('❌ Erro na busca de pontos pendentes:', error);
+      console.error('Erro na busca de pontos pendentes:', error);
       return [];
     }
   }, []);

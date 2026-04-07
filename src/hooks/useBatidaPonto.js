@@ -133,15 +133,11 @@ export function useBatidaPonto() {
       }
 
       const resultado = await BatidaService.registrarBatida({
-        userId: idUsuarioLogado,
         tipo,
         latitude,
         longitude,
         precisaoGps,
-        fotoUrl,
         projetoId,
-        empresaId,
-        superiorEmpresaId: perfilUsuario?.superior_empresa_id,
         observacao
       });
 

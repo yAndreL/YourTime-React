@@ -515,7 +515,7 @@ function ExportDataModal({
         };
         row += 2;
         worksheet.mergeCells(`B${row}:C${row}`);
-        worksheet.getCell(`B${row}`).value = `📋 ${t('comum.employee').toUpperCase()}`;
+        worksheet.getCell(`B${row}`).value = t('comum.employee').toUpperCase();
         worksheet.getCell(`B${row}`).style = sectionStyle;
         row++;
         worksheet.getCell(`B${row}`).value = t('comum.field');
@@ -533,7 +533,7 @@ function ExportDataModal({
         });
         row += 2;
         worksheet.mergeCells(`B${row}:C${row}`);
-        worksheet.getCell(`B${row}`).value = `📊 ${t('exportacao.statistics').toUpperCase()}`;
+        worksheet.getCell(`B${row}`).value = t('exportacao.statistics').toUpperCase();
         worksheet.getCell(`B${row}`).style = sectionStyle;
         worksheet.mergeCells(`F${row}:H${row}`);
         worksheet.getCell(`F${row}`).value = `📈 ${t('exportacao.statusDistribution').toUpperCase()}`;
@@ -605,7 +605,7 @@ function ExportDataModal({
         });
         row = Math.max(row, startRow + 4) + 2;
         worksheet.mergeCells(`B${row}:H${row}`);
-        worksheet.getCell(`B${row}`).value = `📊 ${t('exportacao.workedHoursPerDay').toUpperCase()}`;
+        worksheet.getCell(`B${row}`).value = t('exportacao.workedHoursPerDay').toUpperCase();
         worksheet.getCell(`B${row}`).style = sectionStyle;
         row++;
         const horasHeaders = [t('exportacao.date'), t('exportacao.normalHours'), t('exportacao.extraHours'), t('exportacao.total'), t('exportacao.status')];
@@ -924,7 +924,7 @@ function ExportDataModal({
           const pieChartConfig = {
             type: 'doughnut',
             data: {
-              labels: [`✅ ${t('exportacao.approved')}`, `⏳ ${t('exportacao.pending')}`, `❌ ${t('exportacao.rejected')}`],
+              labels: [t('exportacao.approved'), t('exportacao.pending'), t('exportacao.rejected')],
               datasets: [{
                 data: [diasAprovados, diasPendentes, diasRejeitados],
                 backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(239, 68, 68, 0.8)'],
@@ -999,7 +999,7 @@ function ExportDataModal({
             plugins: {
               title: {
                 display: true,
-                text: '⏰ Resumo Total de Horas',
+                text: `${t('exportacao.totalHoursSummary')}`,
                 font: {
                   size: 18,
                   weight: 'bold'

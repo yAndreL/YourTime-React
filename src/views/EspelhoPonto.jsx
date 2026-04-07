@@ -469,7 +469,7 @@ function EspelhoPonto() {
                             )}
                             {dia.jornada?.atraso_minutos > 0 && (
                               <span className="ml-1 text-[10px] text-yellow-600 dark:text-yellow-400" title="Atraso">
-                                ⚠ {BatidaService.formatarMinutosDescritivo(dia.jornada.atraso_minutos)}
+                                {BatidaService.formatarMinutosDescritivo(dia.jornada.atraso_minutos)}
                               </span>
                             )}
                           </td>
