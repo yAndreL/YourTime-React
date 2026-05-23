@@ -18,9 +18,11 @@ dist-ssr
 .env.production
 .env.development
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+# Editor, IDE e ambiente local
+.vscode/
+.cursor/
+.playwright-mcp/
+.venv/
 .idea
 .DS_Store
 *.suo
